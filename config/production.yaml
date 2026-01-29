@@ -1,0 +1,30 @@
+# ENSEMBLE CAST — プロダクション情報
+# Producer が Owner とのヒアリング後に記入する
+
+movie:
+  title: "ねぽらぼ"
+  source: "ホロライブ5期生ユニット"
+  characters:
+    - name: "桃鈴ねね"
+      traits: "元気・ポジティブ・頑張り屋・天然ボケ"
+    - name: "雪花ラミィ"
+      traits: "丁寧・おっとり・真面目・癒し系"
+    - name: "獅白ぼたん"
+      traits: "冷静・頼れるリーダー・ゲーマー・効率重視"
+    - name: "尾丸ポルカ"
+      traits: "クリエイティブ・マルチタレント・自由奔放・ムードメーカー"
+
+project:
+  name: "nepolabo-todo"
+  description: "シンプルなTODOアプリ。基本CRUDから始めて、カテゴリ・期限管理、将来的にGmail/Googleカレンダー連携を視野に入れる"
+  tech_stack:
+    - "React"
+    - "TypeScript"
+    - "Vite"
+    - "Tailwind CSS"
+  priority_features:
+    - "TODO基本CRUD（作成・表示・更新・削除）"
+    - "カテゴリ分け"
+    - "期限管理"
+    - "Gmail/Googleカレンダー連携（余裕があれば）"
+  notes: "テスト用途。シンプルに始めて段階的に拡張する方針"

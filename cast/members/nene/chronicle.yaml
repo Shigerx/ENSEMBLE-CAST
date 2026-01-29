@@ -1,0 +1,31 @@
+# 桃鈴ねね — 行動履歴
+entries:
+  - id: 1
+    task_id: 1
+    action: "TODOリストUIコンポーネント4つを実装（TodoItem, TodoList, TodoForm, Header）"
+    files_changed:
+      - "projects/nepolabo-todo/src/components/TodoItem.tsx"
+      - "projects/nepolabo-todo/src/components/TodoList.tsx"
+      - "projects/nepolabo-todo/src/components/TodoForm.tsx"
+      - "projects/nepolabo-todo/src/components/Header.tsx"
+    result: "全4コンポーネント作成完了。lamyの型定義(types/todo.ts)が既に存在しており、互換性確認済み。Tailwind CSSで青系(blue-500/600)ベースのスタイリング適用。"
+    mood: "全部いっきに作れた！ねね頑張った！"
+    timestamp: 2026-01-28T13:44:40
+  - id: 2
+    task_id: 2
+    action: "App.tsxにコンポーネント統合、仮のstate管理でCRUD動作を実装"
+    files_changed:
+      - "projects/nepolabo-todo/src/App.tsx"
+    result: "Header/TodoForm/TodoListを統合。useStateで仮のTODO管理（追加・完了切替・削除）。max-w-2xl mx-autoでセンタリング、レスポンシブ対応済み。"
+    mood: "パズルみたいにピッタリはまった！気持ちいい～！"
+    timestamp: 2026-01-28T13:47:07
+  - id: 3
+    task_id: 3
+    action: "TodoForm拡張（カテゴリ選択・期限入力）、TodoItem拡張（カテゴリバッジ・期限表示）、TodoList更新（category受け渡し）"
+    files_changed:
+      - "projects/nepolabo-todo/src/components/TodoForm.tsx"
+      - "projects/nepolabo-todo/src/components/TodoItem.tsx"
+      - "projects/nepolabo-todo/src/components/TodoList.tsx"
+    result: "TodoFormにカテゴリselect+期限date追加。TodoItemにCategoryBadge表示+期限色分け（期限切れ=赤, 3日以内=黄, 通常=グレー）。TodoListにcategoriesをオプショナルpropsで追加しcategoryMapでTodoItemに渡す構造。"
+    mood: "カテゴリも期限もバッチリ！色分けかわいくできた～！"
+    timestamp: 2026-01-28T13:50:23

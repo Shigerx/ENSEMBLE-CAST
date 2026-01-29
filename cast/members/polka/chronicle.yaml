@@ -1,0 +1,31 @@
+# 尾丸ポルカ — 行動履歴
+entries:
+  - id: 1
+    task_id: 1
+    action: "カテゴリ機能・期限管理のUIコンポーネント4ファイルを作成"
+    files_changed:
+      - "projects/nepolabo-todo/src/components/CategoryBadge.tsx"
+      - "projects/nepolabo-todo/src/components/CategoryFilter.tsx"
+      - "projects/nepolabo-todo/src/components/DueDatePicker.tsx"
+      - "projects/nepolabo-todo/src/hooks/useCategories.ts"
+    result: "全4コンポーネント作成完了。仮の型定義をuseCategories内に配置。lamyの型定義完成後に差し替え予定。"
+    mood: "やってみよう精神で一気に作ったっしょ！いい感じ〜！"
+    timestamp: 2026-01-28T13:44:45
+  - id: 2
+    task_id: 2
+    action: "仮型定義をlamyの公式型に差し替え + TodoControls.tsx新規作成"
+    files_changed:
+      - "projects/nepolabo-todo/src/hooks/useCategories.ts"
+      - "projects/nepolabo-todo/src/components/CategoryFilter.tsx"
+      - "projects/nepolabo-todo/src/components/TodoControls.tsx"
+    result: "useCategories.tsの仮Category型を削除→types/todo.tsからimport。CategoryFilterも同様にCategory型をimport。TodoControlsは完了/未完了フィルター、ソートキー(作成日/期限/タイトル)、ソート順(昇順/降順)のUI実装完了。"
+    mood: "lamyの型定義キレイだったから差し替えスムーズ〜っしょ！ソートUIもいい感じ！"
+    timestamp: 2026-01-28T13:47:22
+  - id: 3
+    task_id: 3
+    action: "CategoryManager.tsx（カテゴリ追加・削除UI）を作成"
+    files_changed:
+      - "projects/nepolabo-todo/src/components/CategoryManager.tsx"
+    result: "折りたたみパネル方式のカテゴリ管理UI作成完了。プリセット8色の色選択、2段階削除確認、ARIAアクセシビリティ対応。useCategoriesフックのadd/removeを活用。"
+    mood: "色選択のUIこだわったっしょ〜！丸いボタンで直感的！"
+    timestamp: 2026-01-28T13:50:00

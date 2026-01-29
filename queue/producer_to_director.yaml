@@ -1,0 +1,6 @@
+# Producer → Director 指示キュー
+orders:
+  - id: 1
+    type: start_production
+    message: "production.yaml を読んでキャスティングを開始してください。ねぽらぼ（ホロライブ5期生）のキャラクターでキャストを編成し、nepolabo-todoプロジェクトの開発を始めてください。"
+    timestamp: "2026-01-28T13:35:55"

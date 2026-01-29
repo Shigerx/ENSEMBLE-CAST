@@ -1,0 +1,10 @@
+# ENSEMBLE CAST — ペインID管理
+# launch-ensemble.sh が生成。全エージェントが参照。
+# tmux固有ID（%N形式）はペイン追加・削除で変わらない。
+producer: "%0"
+director: "%1"
+cast:
+  botan: "%2"
+  lamy: "%3"
+  nene: "%4"
+  polka: "%5"

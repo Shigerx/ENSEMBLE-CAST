@@ -1,0 +1,36 @@
+# 雪花ラミィ — 行動履歴
+entries:
+  - id: 1
+    task_id: 1
+    action: "TypeScript型定義・データモデル設計・ストレージ層・ヘルパー関数を実装"
+    files_changed:
+      - "projects/nepolabo-todo/src/types/todo.ts"
+      - "projects/nepolabo-todo/src/utils/storage.ts"
+      - "projects/nepolabo-todo/src/utils/todo-helpers.ts"
+    result: "Todo, Category, TodoWithCategory, TodoFilter型を定義。localStorageラッパーとCRUD/フィルター/ソートのヘルパー関数を実装完了"
+    mood: "きちんと整理できて安心しました。型がしっかりしていると、後の作業も安心ですね。"
+    timestamp: 2026-01-28T13:44:18
+  - id: 2
+    task_id: 2
+    action: "useTodosカスタムフックを実装。タスク1で作成した型・ユーティリティを活用し、状態管理・localStorage同期・フィルター・ソート機能を統合"
+    files_changed:
+      - "projects/nepolabo-todo/src/hooks/useTodos.ts"
+    result: "useTodosフック完成。addTodo/updateTodo/deleteTodo/toggleTodo、フィルター・ソート設定、TodoWithCategoryへのカテゴリ結合をすべて実装"
+    mood: "タスク1の型定義がそのまま綺麗にはまりました。設計が正確だと、組み立ても気持ちよく進みますね。"
+    timestamp: 2026-01-28T13:46:01
+  - id: 3
+    task_id: 3
+    action: "App.tsxの仮useState管理をuseTodosフックに置き換え。localStorage永続化が有効になった"
+    files_changed:
+      - "projects/nepolabo-todo/src/App.tsx"
+    result: "仮のstate管理コード(30行)をuseTodosフック呼び出し(1行)に置換。filteredTodos/addTodo/toggleTodo/deleteTodoを接続完了"
+    mood: "neneさんが作ってくれたUIに、私のデータ層がぴったり繋がりました。チームワークですね。"
+    timestamp: 2026-01-28T13:48:30
+  - id: 4
+    task_id: 4
+    action: "App.tsxに全機能統合。CategoryFilter, TodoControls, CategoryManager, useCategoriesフックを接続し、completedFilter変換ロジックを実装"
+    files_changed:
+      - "projects/nepolabo-todo/src/App.tsx"
+    result: "全キャストのコンポーネントをApp.tsxに統合完了。カテゴリフィルター・完了/未完了フィルター・ソート・カテゴリ管理がすべて動作する状態に"
+    mood: "みんなが作ったパーツが一つに繋がりました。TodoControlsのCompletedFilter型とuseTodosのfilter.completedの型変換が必要でしたが、丁寧に橋渡しできました。"
+    timestamp: 2026-01-28T13:51:01

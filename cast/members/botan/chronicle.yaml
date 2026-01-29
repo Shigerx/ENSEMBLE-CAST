@@ -1,0 +1,34 @@
+# 獅白ぼたん — 行動履歴
+entries:
+  - id: 1
+    task_id: 1
+    action: "Vite + React + TypeScript プロジェクト初期構築、Tailwind CSS v4導入、ディレクトリ構造策定、最小限レイアウトのApp.tsx作成"
+    files_changed:
+      - "projects/nepolabo-todo/vite.config.ts"
+      - "projects/nepolabo-todo/src/index.css"
+      - "projects/nepolabo-todo/src/App.tsx"
+      - "projects/nepolabo-todo/src/main.tsx"
+      - "projects/nepolabo-todo/package.json"
+      - "projects/nepolabo-todo/src/components/.gitkeep"
+      - "projects/nepolabo-todo/src/types/.gitkeep"
+      - "projects/nepolabo-todo/src/hooks/.gitkeep"
+      - "projects/nepolabo-todo/src/utils/.gitkeep"
+      - "projects/nepolabo-todo/src/stores/.gitkeep"
+    result: "ビルド成功、dev server起動確認済み"
+    mood: "基盤は整った。あとは各自の仕事だな。"
+    timestamp: 2026-01-28T13:47:06
+  - id: 2
+    task_id: 2
+    action: "全キャスト作成ファイルを含めたTypeScriptビルド検証。tsc --noEmit、npm run build の両方を実行。全ファイルのimportパス・型整合性を目視確認。"
+    files_changed: []
+    result: "エラーゼロ。修正不要。全12ファイル（types/todo.ts, utils/2, hooks/2, components/7）のimport・型が整合。"
+    mood: "全員の仕事がきっちり噛み合ってるな。いい連携だ。"
+    timestamp: 2026-01-28T13:50:12
+  - id: 3
+    task_id: 3
+    action: "最終ビルド検証。CategoryManager.tsxのuseState型推論エラー（TS2345）を修正。useState<string>に型アノテーション追加。"
+    files_changed:
+      - "projects/nepolabo-todo/src/components/CategoryManager.tsx"
+    result: "エラー1件修正 → tsc --noEmit クリア、npm run build 成功（41モジュール）"
+    mood: "as constとuseStateの組み合わせは定番の罠だな。一発で仕留めた。"
+    timestamp: 2026-01-28T13:52:50

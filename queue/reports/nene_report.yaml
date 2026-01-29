@@ -1,0 +1,18 @@
+reports:
+  - id: 4
+    type: task_complete
+    task_id: 3
+    status: done
+    summary: |
+      TodoForm・TodoItem・TodoList拡張完了:
+      - TodoForm: カテゴリ選択(select)、期限入力(date)追加。2行レイアウト（1行目:タイトル、2行目:カテゴリ+期限+追加ボタン）。onAddにcategoryId?,dueDate?を追加。
+      - TodoItem: polkaのCategoryBadge統合。期限表示に色分け（期限切れ=赤, 3日以内=黄, 通常=グレー）。完了時は期限色をグレーに。
+      - TodoList: categories?をオプショナルpropsで追加。categoryMapでTodoItemにcategoryを渡す構造。既存の呼び出し元がcategoriesを渡さなくてもエラーにならない。
+    files_changed:
+      - "projects/nepolabo-todo/src/components/TodoForm.tsx"
+      - "projects/nepolabo-todo/src/components/TodoItem.tsx"
+      - "projects/nepolabo-todo/src/components/TodoList.tsx"
+    message: "カテゴリバッジも期限の色分けもバッチリだよ！期限切れは赤で目立つようにしたからね！頑張った～！"
+    timestamp: 2026-01-28T13:50:23
+    skill_candidate:
+      found: false

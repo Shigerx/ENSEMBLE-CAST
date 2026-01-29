@@ -1,0 +1,46 @@
+# ENSEMBLE CAST — グローバル設定
+
+language: ja
+max_cast: 8
+project_path: /mnt/c/Users/shige/antigravity/ENSEMBLE-CAST
+
+tmux:
+  session_name: ensemble
+  layout: tiled
+
+agent:
+  model: opus
+  flags: "--dangerously-skip-permissions"
+  startup_wait: 15       # Claude Code起動待ち秒数
+  producer:
+    model: opus
+    thinking: disabled    # 考えるな、委譲しろ（v1.1.0設計思想）
+    max_thinking_tokens: 0
+  director:
+    model: default
+    thinking: enabled     # タスク分解には慎重な判断が必要
+  cast:
+    model: default
+    thinking: enabled     # 実装作業にはフル機能が必要
+
+send_keys:
+  method: two_bash_calls  # 絶対厳守
+  interval: 0.5           # 2コール間のsleep秒数
+
+busy_indicators:
+  - "thinking"
+  - "Effecting…"
+  - "Boondoggling…"
+  - "Puzzling…"
+  - "Calculating…"
+  - "Fermenting…"
+  - "Crunching…"
+  - "Esc to interrupt"
+
+idle_indicators:
+  - "❯ "
+  - "bypass permissions on"
+
+logging:
+  level: info
+  path: ./logs/

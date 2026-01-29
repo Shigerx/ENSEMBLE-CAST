@@ -1,0 +1,39 @@
+tasks:
+  - id: 1
+    title: "プロジェクト初期構築"
+    status: done
+  - id: 2
+    title: "TypeScriptビルド検証"
+    status: done
+  - id: 3
+    title: "最終ビルド検証・動作確認"
+    description: |
+      lamyによるApp.tsx全機能統合が完了した。最終ビルド検証を実施する。
+      
+      やること:
+      1. projects/nepolabo-todo/ で npx tsc --noEmit を実行
+         - TypeScriptエラーがあれば修正
+      2. npm run build でViteビルドが通ることを確認
+      3. エラーがあれば修正（最小限の修正に留める）
+      4. 全ファイルのimportパス整合性を確認
+      
+      統合済みコンポーネント一覧:
+      - App.tsx: 全コンポーネント統合済み（lamy）
+      - components/: Header, TodoForm, TodoList, TodoItem, CategoryBadge, 
+        CategoryFilter, CategoryManager, DueDatePicker, TodoControls
+      - hooks/: useTodos, useCategories
+      - types/: todo.ts
+      - utils/: storage.ts, todo-helpers.ts
+      
+      期待する成果物:
+      - ビルドが通る状態（npm run build 成功）
+      - エラーがあれば修正済み
+      
+      注意:
+      - 前回はエラーゼロだったが、統合後に新たなエラーが出る可能性がある
+      - 修正は最小限に。大きな変更が必要ならblocked報告
+    target_path: "projects/nepolabo-todo/"
+    priority: high
+    status: done
+    assigned_at: "2026-01-28T13:51:59"
+    completed_at: "2026-01-28T13:52:50"

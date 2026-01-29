@@ -1,0 +1,42 @@
+tasks:
+  - id: 1
+    title: "TypeScript型定義・データモデル設計"
+    status: done
+  - id: 2
+    title: "useTodosカスタムフック実装"
+    status: done
+  - id: 3
+    title: "App.tsx useTodosフック統合"
+    status: done
+  - id: 4
+    title: "App.tsx全機能統合（カテゴリ・フィルター・ソート）"
+    description: |
+      全キャストが作成したコンポーネントをApp.tsxに統合し、全機能を動かす。
+      
+      やること:
+      - projects/nepolabo-todo/src/App.tsx を編集:
+        - polkaのコンポーネントを統合:
+          - CategoryFilter: カテゴリフィルタリングUI
+          - TodoControls: 完了/未完了フィルター + ソート
+          - CategoryManager: カテゴリ管理（追加・削除） ※polkaが作成中、存在すれば統合
+        - useCategoriesフックを使ってカテゴリ一覧を取得
+        - useTodosのfilter/sort機能をTodoControlsに接続
+        - TodoFormにcategories, onAddのcategoryId/dueDateを接続
+        - TodoItemにcategory, dueDateを渡す
+        - レイアウト調整:
+          - ヘッダー → カテゴリフィルター → フォーム → コントロール → リスト
+          - サイドにカテゴリ管理（画面幅があれば）
+      
+      期待する成果物:
+      - src/App.tsx — 全機能統合済み
+      
+      注意:
+      - neneがTodoForm/TodoItemを拡張中。完了済みのファイルを使う
+      - polkaのCategoryManagerがまだない場合はスキップ（後で追加）
+      - 他のファイルは編集しない。App.tsxのみ
+      - コンポーネントが存在しない場合はエラーにならないようimportをオプショナルにするか、
+        存在するものだけ統合する
+    target_path: "projects/nepolabo-todo/src/App.tsx"
+    priority: high
+    status: done
+    assigned_at: "2026-01-28T13:50:09"
