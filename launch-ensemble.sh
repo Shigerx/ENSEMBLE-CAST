@@ -303,9 +303,11 @@ tmux send-keys -t "$PRODUCER_PANE" Enter
 log_success "指示書送信完了"
 
 # ========================================
-# セッション設定: マウスモード有効化 + Producerペインにフォーカス
+# セッション設定: マウスモード有効化 + ペインタイトル表示 + Producerペインにフォーカス
 # ========================================
 tmux set-option -t "$SESSION" mouse on
+tmux set-option -t "$SESSION" pane-border-status top
+tmux set-option -t "$SESSION" pane-border-format " #{pane_title} "
 tmux select-pane -t "$PRODUCER_PANE"
 
 # ========================================
