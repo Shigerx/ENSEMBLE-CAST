@@ -28,6 +28,63 @@ tmux attach-session -t ensemble
 
 左ペイン（Producer）があなたの対話窓口です。
 
+---
+
+## 外部プロジェクトでの使い方
+
+ENSEMBLE-CASTは「親オーケストレーター」として動作します。
+対象プロジェクトとは別のディレクトリで起動し、外部プロジェクトを操作します。
+
+### ディレクトリ構成
+
+```
+~/antigravity/
+├── ENSEMBLE-CAST/          ← 制御センター（ここでtmuxを起動）
+│   ├── config/
+│   │   └── production.yaml ← target_path で対象を指定
+│   ├── launch-ensemble.sh
+│   └── ...
+│
+└── my-new-project/         ← 実際の作業対象（別リポジトリ）
+    ├── src/
+    ├── package.json
+    └── ...
+```
+
+### 設定方法
+
+1. **ENSEMBLE-CASTディレクトリで起動**:
+   ```bash
+   cd ~/antigravity/ENSEMBLE-CAST
+   bash launch-ensemble.sh
+   ```
+
+2. **Producerに対象プロジェクトを伝える**:
+   ```
+   映画は「オーシャンズ11」で、
+   ~/antigravity/my-new-project にあるReactアプリを改修したい
+   ```
+
+3. **production.yaml に記録される**:
+   ```yaml
+   project:
+     name: "my-new-project"
+     target_path: "/mnt/c/Users/shige/antigravity/my-new-project"
+     tech_stack: ["React", "TypeScript"]
+   ```
+
+### 複数プロジェクトの切り替え
+
+1. 現在の作業を終了（または中断）
+2. `config/production.yaml` を更新（または新規起動時に別プロジェクトを指定）
+3. Cast達が新しいプロジェクトで作業開始
+
+### メリット
+
+- **ENSEMBLE-CASTは1箇所で管理** — アップデートが楽
+- **プロジェクト側を汚さない** — `.ensemble/` などのゴミが入らない
+- **複数プロジェクトを切り替え可能** — production.yaml を変えるだけ
+
 **最初に聞かれること:**
 1. **映画**: どの映画のキャラクターを使うか（例: オーシャンズ11、ホロライブ、アベンジャーズ）
 2. **プロジェクト**: 何を作りたいか（例: TODOアプリ、ブログシステム）

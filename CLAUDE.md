@@ -353,4 +353,20 @@ ProducerはExtended Thinking無効（`MAX_THINKING_TOKENS=0`）で起動し、�
 
 ## 17. プロジェクトパス
 
+### ENSEMBLE-CAST本体
 WSL2環境: `/mnt/c/Users/shige/antigravity/ENSEMBLE-CAST`
+
+### 対象プロジェクト（外部プロジェクトの場合）
+
+ENSEMBLE-CASTは「親オーケストレーター」として動作する。
+対象プロジェクトが外部にある場合、`config/production.yaml` の `target_path` を確認すること。
+
+```yaml
+project:
+  name: "my-project"
+  target_path: "/mnt/c/Users/shige/antigravity/my-project"  # ← ここ
+```
+
+**Cast作業時の注意**:
+- `target_path` が設定されている場合、コード作成・編集はそのパス内で行う
+- `target_path` が `null` の場合、ENSEMBLE-CAST内の `projects/` ディレクトリで作業する

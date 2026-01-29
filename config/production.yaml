@@ -16,6 +16,9 @@ movie:
 
 project:
   name: "nepolabo-todo"
+  # target_path: 対象プロジェクトのパス（外部プロジェクトの場合に指定）
+  # 未指定の場合は ENSEMBLE-CAST 内で作業する
+  target_path: null
   description: "シンプルなTODOアプリ。基本CRUDから始めて、カテゴリ・期限管理、将来的にGmail/Googleカレンダー連携を視野に入れる"
   tech_stack:
     - "React"
