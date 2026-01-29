@@ -227,6 +227,14 @@ npm test
 - 他Castの成果物に影響がないか確認
 - 既存機能を破壊していないか確認
 
+#### チェック7: INTEGRATION（統合タスクの場合のみ・必須）
+- **他キャストが作成したコンポーネントが実際に使用されているか確認**
+  - タスク説明で指定されたファイルが import されているか
+  - 独自に再実装されていないか（同じ機能のコードが重複していないか）
+- **未使用ファイルがないか確認**
+  - 作成されたが使用されていないコンポーネントがあれば報告
+  - これは rejected 理由にはならないが、suggestions に記載する
+
 ### 3. verdict（判定）の決定
 
 | 条件 | verdict |
@@ -285,6 +293,9 @@ reports:
       - id: REGRESSION
         passed: true
         notes: "他成果物への影響なし"
+      - id: INTEGRATION  # 統合タスクの場合のみ
+        passed: true
+        notes: "指定コンポーネント（DueDatePicker, CategorySelect）を正しく使用"
 
     # rejected の場合のみ必須
     reject_reasons:
