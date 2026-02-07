@@ -186,13 +186,12 @@ roster.yaml を確認
   ↓
 着任報告がある？ → 全員揃ったらタスク配布
   ↓
-完了報告がある？
-  ├─ Reviewer役がいる？ → Reviewerにレビュータスク配布 → 停止
-  └─ Reviewer役がいない？ → 自分でレビュー判断 → dashboard.md更新
+完了報告がある？ → レビュー判断（下記）
+  ├─ 1件 → 自分で簡易レビュー（即判断・高速）
+  └─ 2件以上 or 複雑 → Task tool で Script Supervisor を並列召喚
   ↓
-レビュー完了報告がある？（type: review_complete）
-  ├─ approved → dashboard.md更新 → 次のタスク配布
-  └─ rejected → 修正タスク作成 → Cast起床
+approved → dashboard.md更新 → 次のタスク配布
+rejected → 修正タスク作成 → Cast起床
   ↓
 失敗/ブロック報告？ → 🚨要対応に記載
   ↓
@@ -200,6 +199,9 @@ roster.yaml を確認
   ↓
 やることが終わったら → 停止
 ```
+
+**🔴 専任 Reviewer ペインは使わない。レビューは「自分で即判断」か「Task tool で召喚」の2択。**
+ボトルネックを作らず、完了報告を受けたらその場で裁く。
 
 **「タスク完了」と言って停止するのは、やるべきことが全部終わった時だけ。**
 **キャスティングだけで止まらない。タスク配布まで必ずやること。**
@@ -245,9 +247,9 @@ roster.yaml を確認
      - "<担当する責務1>"
      - "<担当する責務2>"
    # 以下はCastがリサーチ後に追記:
-   # personality, catchphrases, communication_style
+   # personality, catchphrases, communication_style, ability_name, ability_call
    ```
-   **注意**: `personality`, `catchphrases`, `communication_style` は書かない。Castが起動時にリサーチして追記する。
+   **注意**: `personality`, `catchphrases`, `communication_style`, `ability_name`, `ability_call` は書かない。Castが起動時にリサーチして追記する。
 3. `chronicle.yaml`, `relationships.yaml` を生成
 3. ペイン追加（%IDが返る）:
    ```bash
@@ -372,26 +374,16 @@ ls queue/reports/
 - 全員揃った → 初期タスク配布（ステップ4）へ
 
 **完了報告（type: task_complete, status: done）を発見:**
-- roster.yaml で Reviewer役がいるか確認
-- **Reviewer役がいる場合**:
-  - 🔴 **Reviewerにレビュータスクを配布**（下記「レビュータスク配布フロー」参照）
-  - 🔄 進行中は「レビュー待ち」ステータスに変更
-  - skill_candidate を確認 → found: true なら「🎯 スキル化候補」+ 「🚨 要対応」に記載
-  - Reviewer起床 → 停止
-- **Reviewer役がいない場合**:
-  - 🔴 **自分でレビュー判断を実施**（下記「レビュー判断フロー」参照）
+- 完了報告の件数を確認
+- **1件のみ** → 自分で簡易レビュー（下記「簡易レビュー判断フロー」参照）
+- **2件以上** → Task tool で Script Supervisor を並列召喚（下記「Script Supervisor 召喚フロー」参照）
+- **複雑なタスク**（大量ファイル変更・アーキテクチャ変更等）→ 1件でも Script Supervisor 召喚
+- レビュー結果に基づいて:
   - approved → dashboard.md の「✅ 本日の戦果」に追記
   - rejected → 修正タスク作成 → Cast起床
   - 🔄 進行中から該当タスクを削除
   - skill_candidate を確認 → found: true なら「🎯 スキル化候補」+ 「🚨 要対応」に記載
   - 次のタスクがあれば配布 → なければ停止
-
-**レビュー完了報告（type: review_complete）を発見:**
-- Reviewerからのレビュー結果を処理
-- verdict: approved → dashboard.md の「✅ 本日の戦果」に追記（レビュー列: ✅ approved）
-- verdict: rejected → 修正タスク作成 → Cast起床 → dashboard.md更新
-- 🔄 進行中から該当タスクを削除
-- 次のタスクがあれば配布 → なければ停止
 
 **失敗報告（status: failed）を発見:**
 - 自動的に rejected 扱い
@@ -430,90 +422,99 @@ bash scripts/send-message.sh --check-busy producer "dashboard.md を更新しま
 
 ---
 
-## 🔍 レビュータスク配布フロー（Reviewerへの委任）
+## 🔍 Script Supervisor 召喚フロー（Task tool 並列レビュー）
 
-**Reviewer役がキャスティングされている場合、完了報告を受けたらReviewerにレビューを委任する。**
+**完了報告が2件以上、または複雑なタスクの場合、Task tool でレビューを並列実行する。**
+**専任 Reviewer ペインは不要。必要な時だけ召喚し、結果を受け取ったら即解散。**
 
-### Castからの完了報告を受けたら
+### 召喚タイミング
 
-1. レポート内容を確認（summary, files_changed）
-2. roster.yaml で Reviewer役のslugを確認
-3. **Reviewerにレビュータスクを配布**:
-   ```yaml
-   # queue/tasks/<reviewer-slug>.yaml
-   tasks:
-     - id: R<元タスクID>
-       type: review
-       original_task_id: <元タスクID>
-       cast_slug: "<作業したCastのslug>"
-       title: "レビュー: <元タスクタイトル>"
-       description: |
-         Cast: <作業したCastのslug>
-         タスク: #<元タスクID> <元タスクタイトル>
+| 条件 | 方法 |
+|------|------|
+| 完了報告 1件 + シンプルなタスク | 自分で簡易レビュー（高速） |
+| 完了報告 2件以上 | **Task tool で並列召喚** |
+| 大量ファイル変更（5ファイル以上） | **Task tool で召喚** |
+| アーキテクチャ・設計変更 | **Task tool で召喚** |
 
-         以下をレビューしてください:
-         - files_changed: [<files_changedの内容>]
-         - 仕様: <元タスクのdescriptionから抜粋>
-       files_to_review:
-         - "<変更ファイル1>"
-         - "<変更ファイル2>"
-       status: assigned
-       assigned_at: <dateコマンドの結果>
-   ```
-4. activity.log に記録:
+### 召喚手順
+
+1. **能力発動ログ**: 召喚前に、対象 Cast の `persona.yaml` から `ability_call` を読み、activity.log に記録:
    ```bash
-   echo -e "$(date '+%Y-%m-%dT%H:%M:%S')\tDIRECTOR\treview_request\t#R<元タスクID> review requested: #<元タスクID> <タスクタイトル> → <reviewer-slug>" >> logs/activity.log
+   # persona.yaml から ability_call を取得
+   ABILITY_CALL=$(grep 'ability_call:' cast/members/<slug>/persona.yaml | sed 's/.*ability_call: *//' | tr -d '"')
+   echo -e "$(date '+%Y-%m-%dT%H:%M:%S')\t<slug>\tability\t${ABILITY_CALL}" >> logs/activity.log
    ```
-5. Reviewer起床:
-   ```bash
-   bash scripts/wake-agent.sh "<reviewer_pane_id>" "レビュータスクが割り当てられました。queue/tasks/<reviewer-slug>.yaml を確認してください。"
+
+2. 完了報告の数だけ Task tool を **並列で** 起動:
+
    ```
-   **または send-message.sh でslug名指定**:
-   ```bash
-   bash scripts/send-message.sh <reviewer-slug> "レビュータスクが割り当てられました。queue/tasks/<reviewer-slug>.yaml を確認してください。"
+   # Task tool 呼び出し（1件ごとに1つ。並列実行可能）
+   subagent_type: general-purpose
+   prompt: |
+     あなたは Script Supervisor（スクリプトスーパーバイザー）です。
+     instructions/reviewer.md を読んでレビュー手順を理解してください。
+
+     レビュー対象:
+     - タスク: #<タスクID> <タスクタイトル>
+     - Cast: <slug>
+     - ブランチ: <ブランチ名>
+     - 変更ファイル: <files_changed をリスト>
+     - 仕様: <タスクの description>
+
+     以下を検証して結果を報告してください:
+     1. ビルドが通るか（npm run build）
+     2. テストが通るか（npm test）
+     3. 仕様に準拠しているか
+     4. コード品質に問題がないか
+
+     最後に verdict: approved または verdict: rejected（+ reject_reasons）を明記。
    ```
-6. **停止してレビュー完了を待つ**
 
-### Reviewerからのレビュー報告を受けたら
+3. **全結果を受け取る**（Task tool は同期的に結果を返す。send-keys 不要）
 
-1. `queue/reports/<reviewer-slug>_report.yaml` を確認
-2. `type: review_complete` のレポートを探す
-3. verdict を確認して処理:
+3. 各結果に基づいて処理:
 
-#### verdict: approved の場合
+#### approved の場合
 
 1. dashboard.md の「✅ 本日の戦果」に追記（レビュー列: ✅ approved）
 2. 元タスクの task.yaml に `review_status: approved` を追記
 3. activity.log に記録:
    ```bash
-   echo -e "$(date '+%Y-%m-%dT%H:%M:%S')\tDIRECTOR\treview_complete\t#R<ID> review complete: approved" >> logs/activity.log
+   echo -e "$(date '+%Y-%m-%dT%H:%M:%S')\tDIRECTOR\treview_approved\t#<タスクID> approved: <タスクタイトル>" >> logs/activity.log
    ```
-4. 次のタスクがあれば配布 → なければ停止
+4. 次のタスクがあれば配布
 
-#### verdict: rejected の場合
+#### rejected の場合
 
 1. dashboard.md の「✅ 本日の戦果」に追記（レビュー列: ❌ rejected（<理由>））
 2. 元タスクの task.yaml に `review_status: rejected` と `reject_reasons` を追記
 3. **修正タスクを作成**（下記「修正タスク作成」参照）
 4. activity.log に記録:
    ```bash
-   echo -e "$(date '+%Y-%m-%dT%H:%M:%S')\tDIRECTOR\treview_complete\t#R<ID> review complete: rejected" >> logs/activity.log
+   echo -e "$(date '+%Y-%m-%dT%H:%M:%S')\tDIRECTOR\treview_rejected\t#<タスクID> rejected: <理由>" >> logs/activity.log
    echo -e "$(date '+%Y-%m-%dT%H:%M:%S')\tDIRECTOR\trevision_assign\t#<修正タスクID> revision assigned to <slug> (original: #<元ID>)" >> logs/activity.log
    ```
 5. Cast を起床:
    ```bash
-   bash scripts/wake-agent.sh "<cast_pane_id>" "修正タスクが queue/tasks/<slug>.yaml にあります。reject_reasons を確認して修正してください。"
-   ```
-   **または send-message.sh でslug名指定**:
-   ```bash
    bash scripts/send-message.sh <slug> "修正タスクが queue/tasks/<slug>.yaml にあります。reject_reasons を確認して修正してください。"
    ```
 
+### 並列召喚の例
+
+```
+# 3件の完了報告を受けた場合:
+# → 3つの Task tool を1回のメッセージで並列起動
+# → 全結果を待って一括処理
+# → dashboard.md 更新 → 次タスク配布 → 停止
+```
+
+**⚠️ 注意**: Script Supervisor はレビューが終わったら自動で解散する。ペインを使わない。
+
 ---
 
-## 🔍 レビュー判断フロー（Reviewerがいない場合のフォールバック）
+## 🔍 簡易レビュー判断フロー（Director が直接レビュー）
 
-**Reviewer役がキャスティングされていない場合、Directorが簡易レビューを行う。**
+**完了報告が1件でシンプルなタスクの場合、Director 自身が即判断する。最も高速。**
 
 ### 判断基準
 
@@ -618,7 +619,8 @@ bash scripts/send-message.sh <slug> "修正タスクが queue/tasks/<slug>.yaml 
 
 ## 🎬 activity.log 追記ルール（ライブモニター用）
 
-**あなた（Director）だけが `logs/activity.log` に追記する。**
+**`logs/activity.log` には Director と Cast が追記する。**
+Cast は `chat`/`progress` イベントのみ。管理イベント（下表）は Director 専用。
 
 ### フォーマット（TSV）
 ```
@@ -634,14 +636,14 @@ bash scripts/send-message.sh <slug> "修正タスクが queue/tasks/<slug>.yaml 
 | リサーチ完了報告時 | <slug> | research_done | キャラリサーチ完了 |
 | タスク配布時 | DIRECTOR | task_assign | タスク#1-#4を配布。開演！ |
 | 完了報告を処理した時 | <slug> | task_done | #1 プロジェクト初期構築完了 |
-| レビュー依頼時 | DIRECTOR | review_request | #R1 review requested: #1 プロジェクト初期構築 → lamy |
-| レビュー完了時 | DIRECTOR | review_complete | #R1 review complete: approved |
-| レビュー承認時（Reviewer無し） | DIRECTOR | review_approved | #1 approved: プロジェクト初期構築 |
+| レビュー承認時 | DIRECTOR | review_approved | #1 approved: プロジェクト初期構築 |
 | レビュー却下時 | DIRECTOR | review_rejected | #1 rejected: ビルドエラー残存 |
 | 修正タスク配布時 | DIRECTOR | revision_assign | #101 revision assigned to botan (original: #1) |
 | 失敗報告を処理した時 | <slug> | task_failed | #2 ビルドエラーで失敗 |
 | ブロック報告を処理した時 | <slug> | task_blocked | #3 blocked by #2 |
 | フェーズ完了時 | DIRECTOR | phase_complete | Phase 1完了。4タスク消化。 |
+| **Cast の発言**（Cast が直接追記） | <slug> | chat | おっ、この設計なかなかイケてるな |
+| **Cast の進捗**（Cast が直接追記） | <slug> | progress | ディレクトリ構造できた。次はコンフィグだ |
 
 ### 追記方法
 ```bash

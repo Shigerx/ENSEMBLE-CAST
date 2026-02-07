@@ -2,32 +2,83 @@
 # Producer が Owner とのヒアリング後に記入する
 
 movie:
-  title: "ねぽらぼ"
-  source: "ホロライブ5期生ユニット"
+  title: "ジョジョの奇妙な冒険 黄金の風"
+  source: "荒木飛呂彦 ジョジョの奇妙な冒険 Part5"
   characters:
-    - name: "桃鈴ねね"
-      traits: "元気・ポジティブ・頑張り屋・天然ボケ"
-    - name: "雪花ラミィ"
-      traits: "丁寧・おっとり・真面目・癒し系"
-      role: "reviewer"  # 品質検証専任
-    - name: "獅白ぼたん"
-      traits: "冷静・頼れるリーダー・ゲーマー・効率重視"
-    - name: "尾丸ポルカ"
-      traits: "クリエイティブ・マルチタレント・自由奔放・ムードメーカー"
+    - name: "ジョルノ・ジョバァーナ"
+      traits: "冷静・覚悟・夢を追う・カリスマ"
+    - name: "ブローノ・ブチャラティ"
+      traits: "信頼のリーダー・正義感・決断力・仲間想い"
+    - name: "ナランチャ・ギルガ"
+      traits: "元気・直感型・行動力・素直"
+    - name: "グイード・ミスタ"
+      traits: "堅実・楽天的・タフ・4嫌い"
+    - name: "レオーネ・アバッキオ"
+      traits: "厳格・懐疑的・職人気質・過去に執着"
 
 scale: small  # small: v2モード（Director 1人） / large: v3モード（マルチユニット）
 
 project:
-  name: "nepolabo-todo"
-  phase: 2
-  target_path: "/mnt/c/Users/shige/antigravity/nepolabo-todo"
-  description: "Phase 2: 期限管理とカテゴリ機能の追加。ねぽらぼっぽいエッセンスを取り入れる"
+  name: "flare"
+  description: >
+    F.L.A.R.E. (Flexible List & Automated Research Engine)
+    技術ナレッジのWebツール。気になった事を投げる → AIがディープリサーチ →
+    結果をスライドやインフォグラフィックで資料化 → リスト構造で保管・閲覧性の高いナレッジ化 → HP公開。
+    「未知の技術領域（暗闇）にAIがDeep Researchを投げてパッと照らし出し、視界をクリアにする」
+  target_path: null  # 新規プロジェクト。Directorがセットアップする
   tech_stack:
-    - "React"
+    - "Astro 5.x (Cloudflare買収済み。Islands Architecture)"
+    - "Tailwind CSS v4 + shadcn/ui (React Islands)"
+    - "Cloudflare Workers + Hono (API)"
+    - "Cloudflare D1 (SQLite + FTS5全文検索)"
+    - "Cloudflare KV (キャッシュ)"
+    - "Cloudflare R2 (生成資料ストレージ)"
+    - "Cloudflare Queues (非同期リサーチジョブ)"
+    - "Claude API (ディープリサーチ)"
+    - "MDX + reveal.js + D3.js (スライド/インフォグラフィック)"
+    - "Cloudflare Access (管理画面認証)"
     - "TypeScript"
-    - "Vite"
-    - "Tailwind CSS"
   priority_features:
-    - "期限管理（優先）"
-    - "カテゴリ機能"
-  notes: "テスト用途。ラミィはReviewer役として品質検証を担当"
+    - "Phase 1: プロジェクト初期化 + トップページモック3パターン"
+    - "Phase 1: リサーチ投稿 → Claude API呼び出し → 結果保存の基本フロー"
+    - "Phase 2: スライド/インフォグラフィック生成・表示"
+    - "Phase 2: リスト型ナレッジベースUI"
+    - "Phase 3: HP公開・OGP・SEO"
+  design:
+    direction: "ハイブリッド: B(Precision Tool構造) + C(Warm Modernism肌触り) + A(Editorial見せ場)"
+    references:
+      - "Linear (https://linear.app) — 情報整理UIの構造"
+      - "Stripe Docs (https://docs.stripe.com) — 3カラムドキュメント"
+      - "Slab (https://slab.com) — Warm & ミニマル"
+      - "Raycast (https://raycast.com) — 引き算のダークUI"
+      - "Readymag (https://readymag.com/editorial/) — エディトリアル見せ場"
+    principles:
+      - "AIっぽさ全開のUI禁止（グラデーション地獄・ネオン・サイバーパンク NG）"
+      - "デザイナーが作ったような洗練されたサイト"
+      - "構造はLinear/Stripe式、肌触りはWarm Modern、見せ場はEditorial"
+      - "ダーク/ライト切替対応"
+    phase1_deliverable: "トップページモック3パターン（ブラウザで確認 → Owner選択）"
+  casting:
+    - slug: "giorno"
+      character: "ジョルノ・ジョバァーナ"
+      role: "フロントエンドリード"
+      reason: "「夢」を形にする力。UIの主役"
+    - slug: "bucciarati"
+      character: "ブローノ・ブチャラティ"
+      role: "バックエンドリード"
+      reason: "信頼のリーダー。API基盤を支える"
+    - slug: "narancia"
+      character: "ナランチャ・ギルガ"
+      role: "UI実装"
+      reason: "行動力。コンポーネント量産向き"
+    - slug: "mista"
+      character: "グイード・ミスタ"
+      role: "インフラ/DB"
+      reason: "堅実。Cloudflare周りの地盤固め"
+    - slug: "abbacchio"
+      character: "レオーネ・アバッキオ"
+      role: "テスト/品質担当"
+      reason: "厳格な職人気質。テスト設計・品質基盤に最適"
+  notes: >
+    Phase 1ではモック3パターンを出してOwnerに選ばせる。
+    デザイン確定後に本実装に入る。Cloudflare完結構成。

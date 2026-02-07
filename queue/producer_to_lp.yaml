@@ -1,5 +1,0 @@
-# queue/producer_to_lp.yaml — EP → LP 通信キュー（v3）
-# Producer（EP）がLine Producer（LP）への指示を書き込む
-# v2の producer_to_director.yaml と同様の構造
-
-messages: []

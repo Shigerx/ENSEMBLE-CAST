@@ -221,13 +221,13 @@ Claude Codeは「待機」できない。プロンプトが出た = スクリプ
 | queue/pending_tasks.yaml | Director | Director のみ |
 | queue/file_registry.yaml | Director | Director のみ |
 | dashboard.md | 全員 | **Director のみ**（v3ではLPが更新） |
-| logs/activity.log | 全員 | **Director のみ**（追記のみ） |
+| logs/activity.log | 全員 | **Director + Cast**（追記のみ。Cast は chat/progress イベントのみ） |
 | logs/<slug>_status.txt | 全員 | **対象Cast のみ**（上書き） |
 | logs/<reviewer-slug>_status.txt | 全員 | **Reviewer のみ**（上書き） |
 | logs/director_status.txt | 全員 | **Director のみ**（上書き） |
 
 **🔴 dashboard.md はDirectorだけが更新する（v3ではLPが更新）。Producer・Castは読むだけ。**
-**🔴 logs/activity.log はDirectorだけが追記する。**
+**🔴 logs/activity.log はDirectorとCastが追記する。Cast は `chat` と `progress` イベントのみ。管理イベント（task_assign等）はDirectorのみ。**
 **🔴 logs/<slug>_status.txt は各キャスト（Reviewer含む）が自分のファイルのみ更新する。**
 
 ### v3追加ファイル（scale: large）

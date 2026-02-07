@@ -152,6 +152,9 @@ bash scripts/send-message.sh director '<slug>、任務完了。報告書を確�
    - キャッチフレーズ（catchphrases）2-3個
    - 声のトーン（tone）
    - 他キャストとの関係性（character_relationships）※roster.yamlで他メンバーを確認
+   - 必殺技・能力名（ability_name）: スタンド名、呼吸の型、悪魔の実の技名など
+   - 能力発動の掛け声（ability_call）: 「ムーディー・ブルース！！」「全集中…水の呼吸！」など
+   - サブエージェントの呼び名（follower_name）: ファンネーム、スタンド名、継子など（サブエージェント召喚時にこの名前で呼ばれる）
 
    source_hints: "{source_hints}" を参考にしてください。
    ```
@@ -173,6 +176,9 @@ bash scripts/send-message.sh director '<slug>、任務完了。報告書を確�
    character_relationships:
      - name: "<他キャラ名>"
        dynamic: "<関係性の説明>"
+   ability_name: "<必殺技・能力名（スタンド名、呼吸の型、悪魔の実の技など）>"
+   ability_call: "<能力発動の掛け声>"
+   follower_name: "<サブエージェントの呼び名（ファンネーム、スタンド名、継子など）>"
    communication_style: |
      <リサーチ結果に基づく具体的なコミュニケーションスタイル>
    ```
@@ -302,7 +308,32 @@ relationships:
     updated_at: <dateコマンドの結果>
 ```
 
-### 5. 🔴 report の書き込み（必須・毎回）
+### 5. 🎬 activity.log への追記（キャラクターの声を届ける）
+
+**シアターモード（ライブビュー）で会話として表示される。キャラクターの個性を出して書くこと。**
+
+以下のタイミングで `logs/activity.log` に追記する（TSVフォーマット）:
+
+| タイミング | event | 例 |
+|-----------|-------|-----|
+| タスク開始時 | progress | よーし、やるぞ！プロジェクト初期構築に取りかかる |
+| 重要な進捗時 | progress | ディレクトリ構造できた。次はコンフィグだ |
+| 発見・気づき時 | chat | おっ、この設計なかなかイケてるな |
+| タスク完了時 | chat | 完了！我ながらいい出来だ |
+
+```bash
+echo -e "$(date '+%Y-%m-%dT%H:%M:%S')\t<自分のslug>\tchat\t<キャラらしいメッセージ>" >> logs/activity.log
+```
+
+**ルール**:
+- `chat` と `progress` イベントのみ使用可（管理イベントはDirector専用）
+- actor は自分の slug を使用
+- 1タスクにつき 2〜4回 程度が目安（多すぎると API 代の無駄）
+- **コード出力そのものは書かない**（感想・進捗・キャラの声のみ）
+
+### 6. 🔴 report の書き込み（必須・毎回）
+
+**activity.log への追記とは別に、正式なレポートも必須。**
 
 `queue/reports/<slug>_report.yaml` に完了報告を書く:
 ```yaml
@@ -338,7 +369,7 @@ reports:
 | 他のキャストにも有用 | YES |
 | 手順や知識が必要（自明でない） | YES |
 
-### 6. 🔴 send-keysでDirector起床（必須・完了後必ず）
+### 7. 🔴 send-keysでDirector起床（必須・完了後必ず）
 
 報告を書いたら、**必ず**Directorを起床させる:
 ```bash
@@ -356,7 +387,7 @@ bash scripts/send-message.sh director '<slug>、任務完了。報告書を確�
 
 **これをしないと、タスク完了がDirectorに伝わらない。**
 
-### 7. 🔴 停止
+### 8. 🔴 停止
 
 **ステータス更新**（完了時）:
 ```bash

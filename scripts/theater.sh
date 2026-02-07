@@ -58,17 +58,18 @@ LEFT_PANE=$(tmux display-message -t "${SESSION}:0.0" -p '#{pane_id}')
 # 右ペイン = コメンタリー（Claude Code）
 RIGHT_PANE=$(tmux split-window -t "${SESSION}:0" -h -P -F '#{pane_id}' -c "$PROJECT_PATH")
 
-# レイアウト: 左60% 右40%
-tmux select-layout -t "${SESSION}:0" main-vertical
-tmux resize-pane -t "$LEFT_PANE" -x 90
+# レイアウト: 50/50 均等分割
+tmux select-layout -t "${SESSION}:0" even-horizontal
 
 # ペインタイトル
 tmux select-pane -t "$LEFT_PANE" -T "🎬 THEATER"
 tmux select-pane -t "$RIGHT_PANE" -T "🍿 COUCH"
 
-# ペインボーダー表示
+# ペインボーダー表示（Windows Terminal対応: スタイル強調）
 tmux set-option -t "$SESSION" pane-border-status top
-tmux set-option -t "$SESSION" pane-border-format " #{pane_title} "
+tmux set-option -t "$SESSION" pane-border-format " #[bold]#{pane_title}#[nobold] "
+tmux set-option -t "$SESSION" pane-border-style "fg=colour240"
+tmux set-option -t "$SESSION" pane-active-border-style "fg=colour214,bold"
 tmux set-option -t "$SESSION" mouse on
 
 # 右ペイン背景色（ちょっと暗め）
