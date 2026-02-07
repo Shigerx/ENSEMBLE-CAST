@@ -1,0 +1,50 @@
+{
+  "permissions": {
+    "allow": [
+      "Read",
+      "Write",
+      "Edit",
+      "Glob",
+      "Grep",
+      "Bash(tmux *)",
+      "Bash(bash scripts/*)",
+      "Bash(git *)",
+      "Bash(npm *)",
+      "Bash(node *)",
+      "Bash(npx *)",
+      "Bash(cat *)",
+      "Bash(ls *)",
+      "Bash(mkdir *)",
+      "Bash(date *)",
+      "Bash(sleep *)",
+      "Bash(echo *)",
+      "Bash(touch *)",
+      "Bash(head *)",
+      "Bash(tail *)",
+      "Bash(wc *)",
+      "Bash(pwd)"
+    ],
+    "deny": [
+      "Bash(rm -rf /)",
+      "Bash(rm -rf /*)",
+      "Bash(sudo *)",
+      "Bash(chmod 777 *)",
+      "Bash(git push --force main)",
+      "Bash(git push --force origin main)",
+      "Bash(tmux kill-server)"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash hooks/guard.sh"
+          }
+        ]
+      }
+    ]
+  }
+}

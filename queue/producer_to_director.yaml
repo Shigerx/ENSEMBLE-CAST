@@ -2,5 +2,41 @@
 orders:
   - id: 1
     type: start_production
-    message: "production.yaml を読んでキャスティングを開始してください。ねぽらぼ（ホロライブ5期生）のキャラクターでキャストを編成し、nepolabo-todoプロジェクトの開発を始めてください。"
-    timestamp: "2026-01-28T13:35:55"
+    message: |
+      production.yaml を読んでキャスティングを開始してください。
+
+      Phase 2の要件:
+      - 期限管理（優先）
+      - カテゴリ機能
+
+      キャスト配役:
+      - 雪花ラミィ → Reviewer（品質検証専任）
+      - 桃鈴ねね、獅白ぼたん、尾丸ポルカ → 実装担当
+
+      対象プロジェクト: /mnt/c/Users/shige/antigravity/nepolabo-todo
+      まず既存コードを確認してから、タスク分解とキャスティングをお願いします。
+    timestamp: "2026-01-29T21:50:53"
+
+  - id: 2
+    type: framework_improvement
+    message: |
+      【フレームワーク改善指示】
+
+      Phase 2で問題が発覚しました:
+      - 各キャストが作成したコンポーネント（DueDatePicker.tsx, CategorySelect.tsx等）が
+        統合タスクで使用されず、App.tsx内にインラインで再実装された
+      - Reviewerは「動作するか」は確認したが「設計意図通りか」はチェックしていなかった
+
+      以下のフレームワーク改善を実施してください:
+
+      1. instructions/director.md に追記:
+         - 統合タスクの指示では「既存コンポーネントを使用すること」を明記する
+         - タスク間の依存関係と成果物の引き継ぎを明確にする
+
+      2. instructions/reviewer.md に追記:
+         - チェック項目に「作成されたコンポーネントが実際に使用されているか」を追加
+         - 「未使用ファイルがないか」の確認を追加
+
+      これはENSEMBLE-CAST本体の改善です。対象プロジェクトではなく、
+      /mnt/c/Users/shige/antigravity/ENSEMBLE-CAST 内のファイルを編集してください。
+    timestamp: "2026-01-29T22:18:12"

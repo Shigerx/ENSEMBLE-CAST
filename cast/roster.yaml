@@ -4,21 +4,25 @@ movie: "ねぽらぼ"
 members:
   - slug: "botan"
     character_name: "獅白ぼたん"
-    dev_role: "Architect"
+    dev_role: "アーキテクト/リード"
     pane_id: "%2"
     status: active
-  - slug: "lamy"
-    character_name: "雪花ラミィ"
-    dev_role: "Data/Logic"
-    pane_id: "%3"
-    status: active
+
   - slug: "nene"
     character_name: "桃鈴ねね"
-    dev_role: "Frontend/UI"
-    pane_id: "%4"
+    dev_role: "フロントエンド担当"
+    pane_id: "%3"
     status: active
+
   - slug: "polka"
     character_name: "尾丸ポルカ"
-    dev_role: "Features/UX"
+    dev_role: "UI/UXデザイン担当"
+    pane_id: "%4"
+    status: active
+
+  - slug: "lamy"
+    character_name: "雪花ラミィ"
+    dev_role: "Reviewer"
+    is_reviewer: true
     pane_id: "%5"
     status: active

@@ -1,39 +1,28 @@
 tasks:
   - id: 1
-    title: "プロジェクト初期構築"
-    status: done
-  - id: 2
-    title: "TypeScriptビルド検証"
-    status: done
-  - id: 3
-    title: "最終ビルド検証・動作確認"
+    title: "期限管理コンポーネント作成"
     description: |
-      lamyによるApp.tsx全機能統合が完了した。最終ビルド検証を実施する。
-      
-      やること:
-      1. projects/nepolabo-todo/ で npx tsc --noEmit を実行
-         - TypeScriptエラーがあれば修正
-      2. npm run build でViteビルドが通ることを確認
-      3. エラーがあれば修正（最小限の修正に留める）
-      4. 全ファイルのimportパス整合性を確認
-      
-      統合済みコンポーネント一覧:
-      - App.tsx: 全コンポーネント統合済み（lamy）
-      - components/: Header, TodoForm, TodoList, TodoItem, CategoryBadge, 
-        CategoryFilter, CategoryManager, DueDatePicker, TodoControls
-      - hooks/: useTodos, useCategories
-      - types/: todo.ts
-      - utils/: storage.ts, todo-helpers.ts
-      
-      期待する成果物:
-      - ビルドが通る状態（npm run build 成功）
-      - エラーがあれば修正済み
-      
-      注意:
-      - 前回はエラーゼロだったが、統合後に新たなエラーが出る可能性がある
-      - 修正は最小限に。大きな変更が必要ならblocked報告
-    target_path: "projects/nepolabo-todo/"
+      期限管理UIを実装する。
+
+      作成するファイル:
+      1. src/components/DueDatePicker.tsx
+         - 日付選択UI（input type="date" または カスタムピッカー）
+         - 選択した日付を親コンポーネントに渡す
+         - クリアボタン付き
+
+      2. src/components/DueDateDisplay.tsx
+         - 期限日の表示
+         - 期限切れ: 赤色で「期限切れ」表示
+         - 期限間近（3日以内）: オレンジ色で警告
+         - 通常: グレーで日付表示
+
+      技術要件:
+      - TypeScript + React
+      - Tailwind CSS でスタイリング
+      - 既存の Todo 型を参照（src/types/todo.ts）
+
+      出力先: /mnt/c/Users/shige/antigravity/nepolabo-todo/src/components/
+    target_path: "/mnt/c/Users/shige/antigravity/nepolabo-todo/src/components/"
     priority: high
-    status: done
-    assigned_at: "2026-01-28T13:51:59"
-    completed_at: "2026-01-28T13:52:50"
+    status: assigned
+    assigned_at: "2026-01-29T21:59:29"

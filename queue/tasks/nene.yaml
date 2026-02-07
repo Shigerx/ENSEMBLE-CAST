@@ -1,36 +1,32 @@
 tasks:
-  - id: 1
-    title: "TODOリストUIコンポーネント実装"
-    status: done
   - id: 2
-    title: "App.tsx統合・メインページ構成"
-    status: done
-  - id: 3
-    title: "TodoForm拡張（カテゴリ選択・期限入力追加）"
+    title: "カテゴリ機能コンポーネント作成"
     description: |
-      TodoFormにカテゴリ選択と期限入力を追加する。
-      
-      やること:
-      - projects/nepolabo-todo/src/components/TodoForm.tsx を拡張:
-        - カテゴリ選択ドロップダウン（select要素）を追加
-          - Category[] を props で受け取る
-          - 未選択（カテゴリなし）も許可
-        - 期限日入力（input type="date"）を追加
-        - onSubmitのコールバックに categoryId?, dueDate? を含める
-        - フォームレイアウトを調整（1行目: タイトル、2行目: カテゴリ+期限+追加ボタン）
-      - projects/nepolabo-todo/src/components/TodoItem.tsx を拡張:
-        - カテゴリバッジ表示（polkaのCategoryBadge使用可）
-        - 期限表示（期限切れは赤、近いは黄色）
-        - TodoItem の props に category?, dueDate? を追加
-      
-      期待する成果物:
-      - 修正済み: TodoForm.tsx, TodoItem.tsx
-      
-      注意:
-      - 型定義は src/types/todo.ts からimport
-      - polkaの CategoryBadge コンポーネントをimportして使ってよい
-      - App.tsx は触らない（lamyが編集中）
-    target_path: "projects/nepolabo-todo/src/components/TodoForm.tsx, TodoItem.tsx"
+      カテゴリ機能UIを実装する。
+
+      作成するファイル:
+      1. src/hooks/useCategories.ts
+         - カテゴリのCRUD操作
+         - LocalStorageに保存（キー: "nepolabo-categories"）
+         - 既存の TodoCategory 型を使用（src/types/todo.ts）
+         - デフォルトカテゴリ: 仕事, 買い物, 趣味
+
+      2. src/components/CategorySelect.tsx
+         - カテゴリ選択ドロップダウン
+         - 新規カテゴリ作成機能（色選択付き）
+         - カテゴリ削除機能
+
+      3. src/components/CategoryBadge.tsx
+         - カテゴリ表示用バッジ
+         - カテゴリの色を反映
+
+      技術要件:
+      - TypeScript + React
+      - Tailwind CSS でスタイリング
+      - 既存の TodoCategory 型を参照
+
+      出力先: /mnt/c/Users/shige/antigravity/nepolabo-todo/src/
+    target_path: "/mnt/c/Users/shige/antigravity/nepolabo-todo/src/"
     priority: high
-    status: done
-    assigned_at: "2026-01-28T13:48:59"
+    status: assigned
+    assigned_at: "2026-01-29T21:59:29"

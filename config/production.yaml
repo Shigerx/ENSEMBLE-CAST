@@ -9,6 +9,7 @@ movie:
       traits: "元気・ポジティブ・頑張り屋・天然ボケ"
     - name: "雪花ラミィ"
       traits: "丁寧・おっとり・真面目・癒し系"
+      role: "reviewer"  # 品質検証専任
     - name: "獅白ぼたん"
       traits: "冷静・頼れるリーダー・ゲーマー・効率重視"
     - name: "尾丸ポルカ"
@@ -16,18 +17,15 @@ movie:
 
 project:
   name: "nepolabo-todo"
-  # target_path: 対象プロジェクトのパス（外部プロジェクトの場合に指定）
-  # 未指定の場合は ENSEMBLE-CAST 内で作業する
-  target_path: null
-  description: "シンプルなTODOアプリ。基本CRUDから始めて、カテゴリ・期限管理、将来的にGmail/Googleカレンダー連携を視野に入れる"
+  phase: 2
+  target_path: "/mnt/c/Users/shige/antigravity/nepolabo-todo"
+  description: "Phase 2: 期限管理とカテゴリ機能の追加。ねぽらぼっぽいエッセンスを取り入れる"
   tech_stack:
     - "React"
     - "TypeScript"
     - "Vite"
     - "Tailwind CSS"
   priority_features:
-    - "TODO基本CRUD（作成・表示・更新・削除）"
-    - "カテゴリ分け"
-    - "期限管理"
-    - "Gmail/Googleカレンダー連携（余裕があれば）"
-  notes: "テスト用途。シンプルに始めて段階的に拡張する方針"
+    - "期限管理（優先）"
+    - "カテゴリ機能"
+  notes: "テスト用途。ラミィはReviewer役として品質検証を担当"

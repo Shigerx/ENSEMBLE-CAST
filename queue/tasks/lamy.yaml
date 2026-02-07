@@ -1,42 +1,109 @@
 tasks:
-  - id: 1
-    title: "TypeScript型定義・データモデル設計"
-    status: done
-  - id: 2
-    title: "useTodosカスタムフック実装"
-    status: done
-  - id: 3
-    title: "App.tsx useTodosフック統合"
-    status: done
-  - id: 4
-    title: "App.tsx全機能統合（カテゴリ・フィルター・ソート）"
+  - id: R1
+    type: review
+    original_task_id: 1
+    cast_slug: "botan"
+    title: "レビュー: 期限管理コンポーネント作成"
     description: |
-      全キャストが作成したコンポーネントをApp.tsxに統合し、全機能を動かす。
-      
-      やること:
-      - projects/nepolabo-todo/src/App.tsx を編集:
-        - polkaのコンポーネントを統合:
-          - CategoryFilter: カテゴリフィルタリングUI
-          - TodoControls: 完了/未完了フィルター + ソート
-          - CategoryManager: カテゴリ管理（追加・削除） ※polkaが作成中、存在すれば統合
-        - useCategoriesフックを使ってカテゴリ一覧を取得
-        - useTodosのfilter/sort機能をTodoControlsに接続
-        - TodoFormにcategories, onAddのcategoryId/dueDateを接続
-        - TodoItemにcategory, dueDateを渡す
-        - レイアウト調整:
-          - ヘッダー → カテゴリフィルター → フォーム → コントロール → リスト
-          - サイドにカテゴリ管理（画面幅があれば）
-      
-      期待する成果物:
-      - src/App.tsx — 全機能統合済み
-      
-      注意:
-      - neneがTodoForm/TodoItemを拡張中。完了済みのファイルを使う
-      - polkaのCategoryManagerがまだない場合はスキップ（後で追加）
-      - 他のファイルは編集しない。App.tsxのみ
-      - コンポーネントが存在しない場合はエラーにならないようimportをオプショナルにするか、
-        存在するものだけ統合する
-    target_path: "projects/nepolabo-todo/src/App.tsx"
-    priority: high
-    status: done
-    assigned_at: "2026-01-28T13:50:09"
+      Cast: botan（獅白ぼたん）
+      タスク: #1 期限管理コンポーネント作成
+
+      以下をレビューしてください:
+      - files_changed:
+        - nepolabo-todo/src/components/DueDatePicker.tsx
+        - nepolabo-todo/src/components/DueDateDisplay.tsx
+
+      仕様:
+      1. DueDatePicker.tsx
+         - 日付選択UI（input type="date" または カスタムピッカー）
+         - 選択した日付を親コンポーネントに渡す
+         - クリアボタン付き
+
+      2. DueDateDisplay.tsx
+         - 期限日の表示
+         - 期限切れ: 赤色で「期限切れ」表示
+         - 期限間近（3日以内）: オレンジ色で警告
+         - 通常: グレーで日付表示
+
+      チェック項目:
+      - TypeScript型安全性
+      - Tailwind CSSスタイリング
+      - 既存Todo型との整合性
+      - ビルドが通るか
+    files_to_review:
+      - "/mnt/c/Users/shige/antigravity/nepolabo-todo/src/components/DueDatePicker.tsx"
+      - "/mnt/c/Users/shige/antigravity/nepolabo-todo/src/components/DueDateDisplay.tsx"
+    status: assigned
+    assigned_at: "2026-01-29T22:01:25"
+
+  - id: R2
+    type: review
+    original_task_id: 2
+    cast_slug: "nene"
+    title: "レビュー: カテゴリ機能コンポーネント作成"
+    description: |
+      Cast: nene（桃鈴ねね）
+      タスク: #2 カテゴリ機能コンポーネント作成
+
+      以下をレビューしてください:
+      - files_changed:
+        - src/hooks/useCategories.ts
+        - src/components/CategorySelect.tsx
+        - src/components/CategoryBadge.tsx
+
+      仕様:
+      1. src/hooks/useCategories.ts
+         - カテゴリのCRUD操作
+         - LocalStorageに保存（キー: "nepolabo-categories"）
+         - デフォルトカテゴリ: 仕事, 買い物, 趣味
+
+      2. src/components/CategorySelect.tsx
+         - カテゴリ選択ドロップダウン
+         - 新規カテゴリ作成機能（色選択付き）
+         - カテゴリ削除機能
+
+      3. src/components/CategoryBadge.tsx
+         - カテゴリ表示用バッジ
+         - カテゴリの色を反映
+
+      チェック項目:
+      - TypeScript型安全性
+      - Tailwind CSSスタイリング
+      - 既存TodoCategory型との整合性
+      - ビルドが通るか
+    files_to_review:
+      - "/mnt/c/Users/shige/antigravity/nepolabo-todo/src/hooks/useCategories.ts"
+      - "/mnt/c/Users/shige/antigravity/nepolabo-todo/src/components/CategorySelect.tsx"
+      - "/mnt/c/Users/shige/antigravity/nepolabo-todo/src/components/CategoryBadge.tsx"
+    status: pending
+    assigned_at: "2026-01-29T22:02:10"
+
+  - id: R3
+    type: review
+    original_task_id: 3
+    cast_slug: "polka"
+    title: "レビュー: App.tsx統合とねぽらぼスタイリング"
+    description: |
+      Cast: polka（尾丸ポルカ）
+      タスク: #3 App.tsx統合とねぽらぼスタイリング
+
+      以下をレビューしてください:
+      - files_changed:
+        - /mnt/c/Users/shige/antigravity/nepolabo-todo/src/App.tsx
+
+      仕様:
+      1. useTodos フック使用
+      2. AddTodoForm: タイトル + カテゴリ選択 + 期限選択
+      3. TodoList: フィルタ機能付きリスト表示
+      4. 各TodoItem: カテゴリバッジ + 期限表示
+      5. ねぽらぼスタイリング（メンバーカラー配色）
+
+      チェック項目:
+      - TypeScript型安全性
+      - 全コンポーネント統合の整合性
+      - useTodosフックとの連携
+      - ビルドが通るか
+    files_to_review:
+      - "/mnt/c/Users/shige/antigravity/nepolabo-todo/src/App.tsx"
+    status: pending
+    assigned_at: "2026-01-29T22:02:30"

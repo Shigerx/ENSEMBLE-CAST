@@ -1,0 +1,42 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:zenn.dev)",
+      "Bash(wsl --list --verbose:*)",
+      "Bash(wsl -d Ubuntu-24.04 -- bash -c \"which tmux 2>/dev/null && tmux -V || echo ''tmux not installed''\")",
+      "Bash(wsl -d Ubuntu-24.04 -- bash -c \"which claude 2>/dev/null && claude --version 2>/dev/null || echo ''claude not installed in WSL''\")",
+      "Bash(wsl:*)",
+      "WebSearch",
+      "Bash(dir \"C:\\\\Users\\\\shige\\\\antigravity\\\\ENSEMBLE-CAST\" /s /a)",
+      "Bash(powershell -Command:*)",
+      "Bash(wc:*)",
+      "Bash(dir /s /b \"C:\\\\tmp\\\\multi-agent-shogun\")",
+      "Bash(gh api:*)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "Bash(tmux capture-pane:*)",
+      "Bash(wsl.exe -e bash -c \"tmux capture-pane -t ensemble:0.1 -p | tail -20\")",
+      "Bash(ls:*)",
+      "Bash(tree:*)",
+      "Bash(wsl.exe -e bash -c \"cat /tmp/multi-agent-shogun/shutsujin_departure.sh\")",
+      "Bash(grep:*)",
+      "Bash(git -C /tmp/multi-agent-shogun log:*)",
+      "Bash(git -C /tmp/multi-agent-shogun show e5e5dc9 --stat)",
+      "Bash(git -C /tmp/multi-agent-shogun show 14425e8)",
+      "Bash(wsl.exe -e bash -c \"cat /tmp/multi-agent-shogun/README_ja.md\")",
+      "Bash(wsl.exe -e bash -c \"cat /tmp/multi-agent-shogun/README.md 2>/dev/null || cat /tmp/multi-agent-shogun/README_ja.md 2>/dev/null\":*)",
+      "Bash(tmux list-panes:*)",
+      "Bash(tmux list-sessions:*)",
+      "Bash(wsl.exe -e bash -c \"tmux list-sessions 2>/dev/null || echo ''NO SESSIONS''\")",
+      "Bash(wsl.exe -e bash:*)",
+      "Bash(tmux:*)",
+      "Bash(chmod:*)",
+      "Bash(git init:*)",
+      "Bash(git add:*)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nInitial commit: ENSEMBLE CAST framework with Reviewer role\n\nAdd multi-agent orchestration framework for software development:\n- Producer/Director/Cast hierarchy with tmux-based communication\n- Reviewer role for quality gate \\(code review, build/test verification\\)\n- Event-driven architecture with YAML task queues\n- Character persona system for engaging development experience\n\nKey files:\n- CLAUDE.md: System-wide rules and conventions\n- instructions/: Role-specific instruction manuals\n- instructions/reviewer.md: New Reviewer role for quality verification\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(git remote add:*)",
+      "Bash(git push:*)",
+      "Bash(git commit:*)"
+    ]
+  }
+}
