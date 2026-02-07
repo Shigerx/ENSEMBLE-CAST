@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-# show-live.sh — ENSEMBLE CAST RPG風ライブモニター
+# show-live.sh — ENSEMBLE CAST シアターモード
 #
 # Usage:
 #   bash scripts/show-live.sh           # 1回表示
-#   bash scripts/show-live.sh --watch   # 2秒ごと自動更新
+#   bash scripts/show-live.sh --watch   # 2秒ごと自動更新（鑑賞モード）
 
 set -euo pipefail
 
@@ -22,182 +22,440 @@ WHITE='\033[1;37m'
 DIM='\033[2m'
 NC='\033[0m'
 BOLD='\033[1m'
+BG_DARK='\033[48;5;234m'
+BG_DARKER='\033[48;5;232m'
 
-# 状態アイコン
-ICON_ACTIVE="🟢"
-ICON_WAITING="🟡"
-ICON_BLOCKED="🔴"
-ICON_DONE="✅"
-ICON_PROGRESS="🔄"
-ICON_WARNING="⚠️"
-ICON_PENDING="⏳"
+# キャラクターカラーマッピング（slug → カラー）
+# 固定マッピングでなく、ローテーションで割り当て
+CAST_COLORS=("${RED}" "${GREEN}" "${YELLOW}" "${BLUE}" "${MAGENTA}" "${CYAN}")
 
 # ========================================
-# 表示関数
+# キャラクター情報キャッシュ
 # ========================================
-show_monitor() {
-  local TIMESTAMP=$(date "+%H:%M:%S")
+declare -A CHAR_NAMES
+declare -A CHAR_COLORS
+declare -A CHAR_EMOJIS
+COLOR_INDEX=0
 
-  # ヘッダー
-  echo -e "${CYAN}${BOLD}"
-  echo "🎬 ENSEMBLE CAST — ライブモニター                    ${TIMESTAMP}"
-  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-  echo -e "${NC}"
+get_char_info() {
+  local slug="$1"
 
-  # キャスト状況テーブル
-  echo -e "${WHITE}🎭 キャスト状況${NC}"
-  echo "┌──────────┬──────────────┬──────────┬─────────────────────────────────┐"
-  echo "│ キャスト │ ロール       │ 状態     │ 現在のタスク                    │"
-  echo "├──────────┼──────────────┼──────────┼─────────────────────────────────┤"
-
-  # roster.yamlからキャスト情報を読み取り
-  if [ -f "$PROJECT_PATH/cast/roster.yaml" ]; then
-    local members=$(grep -E "^\s+- slug:" "$PROJECT_PATH/cast/roster.yaml" 2>/dev/null | sed 's/.*slug: *//' | tr -d '"' || true)
-
-    if [ -n "$members" ]; then
-      while IFS= read -r slug; do
-        [ -z "$slug" ] && continue
-
-        # persona.yamlからdev_roleを取得
-        local dev_role="—"
-        if [ -f "$PROJECT_PATH/cast/members/$slug/persona.yaml" ]; then
-          dev_role=$(grep -m1 "dev_role:" "$PROJECT_PATH/cast/members/$slug/persona.yaml" 2>/dev/null | sed 's/.*dev_role: *//' | tr -d '"' || echo "—")
-        fi
-
-        # status.txtから現在の状態を取得
-        local state="—"
-        local task="—"
-        local task_id="—"
-        local icon="$ICON_WAITING"
-
-        if [ -f "$PROJECT_PATH/logs/${slug}_status.txt" ]; then
-          local status_line=$(cat "$PROJECT_PATH/logs/${slug}_status.txt" 2>/dev/null | head -1)
-          if [ -n "$status_line" ]; then
-            state=$(echo "$status_line" | cut -d'|' -f1)
-            task=$(echo "$status_line" | cut -d'|' -f2)
-            task_id=$(echo "$status_line" | cut -d'|' -f3)
-          fi
-        fi
-
-        # 状態に応じたアイコン
-        case "$state" in
-          "処理中") icon="$ICON_ACTIVE" ;;
-          "リサーチ中") icon="$ICON_ACTIVE" ;;
-          "完了待機") icon="$ICON_WAITING" ;;
-          "blocked") icon="$ICON_BLOCKED" ;;
-          "起動中") icon="$ICON_PENDING" ;;
-          *) icon="$ICON_WAITING" ;;
-        esac
-
-        # タスク表示の整形
-        local task_display="—"
-        if [ "$task" != "—" ] && [ -n "$task" ]; then
-          if [ "$task_id" != "—" ] && [ -n "$task_id" ]; then
-            task_display="$task_id $task"
-          else
-            task_display="$task"
-          fi
-        fi
-
-        # 長すぎる場合は切り詰め
-        task_display=$(echo "$task_display" | cut -c1-30)
-
-        printf "│ %s %-6s │ %-12s │ %-8s │ %-31s │\n" \
-          "$icon" "$slug" "$dev_role" "$state" "$task_display"
-      done <<< "$members"
-    else
-      echo "│ (キャストなし)                                                      │"
-    fi
-  else
-    echo "│ (roster.yaml なし)                                                   │"
+  # キャッシュ済みなら返す
+  if [ -n "${CHAR_NAMES[$slug]+x}" ]; then
+    return
   fi
 
-  echo "└──────────┴──────────────┴──────────┴─────────────────────────────────┘"
-  echo ""
+  # persona.yaml から名前を取得
+  local persona_file="$PROJECT_PATH/cast/members/$slug/persona.yaml"
+  local name="$slug"
+  local emoji="🎭"
 
-  # タスクフロー
-  echo -e "${WHITE}📋 タスクフロー${NC}"
-
-  # 各キャストのタスクを表示
-  if [ -d "$PROJECT_PATH/queue/tasks" ]; then
-    local has_tasks=false
-    for task_file in "$PROJECT_PATH/queue/tasks"/*.yaml; do
-      [ -f "$task_file" ] || continue
-      has_tasks=true
-
-      local slug=$(basename "$task_file" .yaml)
-
-      # タスク情報を抽出
-      local task_id=$(grep -m1 "id:" "$task_file" 2>/dev/null | head -1 | sed 's/.*id: *//' || echo "?")
-      local task_title=$(grep -m1 "title:" "$task_file" 2>/dev/null | head -1 | sed 's/.*title: *//' | tr -d '"' || echo "Unknown")
-      local task_status=$(grep -m1 "status:" "$task_file" 2>/dev/null | head -1 | sed 's/.*status: *//' || echo "pending")
-
-      # ステータスアイコン
-      local status_icon="[ ]"
-      case "$task_status" in
-        "done"|"complete") status_icon="[x]" ;;
-        "in_progress") status_icon="[~]" ;;
-        "blocked") status_icon="[!]" ;;
-        *) status_icon="[ ]" ;;
-      esac
-
-      # 進捗アイコン
-      local progress_icon="$ICON_PENDING"
-      case "$task_status" in
-        "done"|"complete") progress_icon="$ICON_DONE" ;;
-        "in_progress") progress_icon="$ICON_PROGRESS" ;;
-        "blocked") progress_icon="$ICON_WARNING blocked" ;;
-        *) progress_icon="$ICON_PENDING" ;;
-      esac
-
-      printf "  %s #%s %-30s → %s %s\n" "$status_icon" "$task_id" "$task_title" "$slug" "$progress_icon"
-    done
-
-    if [ "$has_tasks" = false ]; then
-      echo "  (タスクなし)"
+  if [ -f "$persona_file" ]; then
+    name=$(grep -m1 'name:' "$persona_file" 2>/dev/null | sed 's/.*name: *//' | tr -d '"' || echo "$slug")
+    # emoji フィールドがあれば取得
+    local e
+    e=$(grep -m1 'emoji:' "$persona_file" 2>/dev/null | sed 's/.*emoji: *//' | tr -d '"' || true)
+    if [ -n "$e" ]; then
+      emoji="$e"
     fi
-  else
-    echo "  (タスクディレクトリなし)"
   fi
+
+  CHAR_NAMES[$slug]="$name"
+  CHAR_EMOJIS[$slug]="$emoji"
+  CHAR_COLORS[$slug]="${CAST_COLORS[$((COLOR_INDEX % ${#CAST_COLORS[@]}))]}"
+  COLOR_INDEX=$((COLOR_INDEX + 1))
+}
+
+# ========================================
+# プログレスバー生成
+# ========================================
+progress_bar() {
+  local percent="$1"
+  local width="${2:-20}"
+  local filled=$(( percent * width / 100 ))
+  local empty=$(( width - filled ))
+  local bar=""
+
+  for ((i=0; i<filled; i++)); do bar+="█"; done
+  for ((i=0; i<empty; i++)); do bar+="░"; done
+
+  echo "$bar"
+}
+
+# ========================================
+# ターミナル幅取得
+# ========================================
+get_term_width() {
+  local w
+  w=$(tput cols 2>/dev/null || echo 80)
+  echo "$w"
+}
+
+# 水平ライン
+hline() {
+  local w
+  w=$(get_term_width)
+  printf '%*s\n' "$w" '' | tr ' ' '─'
+}
+
+# ========================================
+# ヘッダー
+# ========================================
+show_header() {
+  local TIMESTAMP
+  TIMESTAMP=$(date "+%H:%M:%S")
+  local w
+  w=$(get_term_width)
+
+  echo ""
+  echo -e "${DIM}$(hline)${NC}"
+  echo -e "${BOLD}${CYAN}  🎬 E N S E M B L E   C A S T  —  T H E A T E R   M O D E${NC}"
+
+  # プロジェクト情報
+  local movie="—"
+  local project="—"
+  if [ -f "$PROJECT_PATH/dashboard.md" ]; then
+    movie=$(grep -m1 '映画:' "$PROJECT_PATH/dashboard.md" 2>/dev/null | sed 's/.*映画: *//' || echo "—")
+    project=$(grep -m1 'プロジェクト:' "$PROJECT_PATH/dashboard.md" 2>/dev/null | sed 's/.*プロジェクト: *//' || echo "—")
+  fi
+  echo -e "  ${DIM}🎞️ $movie  |  📁 $project  |  🕐 $TIMESTAMP${NC}"
+  echo -e "${DIM}$(hline)${NC}"
+}
+
+# ========================================
+# キャスト状況（コンパクト横並び）
+# ========================================
+show_cast_status() {
+  echo -e "  ${WHITE}${BOLD}🎭 CAST${NC}"
   echo ""
 
-  # アクティビティログ（最新20件）
-  echo -e "${WHITE}📜 アクティビティログ（最新20件）${NC}"
+  if [ ! -f "$PROJECT_PATH/cast/roster.yaml" ]; then
+    echo -e "  ${DIM}(キャストなし)${NC}"
+    return
+  fi
 
-  if [ -f "$PROJECT_PATH/logs/activity.log" ] && [ -s "$PROJECT_PATH/logs/activity.log" ]; then
-    # 最新20件を逆順で表示
-    tail -20 "$PROJECT_PATH/logs/activity.log" | tac | while IFS=$'\t' read -r timestamp actor event message; do
-      [ -z "$timestamp" ] && continue
+  local slugs
+  slugs=$(grep -E '^\s+-\s+slug:' "$PROJECT_PATH/cast/roster.yaml" 2>/dev/null | sed 's/.*slug: *//' | tr -d '"' | tr -d '\r' || true)
 
-      # タイムスタンプから時刻だけ抽出
-      local time_only=$(echo "$timestamp" | sed 's/.*T//' | cut -c1-5)
+  [ -z "$slugs" ] && { echo -e "  ${DIM}(キャストなし)${NC}"; return; }
 
-      # アクターアイコン
-      local actor_icon="🎭"
-      if [ "$actor" = "DIRECTOR" ]; then
-        actor_icon="🎬"
+  while IFS= read -r slug; do
+    [ -z "$slug" ] && continue
+    get_char_info "$slug"
+
+    local color="${CHAR_COLORS[$slug]}"
+    local name="${CHAR_NAMES[$slug]}"
+    local emoji="${CHAR_EMOJIS[$slug]}"
+
+    # ステータス読み取り
+    local state="待機" task="—" task_id="—"
+    local icon="⬜"
+    if [ -f "$PROJECT_PATH/logs/${slug}_status.txt" ]; then
+      local status_line
+      status_line=$(head -1 "$PROJECT_PATH/logs/${slug}_status.txt" 2>/dev/null || true)
+      if [ -n "$status_line" ]; then
+        state=$(echo "$status_line" | cut -d'|' -f1)
+        task=$(echo "$status_line" | cut -d'|' -f2)
+        task_id=$(echo "$status_line" | cut -d'|' -f3)
+      fi
+    fi
+
+    case "$state" in
+      "処理中"|"リサーチ中") icon="🟢" ;;
+      "完了待機")            icon="🟡" ;;
+      "blocked")             icon="🔴" ;;
+      "起動中"|"着任中")     icon="🔵" ;;
+      *)                     icon="⬜" ;;
+    esac
+
+    # タスク表示
+    local task_display=""
+    if [ "$task" != "—" ] && [ -n "$task" ]; then
+      task_display=" → ${task_id} ${task}"
+    fi
+    task_display=$(echo "$task_display" | cut -c1-40)
+
+    printf "  %s ${color}%-2s %-10s${NC} ${DIM}%s${NC}%s\n" \
+      "$icon" "$emoji" "$name" "$state" "$task_display"
+  done <<< "$slugs"
+  echo ""
+}
+
+# ========================================
+# タスク進捗
+# ========================================
+show_task_progress() {
+  echo -e "  ${WHITE}${BOLD}📊 PROGRESS${NC}"
+  echo ""
+
+  if [ ! -d "$PROJECT_PATH/queue/tasks" ]; then
+    echo -e "  ${DIM}(タスクなし)${NC}"
+    return
+  fi
+
+  local total=0 done_count=0 in_progress=0
+  local task_lines=""
+
+  for task_file in "$PROJECT_PATH/queue/tasks"/*.yaml; do
+    [ -f "$task_file" ] || continue
+
+    local slug
+    slug=$(basename "$task_file" .yaml)
+
+    # タスク情報をパース（複数タスク対応）
+    local current_id="" current_title="" current_status=""
+    while IFS= read -r line; do
+      line=$(echo "$line" | tr -d '\r')
+
+      local tid
+      tid=$(echo "$line" | sed -nE 's/^\s*-?\s*id:\s*(.+)/\1/p')
+      if [ -n "$tid" ]; then
+        # 前のタスクを出力
+        if [ -n "$current_id" ]; then
+          total=$((total + 1))
+          local pct=0 pct_icon="⏳"
+          case "$current_status" in
+            "done"|"complete"|"merged") pct=100; done_count=$((done_count + 1)); pct_icon="✅" ;;
+            "in_progress"|"assigned")   pct=50; in_progress=$((in_progress + 1)); pct_icon="🔄" ;;
+            "review"|"in_review")       pct=80; in_progress=$((in_progress + 1)); pct_icon="🔍" ;;
+            "blocked")                  pct=25; pct_icon="🚫" ;;
+            *)                          pct=0; pct_icon="⏳" ;;
+          esac
+          get_char_info "$slug"
+          local bar
+          bar=$(progress_bar "$pct" 15)
+          local title_short
+          title_short=$(echo "$current_title" | cut -c1-30)
+          task_lines+=$(printf "  %s #%-2s ${DIM}%s${NC} %3d%% ${CHAR_COLORS[$slug]}%s${NC}  %s\n" \
+            "$pct_icon" "$current_id" "$bar" "$pct" "$slug" "$title_short")
+          task_lines+=$'\n'
+        fi
+        current_id="$tid"
+        current_title=""
+        current_status=""
       fi
 
-      printf "  %s %s %-10s │ %s\n" "$time_only" "$actor_icon" "$actor" "$message"
-    done
+      local ttitle
+      ttitle=$(echo "$line" | sed -nE 's/^\s*title:\s*"?([^"]*)"?/\1/p')
+      [ -n "$ttitle" ] && current_title="$ttitle"
+
+      local tstatus
+      tstatus=$(echo "$line" | sed -nE 's/^\s*status:\s*(.+)/\1/p')
+      [ -n "$tstatus" ] && current_status="$tstatus"
+    done < "$task_file"
+
+    # 最後のタスク
+    if [ -n "$current_id" ]; then
+      total=$((total + 1))
+      local pct=0 pct_icon="⏳"
+      case "$current_status" in
+        "done"|"complete"|"merged") pct=100; done_count=$((done_count + 1)); pct_icon="✅" ;;
+        "in_progress"|"assigned")   pct=50; in_progress=$((in_progress + 1)); pct_icon="🔄" ;;
+        "review"|"in_review")       pct=80; in_progress=$((in_progress + 1)); pct_icon="🔍" ;;
+        "blocked")                  pct=25; pct_icon="🚫" ;;
+        *)                          pct=0; pct_icon="⏳" ;;
+      esac
+      get_char_info "$slug"
+      local bar
+      bar=$(progress_bar "$pct" 15)
+      local title_short
+      title_short=$(echo "$current_title" | cut -c1-30)
+      task_lines+=$(printf "  %s #%-2s ${DIM}%s${NC} %3d%% ${CHAR_COLORS[$slug]}%s${NC}  %s\n" \
+        "$pct_icon" "$current_id" "$bar" "$pct" "$slug" "$title_short")
+      task_lines+=$'\n'
+    fi
+  done
+
+  if [ "$total" -gt 0 ]; then
+    # 全体進捗バー
+    local overall_pct=0
+    if [ "$total" -gt 0 ]; then
+      overall_pct=$(( (done_count * 100) / total ))
+    fi
+    local overall_bar
+    overall_bar=$(progress_bar "$overall_pct" 30)
+    echo -e "  ${BOLD}${overall_bar}${NC} ${WHITE}${overall_pct}%${NC}  ${DIM}(${done_count}/${total} complete, ${in_progress} active)${NC}"
+    echo ""
+    echo -ne "$task_lines"
   else
-    echo "  (ログなし)"
+    echo -e "  ${DIM}(タスクなし)${NC}"
   fi
   echo ""
 }
 
 # ========================================
-# メイン
+# 会話ストリーム（メイン）
 # ========================================
-if [ "${1:-}" = "--watch" ]; then
-  # 2秒ごと自動更新モード
-  while true; do
-    clear
-    show_monitor
-    echo -e "${DIM}[Ctrl+C で終了]${NC}"
-    sleep 2
+show_conversation() {
+  local max_lines="${1:-15}"
+
+  echo -e "  ${WHITE}${BOLD}💬 LIVE${NC}"
+  echo ""
+
+  if [ ! -f "$PROJECT_PATH/logs/activity.log" ] || [ ! -s "$PROJECT_PATH/logs/activity.log" ]; then
+    echo -e "  ${DIM}  (まだ会話はありません...)${NC}"
+    echo ""
+    return
+  fi
+
+  tail -"$max_lines" "$PROJECT_PATH/logs/activity.log" | while IFS=$'\t' read -r timestamp actor event message; do
+    [ -z "$timestamp" ] && continue
+
+    # タイムスタンプ → 時刻のみ
+    local time_only
+    time_only=$(echo "$timestamp" | sed 's/.*T//' | cut -c1-5)
+
+    # アクターの表示名とカラー
+    local display_name="$actor"
+    local color="${DIM}"
+    local emoji="🎭"
+
+    case "$actor" in
+      "DIRECTOR")
+        display_name="Director"
+        color="${RED}"
+        emoji="🎬"
+        ;;
+      "PRODUCER")
+        display_name="Producer"
+        color="${MAGENTA}"
+        emoji="🎬"
+        ;;
+      "LINE_PRODUCER"|"LP")
+        display_name="Line Producer"
+        color="${MAGENTA}"
+        emoji="📋"
+        ;;
+      *)
+        # Cast member
+        get_char_info "$actor"
+        if [ -n "${CHAR_NAMES[$actor]+x}" ]; then
+          display_name="${CHAR_NAMES[$actor]}"
+          color="${CHAR_COLORS[$actor]}"
+          emoji="${CHAR_EMOJIS[$actor]}"
+        fi
+        ;;
+    esac
+
+    # イベントタイプに応じた装飾
+    local prefix=""
+    case "$event" in
+      "arrival")      prefix="✨ " ;;
+      "task_assign")  prefix="📋 " ;;
+      "task_start")   prefix="▶️ " ;;
+      "task_done")    prefix="✅ " ;;
+      "review_start") prefix="🔍 " ;;
+      "review_done")  prefix="✅ " ;;
+      "blocked")      prefix="🚫 " ;;
+      "cast_start")   prefix="🎬 " ;;
+      "escalation")   prefix="🚨 " ;;
+      *)              prefix="" ;;
+    esac
+
+    # メッセージの整形
+    local msg_display
+    msg_display=$(echo "$message" | cut -c1-70)
+
+    printf "  ${DIM}%s${NC}  %s ${color}%-12s${NC} │ %s%s\n" \
+      "$time_only" "$emoji" "$display_name" "$prefix" "$msg_display"
   done
-else
-  # 1回表示モード
-  show_monitor
-fi
+  echo ""
+}
+
+# ========================================
+# フッター
+# ========================================
+show_footer() {
+  local mode="${1:-readonly}"
+  echo -e "${DIM}$(hline)${NC}"
+  if [ "$mode" = "interactive" ]; then
+    echo -ne "  ${YELLOW}🍿 Owner ▶${NC} "
+  else
+    echo -e "${DIM}  [Ctrl+C で終了]  ${NC}"
+  fi
+}
+
+# ========================================
+# Producerにメッセージ送信
+# ========================================
+send_to_producer() {
+  local message="$1"
+  local send_script="$PROJECT_PATH/scripts/send-message.sh"
+
+  if [ -f "$send_script" ]; then
+    bash "$send_script" --check-busy producer "$message" 2>/dev/null
+    return $?
+  fi
+
+  # fallback: wake-agent.sh
+  local pane_id
+  pane_id=$(grep -E '^producer:' "$PROJECT_PATH/config/panes.yaml" 2>/dev/null | sed -E 's/.*"([^"]+)".*/\1/' || true)
+  if [ -n "$pane_id" ]; then
+    bash "$PROJECT_PATH/scripts/wake-agent.sh" "$pane_id" "$message" 2>/dev/null
+    return $?
+  fi
+
+  return 1
+}
+
+# ========================================
+# メイン表示
+# ========================================
+show_theater() {
+  local mode="${1:-readonly}"
+  clear
+
+  show_header
+
+  # 上段: 会話ストリーム（メイン）
+  show_conversation 15
+
+  echo -e "${DIM}$(hline)${NC}"
+
+  # 下段: キャスト状況 + タスク進捗
+  show_cast_status
+  show_task_progress
+
+  show_footer "$mode"
+}
+
+# ========================================
+# エントリポイント
+# ========================================
+case "${1:-}" in
+  --watch)
+    # 鑑賞モード（表示のみ、2秒更新）
+    trap 'echo ""; echo -e "\033[2m🎬 幕引き — シアターモード終了\033[0m"; exit 0' INT
+    while true; do
+      show_theater "readonly"
+      sleep 2
+    done
+    ;;
+  --interactive)
+    # インタラクティブモード（鑑賞 + Producer に話しかけられる）
+    trap 'echo ""; echo -e "\033[2m🎬 幕引き — シアターモード終了\033[0m"; exit 0' INT
+    LAST_SENT=""
+    while true; do
+      show_theater "interactive"
+
+      # read -t 2: 2秒待ち、入力があればProducerに送信
+      if read -t 2 -r user_input; then
+        if [ -n "$user_input" ]; then
+          LAST_SENT="$user_input"
+          if send_to_producer "$user_input"; then
+            # 送信成功 → 一瞬フィードバック表示
+            echo -e "  ${GREEN}✓ 送信しました${NC}"
+            sleep 1
+          else
+            echo -e "  ${RED}✗ 送信失敗（Producerがbusy？）${NC}"
+            sleep 2
+          fi
+        fi
+      fi
+    done
+    ;;
+  *)
+    # 1回表示
+    show_theater "readonly"
+    ;;
+esac
