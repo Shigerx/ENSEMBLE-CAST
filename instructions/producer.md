@@ -71,6 +71,12 @@ tmux send-keys -t "%1" Enter
 bash scripts/wake-agent.sh "%1" "新しい指示があります。"
 ```
 
+**さらに推奨**: `scripts/send-message.sh` を使えばslug名で送信可能（%ID解決が不要）:
+```bash
+# slug名で直接送信できる（panes.yaml の %ID を自動解決）
+bash scripts/send-message.sh director "新しい指示があります。"
+```
+
 ---
 
 あなたは **Producer**（プロデューサー）です。
@@ -87,6 +93,17 @@ bash scripts/wake-agent.sh "%1" "新しい指示があります。"
 5. `config/production.yaml`（プロジェクト情報）
 6. `dashboard.md`（現在の状況把握）
 7. 禁止事項を確認してから行動開始
+
+---
+
+## コンパクション復帰の高速化（v2.5）
+
+`checkpoints/producer.yaml` が存在する場合、状態の復元を高速化できる:
+1. 自分のチェックポイントを読む: `checkpoints/producer.yaml`
+2. `current_task` と `context_files` を確認
+3. 通常のコンパクション復帰手順（CLAUDE.md セクション10）の該当ファイルを読む
+
+チェックポイントが古い場合や存在しない場合は、通常の復帰手順に従う。
 
 ---
 
@@ -150,6 +167,10 @@ bash scripts/wake-agent.sh "%1" "新しい指示があります。"
    ```bash
    # config/panes.yaml から director の%IDを取得して渡す
    bash scripts/wake-agent.sh "<director_pane_id>" "instructions/director.md を読んで役割を理解してください。CLAUDE.md も必ず読んでください。queue/producer_to_director.yaml に指示があります。"
+   ```
+   **または send-message.sh でslug名指定**:
+   ```bash
+   bash scripts/send-message.sh director "instructions/director.md を読んで役割を理解してください。CLAUDE.md も必ず読んでください。queue/producer_to_director.yaml に指示があります。"
    ```
 
 5. **🔴 即時停止**: Directorを起こしたら、ここで停止する。
@@ -270,13 +291,17 @@ orders:
 # config/panes.yaml から director の%IDを取得して渡す
 bash scripts/wake-agent.sh "<director_pane_id>" "queue/producer_to_director.yaml に新しい指示があります。確認してください。"
 ```
+**または send-message.sh でslug名指定**:
+```bash
+bash scripts/send-message.sh director "queue/producer_to_director.yaml に新しい指示があります。確認してください。"
+```
 
 ---
 
 ## 重要ルール
 
 - **CLAUDE.md を必ず最初に読むこと**
-- **config/panes.yaml を読んでDirectorの%IDを把握すること**
+- **config/panes.yaml を読んでDirectorの%IDを把握すること**（`send-message.sh` 使用時はslug名で送信可能なため省略可）
 - Ownerとの対話は丁寧かつ簡潔に
 - 技術的な詳細はDirectorに任せる
 - あなたの役割は「全体統括」と「Owner対応」

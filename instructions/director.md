@@ -86,6 +86,12 @@ tmux send-keys -t "%3" Enter
 bash scripts/wake-agent.sh "%3" "新しいタスクがあります。"
 ```
 
+**さらに推奨**: `scripts/send-message.sh` を使えばslug名で送信可能（%ID解決が不要）:
+```bash
+# slug名で直接送信できる（panes.yaml の %ID を自動解決）
+bash scripts/send-message.sh nene "新しいタスクがあります。"
+```
+
 ### ✅ Producerへの send-keys（報告時に必須）
 
 dashboard.md を更新した後、**Producerを起床させて報告を届ける**:
@@ -109,6 +115,14 @@ dashboard.md を更新した後、**Producerを起床させて報告を届ける
 
 4. **3回ともBusyなら送信を諦める**（dashboard.mdの更新だけで留める）
 
+**`send-message.sh` を使えば上記の手順を1コマンドに簡略化できる**:
+```bash
+# --check-busy で Busy/Idle チェック（最大3回、30秒間隔）を自動実行
+# slug名で送信可能（%ID解決不要）
+bash scripts/send-message.sh --check-busy producer "dashboard.md を更新しました。Ownerに状況を報告してください。"
+# exit code 2 が返ったら Busy timeout（dashboard.md更新のみに留める）
+```
+
 ---
 
 ## コンテキスト読み込み順序（起動時・コンパクション後の必須手順）
@@ -123,6 +137,24 @@ dashboard.md を更新した後、**Producerを起床させて報告を届ける
 8. `context/{project}.md`（プロジェクトコンテキスト、存在すれば）
 9. `dashboard.md`（現在の進捗）
 10. 禁止事項を確認してから行動開始
+
+---
+
+## コンパクション復帰の高速化（v2.5）
+
+`checkpoints/director.yaml` が存在する場合、状態の復元を高速化できる:
+1. 自分のチェックポイントを読む: `checkpoints/director.yaml`
+2. `current_task` と `context_files` を確認
+3. 通常のコンパクション復帰手順（CLAUDE.md セクション10）の該当ファイルを読む
+
+チェックポイントが古い場合や存在しない場合は、通常の復帰手順に従う。
+
+**チェックポイントの保存（定期実行を推奨）**:
+```bash
+node scripts/stage-manager/checkpoint.js --snapshot director
+# 全Agentのスナップショットを一括保存:
+node scripts/stage-manager/checkpoint.js --snapshot-all
+```
 
 ---
 
@@ -232,6 +264,10 @@ roster.yaml を確認
    ```bash
    bash scripts/wake-agent.sh "%5" "あなたは <character_name> です。まず CLAUDE.md を読み、次に instructions/cast_template.md を読んでください。あなたのslugは '<slug>' です。cast/members/<slug>/persona.yaml であなたの人格を確認してください。"
    ```
+   **または send-message.sh でslug名指定**（panes.yaml にslugを登録済みの場合）:
+   ```bash
+   bash scripts/send-message.sh <slug> "あなたは <character_name> です。まず CLAUDE.md を読み、次に instructions/cast_template.md を読んでください。あなたのslugは '<slug>' です。cast/members/<slug>/persona.yaml であなたの人格を確認してください。"
+   ```
 9. roster.yaml の status を `active` に更新
 
 **次のキャストに進む前に、前のキャストの起動が完了していること。**
@@ -293,6 +329,10 @@ roster.yaml を確認
    ```bash
    # config/panes.yaml から対象キャストの%IDを取得
    bash scripts/wake-agent.sh "%5" "新しいタスクが queue/tasks/<slug>.yaml にあります。確認して作業を開始してください。"
+   ```
+   **または send-message.sh でslug名指定**:
+   ```bash
+   bash scripts/send-message.sh <slug> "新しいタスクが queue/tasks/<slug>.yaml にあります。確認して作業を開始してください。"
    ```
 
 4. dashboard.md を更新:
@@ -367,6 +407,11 @@ ls queue/reports/
 2. Idleなら `bash scripts/wake-agent.sh` でProducerを起床
 3. 3回ともBusyなら諦めてdashboard.md更新のみに留める
 
+**send-message.sh なら1コマンド**:
+```bash
+bash scripts/send-message.sh --check-busy producer "dashboard.md を更新しました。Ownerに状況を報告してください。"
+```
+
 **それ以外（中間報告、次タスク配布済み等）はProducerを起こさない。**
 
 ### 5. 停止
@@ -412,6 +457,10 @@ ls queue/reports/
    ```bash
    bash scripts/wake-agent.sh "<reviewer_pane_id>" "レビュータスクが割り当てられました。queue/tasks/<reviewer-slug>.yaml を確認してください。"
    ```
+   **または send-message.sh でslug名指定**:
+   ```bash
+   bash scripts/send-message.sh <reviewer-slug> "レビュータスクが割り当てられました。queue/tasks/<reviewer-slug>.yaml を確認してください。"
+   ```
 6. **停止してレビュー完了を待つ**
 
 ### Reviewerからのレビュー報告を受けたら
@@ -443,6 +492,10 @@ ls queue/reports/
 5. Cast を起床:
    ```bash
    bash scripts/wake-agent.sh "<cast_pane_id>" "修正タスクが queue/tasks/<slug>.yaml にあります。reject_reasons を確認して修正してください。"
+   ```
+   **または send-message.sh でslug名指定**:
+   ```bash
+   bash scripts/send-message.sh <slug> "修正タスクが queue/tasks/<slug>.yaml にあります。reject_reasons を確認して修正してください。"
    ```
 
 ---
@@ -514,6 +567,10 @@ echo -e "$(date '+%Y-%m-%dT%H:%M:%S')\tDIRECTOR\trevision_assign\t#<修正タス
 Cast を起床:
 ```bash
 bash scripts/wake-agent.sh "<cast_pane_id>" "修正タスクが queue/tasks/<slug>.yaml にあります。reject_reasons を確認して修正してください。"
+```
+**または send-message.sh でslug名指定**:
+```bash
+bash scripts/send-message.sh <slug> "修正タスクが queue/tasks/<slug>.yaml にあります。reject_reasons を確認して修正してください。"
 ```
 
 ### 3回以上 rejected の場合
@@ -608,11 +665,11 @@ tmux capture-pane -t "%5" -p | tail -20
 ## 重要ルール
 
 - **CLAUDE.md を必ず最初に読むこと**
-- **config/panes.yaml を必ず読んでペインIDを把握すること**
+- **config/panes.yaml を必ず読んでペインIDを把握すること**（`send-message.sh` 使用時はslug名で送信可能なため省略可）
 - 自分ではコードを書かない。すべてCastに委任
 - **dashboard.md の唯一の更新者**
-- 2コール send-keys ルールを厳守（`scripts/wake-agent.sh`）
-- **ペインIDは%N形式のみ使用**（相対インデックス禁止）
+- 2コール send-keys ルールを厳守（`scripts/wake-agent.sh` または `scripts/send-message.sh`）
+- **ペインIDは%N形式のみ使用**（相対インデックス禁止）。`send-message.sh` 使用時はslug名でも可
 - タイムスタンプは必ず `date` コマンドで取得
 - キャストは最大8名まで
 - ペイン追加は1つずつ

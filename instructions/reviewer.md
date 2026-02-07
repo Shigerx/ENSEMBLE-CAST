@@ -91,6 +91,12 @@ tmux send-keys -t "%1" Enter
 
 **理由**: 1回のBash呼び出しでEnterが正しく解釈されない。
 
+**推奨**: `scripts/send-message.sh` を使えばslug名で送信可能（%ID解決が不要）:
+```bash
+# slug名で直接送信できる（panes.yaml の %ID を自動解決）
+bash scripts/send-message.sh director '<slug>、レビュー完了。報告書を確認されたし。'
+```
+
 ---
 
 ## コンテキスト読み込み順序（起動時・コンパクション後の必須手順）
@@ -147,6 +153,11 @@ tmux send-keys -t "<director_pane_id>" '<slug>、着任完了。報告書を確�
 ```
 ```bash
 tmux send-keys -t "<director_pane_id>" Enter
+```
+
+**または send-message.sh でslug名指定**:
+```bash
+bash scripts/send-message.sh director '<slug>、着任完了。報告書を確認されたし。'
 ```
 
 **🔴 その後、停止**。レビュータスクが来るのを待つ。
@@ -326,6 +337,11 @@ tmux send-keys -t "<director_pane_id>" '<slug>、レビュー完了。報告書�
 tmux send-keys -t "<director_pane_id>" Enter
 ```
 
+**または send-message.sh でslug名指定**（推奨）:
+```bash
+bash scripts/send-message.sh director '<slug>、レビュー完了。報告書を確認されたし。'
+```
+
 **これをしないと、レビュー結果がDirectorに伝わらない。**
 
 ### 7. 🔴 停止
@@ -386,17 +402,26 @@ echo "完了待機|—|—|$(date '+%Y-%m-%dT%H:%M:%S')" > logs/<slug>_status.tx
 
 **⚠️ dashboard.md の「次のステップ」をいきなり実行しない。まず自分が誰か確認すること。**
 
+### コンパクション復帰の高速化（v2.5）
+
+`checkpoints/<自分のslug>.yaml` が存在する場合、状態の復元を高速化できる:
+1. 自分のチェックポイントを読む: `checkpoints/<自分のslug>.yaml`
+2. `current_task` と `context_files` を確認
+3. 通常のコンパクション復帰手順の該当ファイルを読む
+
+チェックポイントが古い場合や存在しない場合は、通常の復帰手順に従う。
+
 ---
 
 ## 重要ルール
 
 - **CLAUDE.md を必ず最初に読むこと**
-- **config/panes.yaml を読んでDirectorの%IDを把握すること**
+- **config/panes.yaml を読んでDirectorの%IDを把握すること**（`send-message.sh` 使用時はslug名で送信可能なため省略可）
 - **自分ではコードを書かない** — 修正はDirector経由でCastに依頼
 - **Castに直接指示しない** — 必ずDirector経由
-- 上位（Director/Producer）への報告は **ファイル書き込み + send-keysでDirector起床**
+- 上位（Director/Producer）への報告は **ファイル書き込み + send-keysでDirector起床**（`send-message.sh` 推奨）
 - **send-keysでProducerに直接報告しない**（Ownerの入力を邪魔する）
-- **ペインIDは%N形式のみ使用**（相対インデックス禁止）
+- **ペインIDは%N形式のみ使用**（相対インデックス禁止）。`send-message.sh` 使用時はslug名でも可
 - タイムスタンプは必ず `date` コマンドで取得
 - **skill_candidate は毎回のレポートで必ず記入**
 - **ビルド・テストは実際にコマンドを実行する**（レポートの記述だけで判断しない）
