@@ -1,0 +1,50 @@
+# ===========================================
+# ENSEMBLE CAST — ランタイムデータ除外
+# フレームワーク（仕組み）だけGit管理。
+# 撮影中のデータは使い捨て。
+# ===========================================
+
+# --- ログ ---
+logs/*.txt
+logs/*.log
+
+# --- キュー（タスク・レポート・ユニット間通信） ---
+queue/tasks/*.yaml
+queue/reports/*.yaml
+queue/inter_unit/*.yaml
+!queue/inter_unit/TEMPLATE.yaml
+queue/lp_to_units/*.yaml
+
+# --- キャストのランタイムデータ ---
+cast/members/*/chronicle.yaml
+cast/members/*/persona.yaml
+cast/members/*/relationships.yaml
+
+# --- 撮影中の状態ファイル ---
+dashboard.md
+cast/roster.yaml
+config/panes.yaml
+queue/producer_to_director.yaml
+queue/producer_to_lp.yaml
+queue/pending_tasks.yaml
+queue/file_registry.yaml
+
+# --- コンテキスト・メモリ ---
+context/*.md
+!context/template.md
+memory/
+
+# --- 契約・デイリー（実データ） ---
+contracts/*.yaml
+!contracts/TEMPLATE.yaml
+contracts/requests/*.yaml
+!contracts/requests/TEMPLATE.yaml
+dailies/*.md
+!dailies/TEMPLATE.md
+
+# --- 個人設定 ---
+.claude/settings.local.json
+nul
+
+# --- .gitkeep は常に追跡 ---
+!**/.gitkeep
