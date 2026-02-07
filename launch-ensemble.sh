@@ -129,7 +129,10 @@ tmux kill-session -t "$SESSION" 2>/dev/null && log_info "前回セッション�
 # STEP 2: ディレクトリ初期化
 # ========================================
 log_action "[2/7] ディレクトリを初期化..."
-mkdir -p "$PROJECT_PATH"/{cast/members,queue/tasks,queue/reports,logs,context,memory,config}
+mkdir -p "$PROJECT_PATH"/{cast/members,queue/tasks,queue/reports,logs,context,memory,config,scripts/stage-manager,.githooks}
+
+# Stage Manager: pre-commit hook を有効化
+git -C "$PROJECT_PATH" config core.hooksPath .githooks
 
 if [ "$FRESH_START" = true ]; then
   # 前回データをクリア

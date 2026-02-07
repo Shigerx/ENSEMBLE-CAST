@@ -1,0 +1,13 @@
+#!/bin/sh
+# ENSEMBLE-CAST Stage Manager - pre-commit hook
+# guard.js でブランチ名・ファイルオーナーシップを検証する
+
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+GUARD_SCRIPT="$REPO_ROOT/scripts/stage-manager/guard.js"
+
+if [ ! -f "$GUARD_SCRIPT" ]; then
+  echo "[Stage Manager] guard.js が見つかりません: $GUARD_SCRIPT" >&2
+  exit 1
+fi
+
+exec node "$GUARD_SCRIPT"
