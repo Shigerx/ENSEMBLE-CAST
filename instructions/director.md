@@ -619,3 +619,202 @@ tmux capture-pane -t "%5" -p | tail -20
 - **キャスティングだけで止まらない。タスク配布まで必ずやる**
 - **レース条件に注意**: 各キャストに専用ファイルを割り当てる
 - 長い作業は委任して即停止（即時委任の原則）
+
+---
+
+## 🔴 Git ブランチ管理（v2 追加）
+
+### タスク配布時のブランチ作成
+
+各 Cast にタスクを配布する際、**専用ブランチを作成**する:
+
+1. メインブランチの最新を取得:
+   ```bash
+   cd <target_path>
+   git checkout main && git pull origin main
+   ```
+
+2. Cast 用ブランチを作成:
+   ```bash
+   git checkout -b cast/<slug>/<task-id>-<短い説明>
+   git checkout main  # Director 自身は main に戻る
+   ```
+
+3. タスク YAML にブランチ名を記載:
+   ```yaml
+   tasks:
+     - id: 1
+       branch: "cast/botan/1-deadline-feature"  # ← 追加
+       # ... 他のフィールド
+   ```
+
+### 統合タスクのマージフロー
+
+統合タスク（depends_on あり）の場合:
+
+1. 依存タスクの全ブランチを統合ブランチにマージ:
+   ```bash
+   git checkout -b cast/<slug>/<task-id>-integration
+   git merge cast/<依存slug1>/<依存task-id>-<説明> --no-edit
+   git merge cast/<依存slug2>/<依存task-id>-<説明> --no-edit
+   ```
+
+2. コンフリクトがあれば `status: blocked` で報告
+
+### レビュー承認後のマージ
+
+Director がレビュー承認後に main へマージ:
+```bash
+cd <target_path>
+git checkout main
+git merge cast/<slug>/<task-id>-<説明> --no-edit
+git branch -d cast/<slug>/<task-id>-<説明>
+```
+
+---
+
+## 🔴 依存タスクの強制チェック（v2 追加）
+
+### タスク配布時の依存チェック
+
+タスクに `depends_on` がある場合、**依存タスクの完了を確認してから wake する**。
+
+```
+タスク配布判断フロー:
+  ↓
+depends_on がある？
+  ├─ NO → 即座に wake
+  └─ YES → 依存タスクの status を確認
+       ├─ 全て approved → wake
+       ├─ 一部未完了 → wake しない（pending_tasks に記録）
+       └─ 一部 rejected → 依存の修正完了まで待機
+```
+
+### pending_tasks の管理
+
+依存待ちタスクは `queue/pending_tasks.yaml` に記録:
+
+```yaml
+pending_tasks:
+  - task_id: 3
+    assigned_to: "polka"
+    depends_on: [1, 2]
+    waiting_for:
+      - task_id: 1
+        status: "in_progress"  # まだ完了していない
+      - task_id: 2
+        status: "approved"     # 完了済み
+    created_at: <timestamp>
+```
+
+### 起床時のペンディングチェック
+
+起床時の Full Scan に追加:
+1. `queue/reports/` を全スキャン（既存）
+2. **`queue/pending_tasks.yaml` をチェック**（追加）
+   - 依存タスクが全て approved になっていたら:
+     - pending_tasks から削除
+     - 対象 Cast のタスク YAML を書き込み
+     - Cast を wake
+
+---
+
+## 🔴 ファイルオーナーシップ管理（v2 追加）
+
+### タスク配布時のファイル宣言
+
+各タスクに `owned_files`（排他）と `shared_files`（統合時に調整）を明記:
+
+```yaml
+tasks:
+  - id: 1
+    owned_files:          # このCast だけが書き込めるファイル
+      - src/components/DueDatePicker.tsx
+      - src/components/DueDateDisplay.tsx
+    shared_files:         # 統合タスクで最終調整するファイル
+      - src/App.tsx
+```
+
+### 競合チェック（タスク配布前に実施）
+
+新しいタスクを配布する前に、**既存タスクの owned_files と重複がないか確認**:
+
+```
+チェックフロー:
+  ↓
+新タスクの owned_files を列挙
+  ↓
+既存の全 active タスクの owned_files と比較
+  ↓
+重複あり？
+  ├─ YES → タスクを分割するか、依存関係にして直列化
+  └─ NO → 配布OK
+```
+
+### ファイルレジストリ
+
+現在のファイル所有状況を `queue/file_registry.yaml` で管理:
+
+```yaml
+# Director が管理。タスク配布/完了時に更新
+registry:
+  - file: "src/components/DueDatePicker.tsx"
+    owner: "botan"
+    task_id: 1
+    type: exclusive
+  - file: "src/App.tsx"
+    owner: null          # shared — 統合タスクまで誰も排他取得しない
+    type: shared
+    pending_integrator: "polka"  # 統合担当
+```
+
+---
+
+### レビュー approved 後の追加アクション（v2 追加）
+
+1. Cast のブランチを main にマージ:
+   ```bash
+   cd <target_path>
+   git checkout main
+   git merge cast/<slug>/<task-id>-<説明> --no-edit
+   ```
+
+2. マージ成功を確認後、ブランチ削除:
+   ```bash
+   git branch -d cast/<slug>/<task-id>-<説明>
+   ```
+
+3. `queue/file_registry.yaml` から該当タスクのエントリを削除
+
+4. **マージ後ビルドチェック**（任意だが推奨）:
+   ```bash
+   cd <target_path>
+   npm run build
+   ```
+   失敗した場合: マージをリバートし、Cast に修正タスクを配布
+
+---
+
+## 🔴 タスク配布の自動化ヒント（v2 追加）
+
+### バッチ配布パターン
+
+独立したタスクは一括で配布し、1回の停止で済ませる:
+
+```
+独立タスク群: [#1, #2, #3] → 全員に一括 wake → 停止
+依存タスク: [#4 depends_on #1,#2] → pending_tasks に登録 → 完了時に自動 wake
+```
+
+### ダッシュボード簡易化
+
+Cast 4名以上の場合、dashboard.md に進捗サマリーを追加:
+
+```markdown
+## 📊 進捗サマリー
+- 総タスク: 8
+- 完了(approved): 3 (37.5%)
+- 進行中: 3
+- ペンディング(依存待ち): 2
+- ブロック: 0
+```

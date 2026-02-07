@@ -156,6 +156,8 @@ Claude Codeは「待機」できない。プロンプトが出た = スクリプ
 | queue/tasks/<reviewer-slug>.yaml | Reviewer のみ | Director のみ |
 | queue/reports/<slug>_report.yaml | Director | 対象Cast のみ |
 | queue/reports/<reviewer-slug>_report.yaml | Director | Reviewer のみ |
+| queue/pending_tasks.yaml | Director | Director のみ |
+| queue/file_registry.yaml | Director | Director のみ |
 | dashboard.md | 全員 | **Director のみ**（唯一の更新者） |
 | logs/activity.log | 全員 | **Director のみ**（追記のみ） |
 | logs/<slug>_status.txt | 全員 | **対象Cast のみ**（上書き） |
@@ -185,6 +187,16 @@ Claude Codeは「待機」できない。プロンプトが出た = スクリプ
 ```
 
 競合リスクがある場合は status: blocked にして Director に報告する。
+
+### v2: Git ブランチ分離による根本解決
+
+v2 ではファイル競合を Git ブランチで根本解決する:
+- 各 Cast は専用ブランチ（`cast/<slug>/<task-id>-<説明>`）で作業
+- main ブランチには直接コミットしない
+- マージは Director がレビュー承認後に実施
+- コンフリクト発生時は `status: blocked` で報告
+
+詳細: `instructions/director.md` の「Git ブランチ管理」セクション参照
 
 ---
 

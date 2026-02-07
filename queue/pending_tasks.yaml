@@ -1,0 +1,3 @@
+# Director が管理する依存待ちタスクのキュー
+# タスクの depends_on が全て approved になるまでここに保持
+pending_tasks: []
