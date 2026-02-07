@@ -1,11 +1,17 @@
 # ENSEMBLE CAST — 全Agent共通ルール
 
-> このファイルはすべてのAgent（Producer, Director, Cast Member）が必読するシステムルールです。
+> このファイルはすべてのAgent（Producer, Line Producer, Director, Cast Member）が必読するシステムルールです。
 > コンパクション後も、最初にこのファイルを読み直すこと。
 
 ---
 
 ## 1. 階層構造
+
+`config/production.yaml` の `scale` 設定でモードが決まる:
+- `scale: small` → v2モード（Producer → Director → Cast）
+- `scale: large` → v3モード（Producer → LP → Director×N → Cast）
+
+### v2構造（scale: small）
 
 ```
 Owner（人間・上様）
@@ -30,6 +36,38 @@ Owner（人間・上様）
 - 問題があればDirectorに報告（Castには直接指示しない）
 - 指示書: `instructions/reviewer.md`
 
+### v3構造（scale: large）
+
+```
+Owner（人間・上様）
+  ↓ 対話                    ↑ デイリーラッシュ + dashboard.md
+┌──────────────────────┐
+│  PRODUCER（EP）       │ ← 戦略統括・Owner対応
+└──────────┬───────────┘
+           ↓ 方針指示         ↑ 統合レポート
+┌──────────────────────┐
+│  LINE PRODUCER（LP）  │ ← 現場統括・ユニット間調整・契約管理
+└──────────┬───────────┘
+           ↓ コールシート + タスク  ↑ ユニットレポート
+     ┌─────┼─────────────┐
+     ▼     ▼             ▼
+  Unit A  Unit B       Unit C
+  Director Director    Director
+  Cast×N  Cast×N      Cast×N
+
+サブエージェント（オンデマンド召喚）:
+  Script Supervisor, Technical Advisor, Location Scout,
+  Assistant Director, Research Consultant, Editor,
+  Script Doctor, Previs Artist
+
+非LLM常駐プロセス:
+  Stage Manager (guard.js | router.js | checkpoint.js | health.js)
+```
+
+v3ではProducerがEP（エグゼクティブプロデューサー）に昇格し、戦略に専念する。
+LP（ラインプロデューサー）が現場統括を担い、複数ユニットのDirectorを管理する。
+サブエージェントはオンデマンド召喚（Task tool）で必要な時だけ起動し、YAML報告後に解散する。
+
 ---
 
 ## 2. ペインID参照ルール（最重要）
@@ -40,12 +78,28 @@ Owner（人間・上様）
 - send-keysは %ID を直接指定: `tmux send-keys -t "%5" "message"`
 
 ```yaml
-# config/panes.yaml の例
+# config/panes.yaml の例（v2: scale: small）
 producer: "%0"
 director: "%1"
 cast:
   botan: "%2"
   lamy: "%3"
+```
+
+```yaml
+# config/panes.yaml の例（v3: scale: large）
+producer: "%0"
+line_producer: "%1"
+units:
+  frontend:
+    director: "%2"
+    cast:
+      nene: "%3"
+      polka: "%4"
+  backend:
+    director: "%5"
+    cast:
+      rusty: "%6"
 ```
 
 ---
@@ -86,17 +140,25 @@ bash scripts/wake-agent.sh "%1" "送信テキスト"
 ### 上→下（指示）: YAML書き込み + send-keysで起床
 - Producer → Director: YAML書き込み → `scripts/wake-agent.sh` で起床
 - Director → Cast: YAML書き込み → `scripts/wake-agent.sh` で起床
+- **v3追加**: Producer → LP: `queue/producer_to_lp.yaml` → wake-agent.sh
+- **v3追加**: LP → Director: `queue/lp_to_units/<unit>.yaml` → wake-agent.sh
 
 ### 下→上（報告）: ファイル書き込み + send-keysで起床
 - Cast → Director: `queue/reports/<slug>_report.yaml` に書き込み → send-keysでDirectorを起床
 - Director → Producer: `dashboard.md` を更新 → **send-keysでProducerを起床**
+- **v3追加**: Director → LP: ユニットレポート → send-keysでLPを起床
+- **v3追加**: LP → Producer: `dashboard.md` + デイリーラッシュ → send-keysでProducerを起床
 
 **⚠️ Producerへのsend-keys時の注意**: Ownerが入力中だと割り込んでしまう。
 Directorは送信前に **必ずBusy/Idleチェック** を行い、Idle（「❯」表示）を確認してから送ること。
 Busyなら **30秒待って再チェック**（最大3回）。3回ともBusyなら送信を諦め、dashboard.mdの更新のみに留める。
+- **v3追加**: Director → LP へのsend-keys時も同様にBusy/Idleチェックを行うこと。
+- **v3追加**: LP → Producer へのsend-keys時も上記と同じルールを適用する（Owner入力中の割り込み防止）。
 
 ### 横（キャスト間）: 直接通信禁止
 - キャスト同士は直接やりとりしない。Director経由でのみ協調する。
+- **v3追加**: Director間の直接通信も禁止。LP経由でのみ協調する。
+- **v3追加**: ユニット間メッセージは `queue/inter_unit/` に書き込み、Stage Manager（router.js）がルーティングする。
 
 ### 🔴 ポーリング禁止
 ループで状態を監視してはならない。API代金の無駄。イベント駆動で動くこと。
@@ -158,19 +220,65 @@ Claude Codeは「待機」できない。プロンプトが出た = スクリプ
 | queue/reports/<reviewer-slug>_report.yaml | Director | Reviewer のみ |
 | queue/pending_tasks.yaml | Director | Director のみ |
 | queue/file_registry.yaml | Director | Director のみ |
-| dashboard.md | 全員 | **Director のみ**（唯一の更新者） |
+| dashboard.md | 全員 | **Director のみ**（v3ではLPが更新） |
 | logs/activity.log | 全員 | **Director のみ**（追記のみ） |
 | logs/<slug>_status.txt | 全員 | **対象Cast のみ**（上書き） |
 | logs/<reviewer-slug>_status.txt | 全員 | **Reviewer のみ**（上書き） |
 | logs/director_status.txt | 全員 | **Director のみ**（上書き） |
 
-**🔴 dashboard.md はDirectorだけが更新する。Producer・Castは読むだけ。**
+**🔴 dashboard.md はDirectorだけが更新する（v3ではLPが更新）。Producer・Castは読むだけ。**
 **🔴 logs/activity.log はDirectorだけが追記する。**
 **🔴 logs/<slug>_status.txt は各キャスト（Reviewer含む）が自分のファイルのみ更新する。**
 
+### v3追加ファイル（scale: large）
+
+| ファイル | 読み | 書き |
+|---------|------|------|
+| config/units.yaml | 全員 | LP のみ |
+| contracts/*.yaml | 全員 | LP のみ（Director は交渉を通じて変更申請） |
+| contracts/requests/*.yaml | LP + 関連Director | 申請者（Cast/Director） |
+| queue/producer_to_lp.yaml | LP | Producer のみ |
+| queue/lp_to_units/*.yaml | 対象ユニットDirector | LP のみ |
+| queue/inter_unit/*.yaml | 対象Director | LP / 送信元Director |
+| dailies/*.md | 全員 | LP のみ |
+| checkpoints/*.yaml | 対象Agent + LP | Stage Manager（自動） |
+| logs/line_producer_status.txt | 全員 | **LP のみ**（上書き） |
+
+**v3での所有権変更（scale: large）:**
+
+| ファイル | v2での書き | v3での書き |
+|---------|-----------|-----------|
+| dashboard.md | Director のみ | **LP のみ**（Director はユニットレポートを LP に送り、LP が統合） |
+| logs/activity.log | Director のみ | **各ユニット Director**（追記のみ。複数 Director の追記はタイムスタンプで区別） |
+
 ---
 
-## 8. レース条件の防止
+## 8. ユニットとドメイン境界（v3: scale: large）
+
+### ユニットの概念
+v3ではプロジェクトを複数のユニット（班）に分割する。
+各ユニットは Director + Cast で構成され、担当ドメイン（ディレクトリ）を持つ。
+ユニット構成は `config/units.yaml` で定義される。
+
+### ドメイン境界ルール
+- 各ユニットの Cast は自ドメインのファイルのみ編集可能
+- ドメイン外のファイル変更はコールシート（契約）で調整
+- Stage Manager（guard.js）が commit 時にドメイン違反を reject
+
+### コールシート（ユニット間契約）
+ユニット間のインターフェース契約。`contracts/` ディレクトリで管理。
+- status: draft → negotiation → agreed → implementing → verified
+- LP が作成・管理、Director が交渉に参加
+- 変更リクエストは `contracts/requests/` に格納
+
+### ユニット間通信
+- Director ↔ LP ↔ Director（直接のDirector間通信は禁止）
+- メッセージキュー: `queue/inter_unit/`
+- Stage Manager（router.js）がルーティング
+
+---
+
+## 9. レース条件の防止
 
 - 各キャストには**専用のタスクファイル**（`queue/tasks/<slug>.yaml`）が割り当てられる
 - 各キャストは**自分のファイルだけ**を読む（他キャストのファイルを読まない）
@@ -200,7 +308,7 @@ v2 ではファイル競合を Git ブランチで根本解決する:
 
 ---
 
-## 9. Busy/Idle 状態チェック
+## 10. Busy/Idle 状態チェック
 
 send-keysで指示を送る前に、相手が受信可能か確認すること:
 
@@ -220,7 +328,7 @@ tmux capture-pane -t "%5" -p | tail -20
 
 ---
 
-## 10. コンパクション復帰手順
+## 11. コンパクション復帰手順
 
 Claude Codeのコンテキストがコンパクションされた場合:
 
@@ -236,6 +344,7 @@ Claude Codeのコンテキストがコンパクションされた場合:
 
 4. **自分の指示書を読む**:
    - Producer: `instructions/producer.md`
+   - Line Producer: `instructions/line_producer.md`
    - Director: `instructions/director.md`
    - Cast: `instructions/cast_template.md` + `cast/members/<slug>/persona.yaml`
    - Reviewer: `instructions/reviewer.md` + `cast/members/<slug>/persona.yaml`
@@ -243,10 +352,12 @@ Claude Codeのコンテキストがコンパクションされた場合:
 5. **累積ファイルを読む**:
    - Cast: `cast/members/<slug>/chronicle.yaml`
    - Director: `cast/roster.yaml` + `dashboard.md`
+   - Line Producer: `config/units.yaml` + `contracts/` + `dailies/` + `dashboard.md`
 
 6. **現在のタスクを確認**:
    - Cast: `queue/tasks/<slug>.yaml`
-   - Director: `queue/producer_to_director.yaml`
+   - Director: `queue/producer_to_director.yaml`（v2）/ `queue/lp_to_units/<unit>.yaml`（v3）
+   - Line Producer: `queue/producer_to_lp.yaml` + `queue/inter_unit/`
 
 7. **禁止事項を確認してから**作業を再開
 
@@ -262,13 +373,13 @@ Claude Codeのコンテキストがコンパクションされた場合:
 役割によって「やっていいこと」が全く異なる。
 
 ### コンパクション時のサマリーに含めるべき情報
-- 自分のロール（Producer/Director/Cast + slug）
+- 自分のロール（Producer/Line Producer/Director/Cast + slug）
 - 主要な禁止事項
 - 現在進行中のタスクID
 
 ---
 
-## 11. タイムスタンプ
+## 12. タイムスタンプ
 
 すべてのYAMLファイルでタイムスタンプを記録する際は、必ず `date` コマンドを使用すること:
 
@@ -284,7 +395,7 @@ date "+%Y-%m-%dT%H:%M:%S"
 
 ---
 
-## 12. コード品質
+## 13. コード品質
 
 - コードはシニアエンジニアレベルの品質を維持すること
 - キャラクターの個性は**コミュニケーションスタイルのみ**に反映する
@@ -293,7 +404,7 @@ date "+%Y-%m-%dT%H:%M:%S"
 
 ---
 
-## 13. 3層コンテキスト管理
+## 14. 3層コンテキスト管理
 
 効率的な知識共有のため、3層構造のコンテキストを採用:
 
@@ -321,7 +432,7 @@ date "+%Y-%m-%dT%H:%M:%S"
 
 ---
 
-## 14. スキル化の4段階判定プロセス
+## 15. スキル化の4段階判定プロセス
 
 スキル化候補が上がった場合、以下の4段階で判定する:
 
@@ -338,11 +449,13 @@ date "+%Y-%m-%dT%H:%M:%S"
 
 ---
 
-## 15. 即時委任の原則
+## 16. 即時委任の原則
 
 長い作業は**即座に下位へ委任して、自分は停止**すること。
 
 - Producer: Director に委任したら停止 → Owner が次のコマンドを入力できる
+- **v3追加**: Producer: LP に委任したら停止（v3では LP が現場統括）
+- **v3追加**: LP: Director に委任したら停止 → 次のsend-keysで起床する
 - Director: Cast に委任したら停止 → 次のsend-keysで起床する
 
 **「考えるな、委譲しろ」** — 特にProducerは即断即決。Extended Thinking無効で運用する。
@@ -351,11 +464,12 @@ date "+%Y-%m-%dT%H:%M:%S"
 
 ---
 
-## 16. モデル設定
+## 17. モデル設定
 
 | エージェント | モデル | Thinking | 理由 |
 |-------------|--------|----------|------|
 | Producer | Opus | **無効** | 委譲とOwner対応に深い推論は不要 |
+| Line Producer | Opus | **有効** | ユニット間調整・契約交渉には慎重な判断が必要 |
 | Director | デフォルト | 有効 | タスク分解・キャスティングには慎重な判断が必要 |
 | Cast | デフォルト | 有効 | 実装作業にはフル機能が必要 |
 
@@ -363,7 +477,7 @@ ProducerはExtended Thinking無効（`MAX_THINKING_TOKENS=0`）で起動し、�
 
 ---
 
-## 17. プロジェクトパス
+## 18. プロジェクトパス
 
 ### ENSEMBLE-CAST本体
 WSL2環境: `/mnt/c/Users/shige/antigravity/ENSEMBLE-CAST`

@@ -1,0 +1,28 @@
+# contracts/requests/TEMPLATE.yaml — 変更リクエストテンプレート
+# Cast/Director がコールシートの変更を申請する際に使用
+
+change_request:
+  id: CR-XXX
+  call_sheet_id: CS-XXX
+  status: open  # open → reviewing → approved → rejected
+
+  requester:
+    unit: ""
+    role: ""       # director / cast
+    slug: ""
+
+  description: ""
+  reason: ""
+
+  proposed_changes: |
+    # 変更内容を記述
+
+  impact_analysis:
+    affected_units: []
+    affected_files: []
+    breaking: false  # 既存実装に破壊的変更があるか
+
+  resolution:
+    decision: ""     # approved / rejected / modified
+    decided_by: ""   # LP slug
+    notes: ""

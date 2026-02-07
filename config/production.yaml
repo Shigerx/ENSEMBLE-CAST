@@ -15,6 +15,8 @@ movie:
     - name: "尾丸ポルカ"
       traits: "クリエイティブ・マルチタレント・自由奔放・ムードメーカー"
 
+scale: small  # small: v2モード（Director 1人） / large: v3モード（マルチユニット）
+
 project:
   name: "nepolabo-todo"
   phase: 2

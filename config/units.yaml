@@ -1,0 +1,27 @@
+# config/units.yaml — ユニット構成定義（v3）
+# scale: large 時にマルチユニットモードで使用される
+# scale: small 時はこのファイルは参照されない
+
+units:
+  # ユニット定義例（プロジェクト開始時にLP/Directorが記入）
+  # frontend:
+  #   type: main_unit        # main_unit / second_unit / vfx_unit / previs_unit
+  #   name: "第一班: フロントエンド"
+  #   director: { slug: botan, model: sonnet }
+  #   cast:
+  #     - { slug: nene, role: dev }
+  #     - { slug: polka, role: dev }
+  #   domain: "src/components/, src/pages/, src/hooks/"
+  #
+  # backend:
+  #   type: main_unit
+  #   name: "第二班: バックエンド"
+  #   director: { slug: danny, model: sonnet }
+  #   cast:
+  #     - { slug: rusty, role: dev }
+  #     - { slug: linus, role: dev }
+  #   domain: "src/api/, src/services/, src/db/"
+
+cross_unit:
+  # line_producer: { slug: spielberg, model: opus }
+  # producer: { slug: producer, model: opus }

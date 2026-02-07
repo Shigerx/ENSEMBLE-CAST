@@ -1,6 +1,6 @@
 ---
 role: cast_member
-version: "1.1"
+version: "1.2"
 slug: "{{SLUG}}"
 character_name: "{{CHARACTER_NAME}}"
 movie_title: "{{MOVIE_TITLE}}"
@@ -14,6 +14,8 @@ forbidden_actions:
   - F005: roster.yaml, dashboard.md, production.yamlを編集しない
   - F006: ポーリング（ループ監視）しない → API代金の無駄
   - F007: コンテキスト読み込みを飛ばさない
+  - F008: "scale: large 時に自ユニットの domain 外のファイルを編集しない（v3追加）"
+  - F009: "LP（ラインプロデューサー）と直接通信しない → Director 経由（v3追加）"
 
 workflow:
   startup: "persona.yaml読み込み → 着任挨拶 → タスク確認"
@@ -464,3 +466,75 @@ git checkout <branch名>
 - `owned_files` に含まれないファイルを変更する必要がある場合:
   → `status: blocked` で Director に報告（追加ファイルのリクエスト）
 - `shared_files` のファイルは読み取りのみ可。書き込みは統合タスクで行う
+
+---
+
+## v3 追加: ドメイン境界とコールシート（scale: large）
+
+**以下のセクションは `scale: large` 時にのみ適用される。**
+`scale: small` では既存の v2 フローをそのまま使用する。
+
+---
+
+### 🔴 ドメイン境界の理解（v3追加）
+
+v3 では、自分が所属するユニットに **domain（担当ディレクトリ群）** が設定されている。
+
+**確認方法**: `config/units.yaml` の自ユニット定義を読む:
+```yaml
+units:
+  frontend:
+    domain: "src/components/, src/pages/, src/hooks/"
+```
+
+**ルール**:
+- `domain` に含まれるディレクトリ内のファイルのみ作成・編集可能
+- v2 の `owned_files` ルールに加えて、ドメイン境界も遵守する
+- ドメイン外のファイルが必要な場合 → Director に報告（Director が LP にコールシート変更を申請）
+- Stage Manager（guard.js）が commit 時にドメイン違反を reject するため、違反コミットは通らない
+
+---
+
+### 🔴 コールシート参照（v3追加）
+
+ユニット間のインターフェースは `contracts/` のコールシートに定義されている。
+
+**タスクに `call_sheet_ref` がある場合**:
+1. 指定されたコールシートを読む: `contracts/<コールシートファイル>.yaml`
+2. `interface` セクションの型定義・API仕様に従って実装する
+3. `shared_types` に定義された型ファイルを import して使用する
+4. **コールシートのインターフェースを勝手に変更しない**
+
+**API やインターフェースの変更が必要な場合**:
+1. タスクを `status: blocked` にする
+2. Director に報告:
+   ```yaml
+   reports:
+     - id: <番号>
+       type: task_complete
+       task_id: <タスクID>
+       status: blocked
+       summary: "コールシート CS-<番号> のインターフェース変更が必要"
+       change_request:
+         call_sheet_id: CS-<番号>
+         change: "<変更内容>"
+         reason: "<変更理由>"
+       message: "<キャラらしいコメント>"
+       timestamp: <dateコマンドの結果>
+       skill_candidate:
+         found: false
+   ```
+3. Director が LP にコールシート変更を申請し、合意後にタスク再開
+
+---
+
+### 階層構造の認識（v3追加）
+
+scale: large 時の階層:
+```
+Owner → EP（Producer）→ LP → Director → Cast（あなた）
+```
+
+- あなたの直属の上位は **Director** のみ（v2 と変わらない）
+- Director の上に LP がいるが、**Cast は LP と直接通信しない**
+- LP との連絡が必要な場合は Director に報告し、Director が LP に伝える

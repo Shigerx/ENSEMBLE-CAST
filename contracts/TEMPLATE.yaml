@@ -1,0 +1,45 @@
+# contracts/TEMPLATE.yaml — コールシートテンプレート
+# LP がユニット間契約を定義する際に使用
+
+call_sheet:
+  id: CS-XXX
+  title: ""
+  status: draft  # draft → negotiation → agreed → implementing → verified
+
+  provider:
+    unit: ""
+    director: ""
+  consumer:
+    unit: ""
+    director: ""
+
+  interface:
+    type: ""  # rest_api / graphql / event / shared_module
+    # 以下は type に応じて記述
+    # rest_api の場合:
+    #   base_path: /api/xxx
+    #   endpoints:
+    #     - method: GET
+    #       path: /
+    #       response: |
+    #         { ... }
+    #
+    # shared_module の場合:
+    #   module_path: "src/shared/xxx.ts"
+    #   exports:
+    #     - name: functionName
+    #       signature: "(arg: Type) => ReturnType"
+
+    shared_types:
+      file: ""
+      types: []
+
+  changelog:
+    - version: 1
+      date: ""
+      author: ""
+      changes: "初版作成"
+
+  verification:
+    method: contract_test  # contract_test / integration_test / manual
+    test_file: ""

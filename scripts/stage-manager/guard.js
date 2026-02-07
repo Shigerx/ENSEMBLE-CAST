@@ -149,6 +149,96 @@ function parseValue(val) {
 }
 
 // =============================================================================
+// units.yaml 専用パーサー
+// =============================================================================
+
+/**
+ * units.yaml をパースしてユニット定義の配列を返す
+ * 形式例:
+ *   units:
+ *     frontend:
+ *       ...
+ *       cast:
+ *         - { slug: nene, role: dev }
+ *       domain: "src/components/, src/pages/"
+ *
+ * @param {string} yamlStr
+ * @returns {Array<{name: string, cast: string[], domain: string}>}
+ */
+function parseUnitsYaml(yamlStr) {
+  const lines = yamlStr.split('\n');
+  const units = [];
+  let inUnits = false;
+  let currentUnit = null;
+  let inCast = false;
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+
+    // コメント行・空行をスキップ
+    if (/^\s*#/.test(line) || /^\s*$/.test(line)) continue;
+
+    // "units:" セクション開始
+    if (/^units:\s*$/.test(line)) {
+      inUnits = true;
+      continue;
+    }
+
+    // "cross_unit:" 等でunitsセクション終了
+    if (/^\S/.test(line) && !line.startsWith('units:')) {
+      inUnits = false;
+      inCast = false;
+      continue;
+    }
+
+    if (!inUnits) continue;
+
+    // ユニット名（インデント2）: "  frontend:"
+    const unitNameMatch = line.match(/^  (\w[\w_-]*):\s*$/);
+    if (unitNameMatch) {
+      if (currentUnit) units.push(currentUnit);
+      currentUnit = { name: unitNameMatch[1], cast: [], domain: '' };
+      inCast = false;
+      continue;
+    }
+
+    if (!currentUnit) continue;
+
+    // domain（インデント4）: "    domain: \"src/components/, src/pages/\""
+    const domainMatch = line.match(/^\s{4}domain:\s*"?([^"]*)"?\s*$/);
+    if (domainMatch) {
+      currentUnit.domain = domainMatch[1].trim();
+      inCast = false;
+      continue;
+    }
+
+    // cast セクション開始: "    cast:"
+    if (/^\s{4}cast:\s*$/.test(line)) {
+      inCast = true;
+      continue;
+    }
+
+    // cast アイテム（インラインオブジェクト形式）: "      - { slug: nene, role: dev }"
+    if (inCast) {
+      const castMatch = line.match(/^\s+-\s*\{\s*slug:\s*(\w[\w_-]*)/);
+      if (castMatch) {
+        currentUnit.cast.push(castMatch[1]);
+        continue;
+      }
+      // cast の配列外の行に遭遇 → cast セクション終了
+      if (/^\s{4}\w/.test(line)) {
+        inCast = false;
+      }
+    }
+  }
+
+  // 最後のユニットを追加
+  if (currentUnit) units.push(currentUnit);
+
+  return units;
+}
+
+// =============================================================================
 // ブランチ名バリデーション
 // =============================================================================
 
@@ -246,6 +336,90 @@ function validateFileOwnership(files, slug, registry) {
 }
 
 // =============================================================================
+// ドメイン境界バリデーション（v3: scale: large のみ）
+// =============================================================================
+
+/**
+ * contracts/types/ 等、ユニット横断で共有される例外パス
+ */
+const DOMAIN_EXCEPTION_PREFIXES = [
+  'contracts/types/',
+];
+
+/**
+ * ドメイン境界を検証する
+ * @param {string[]} files - コミットに含まれるファイルパス一覧
+ * @param {string|null} slug - ブランチの slug（main/director の場合は null）
+ * @param {Array<{name: string, cast: string[], domain: string}>|null} units - units.yaml のユニット定義
+ * @param {string|undefined} scale - production.yaml の scale（"small" | "large"）
+ * @returns {{ valid: boolean, violations: string[] }}
+ */
+function validateDomainBoundary(files, slug, units, scale) {
+  // scale が large でなければチェックスキップ
+  if (scale !== 'large') {
+    return { valid: true, violations: [] };
+  }
+
+  // slug が null（main / director ブランチ）→ チェックスキップ
+  if (slug === null) {
+    return { valid: true, violations: [] };
+  }
+
+  // units が未定義・空配列 → チェックスキップ
+  if (!units || units.length === 0) {
+    return { valid: true, violations: [] };
+  }
+
+  // slug がどのユニットに属するか特定
+  const unit = units.find((u) => u.cast && u.cast.includes(slug));
+  if (!unit) {
+    // slug がどのユニットにも属さない → チェックスキップ
+    return { valid: true, violations: [] };
+  }
+
+  // domain をパース（カンマ区切り → プレフィックス配列）
+  const domainPrefixes = unit.domain
+    .split(',')
+    .map((d) => d.trim())
+    .filter(Boolean);
+
+  // domain が未設定のユニット（横断ユニット等）はチェック不要
+  if (domainPrefixes.length === 0) {
+    return { valid: true, violations: [] };
+  }
+
+  const violations = [];
+
+  for (const file of files) {
+    // ENSEMBLE-CAST 内部ファイルはチェック対象外
+    if (isInternalFile(file)) continue;
+
+    // contracts/types/ 等の例外パスはチェック対象外
+    let isException = false;
+    for (const prefix of DOMAIN_EXCEPTION_PREFIXES) {
+      if (file.startsWith(prefix)) {
+        isException = true;
+        break;
+      }
+    }
+    if (isException) continue;
+
+    // ドメイン内のファイルかチェック
+    const inDomain = domainPrefixes.some((prefix) => file.startsWith(prefix));
+    if (!inDomain) {
+      violations.push(
+        `"${file}" はユニット "${unit.name}" のドメイン外です。許可ドメイン: ${domainPrefixes.join(', ')}`
+      );
+    }
+  }
+
+  return {
+    valid: violations.length === 0,
+    violations,
+  };
+}
+
+// =============================================================================
 // メインロジック（pre-commit hook として実行時）
 // =============================================================================
 
@@ -325,8 +499,38 @@ function main() {
       process.exit(1);
     }
 
-    // ドメイン境界チェック（v3.0 で実装予定）
-    // TODO: units.yaml の domain 定義に基づくドメイン境界検証を追加
+    // 7. ドメイン境界チェック（v3: scale: large の場合のみ）
+    let scale = 'small';
+    try {
+      const productionPath = path.join(repoRoot, 'config', 'production.yaml');
+      const productionContent = fs.readFileSync(productionPath, 'utf-8');
+      const scaleMatch = productionContent.match(/^scale:\s*(\S+)/m);
+      if (scaleMatch) {
+        scale = scaleMatch[1].replace(/['"]/g, '');
+      }
+    } catch (e) {
+      // production.yaml が読めない → scale: small 扱い
+    }
+
+    if (scale === 'large') {
+      let units = [];
+      try {
+        const unitsPath = path.join(repoRoot, 'config', 'units.yaml');
+        const unitsContent = fs.readFileSync(unitsPath, 'utf-8');
+        units = parseUnitsYaml(unitsContent);
+      } catch (e) {
+        // units.yaml が読めない → ドメインチェックスキップ
+      }
+
+      const domainResult = validateDomainBoundary(stagedFiles, branchResult.slug, units, scale);
+      if (!domainResult.valid) {
+        process.stderr.write(`[Stage Manager] ドメイン境界チェック失敗:\n`);
+        for (const v of domainResult.violations) {
+          process.stderr.write(`  ${v}\n`);
+        }
+        process.exit(1);
+      }
+    }
 
     // 全チェック通過
     process.exit(0);
@@ -343,8 +547,10 @@ function main() {
 module.exports = {
   parseSimpleYaml,
   parseValue,
+  parseUnitsYaml,
   validateBranchName,
   validateFileOwnership,
+  validateDomainBoundary,
   isInternalFile,
 };
 

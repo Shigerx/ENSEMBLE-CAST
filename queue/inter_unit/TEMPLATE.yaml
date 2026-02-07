@@ -1,0 +1,13 @@
+# queue/inter_unit/TEMPLATE.yaml — ユニット間メッセージテンプレート
+# LP/Director がユニット間通信で使用
+
+messages: []
+# 各メッセージの形式:
+#   - id: IU-XXX
+#     from: { role: line_producer/director, slug: xxx }
+#     to: { role: director, slug: xxx, unit: xxx }
+#     type: contract_change / task_dependency / escalation / info
+#     payload:
+#       # type に応じた内容
+#     timestamp: ""
+#     status: unread  # unread → read → acknowledged → resolved

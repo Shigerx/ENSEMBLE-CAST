@@ -11,6 +11,7 @@ const {
   parseValue,
   validateBranchName,
   validateFileOwnership,
+  validateDomainBoundary,
   isInternalFile,
 } = require('./guard.js');
 
@@ -401,5 +402,174 @@ describe('validateFileOwnership', () => {
       registry
     );
     assert.equal(result.valid, true);
+  });
+});
+
+// =============================================================================
+// validateDomainBoundary - ドメイン境界チェック（v3）
+// =============================================================================
+describe('validateDomainBoundary', () => {
+  // テスト用ユニット定義
+  const units = [
+    {
+      name: 'frontend',
+      cast: ['nene', 'polka'],
+      domain: 'src/components/, src/pages/, src/hooks/',
+    },
+    {
+      name: 'backend',
+      cast: ['rusty', 'linus'],
+      domain: 'src/api/, src/services/, src/db/',
+    },
+    {
+      name: 'infra',
+      cast: ['trinity'],
+      domain: 'infra/, docker/, ci/',
+    },
+  ];
+
+  it('ドメイン内のファイル変更 → pass', () => {
+    const result = validateDomainBoundary(
+      ['src/components/Button.tsx', 'src/pages/Home.tsx'],
+      'nene',
+      units,
+      'large'
+    );
+    assert.equal(result.valid, true);
+    assert.equal(result.violations.length, 0);
+  });
+
+  it('ドメイン外のファイル変更 → reject', () => {
+    const result = validateDomainBoundary(
+      ['src/api/todos.ts'],
+      'nene',
+      units,
+      'large'
+    );
+    assert.equal(result.valid, false);
+    assert.ok(result.violations.length > 0);
+    assert.ok(result.violations[0].includes('src/api/todos.ts'));
+  });
+
+  it('scale: small の場合 → チェックスキップ', () => {
+    const result = validateDomainBoundary(
+      ['src/api/todos.ts'],
+      'nene',
+      units,
+      'small'
+    );
+    assert.equal(result.valid, true);
+    assert.equal(result.violations.length, 0);
+  });
+
+  it('contracts/types/ のファイル → 例外として pass', () => {
+    const result = validateDomainBoundary(
+      ['contracts/types/todo.ts'],
+      'nene',
+      units,
+      'large'
+    );
+    assert.equal(result.valid, true);
+    assert.equal(result.violations.length, 0);
+  });
+
+  it('units にユニット定義がない場合 → チェックスキップ', () => {
+    const result = validateDomainBoundary(
+      ['src/api/todos.ts'],
+      'nene',
+      [],
+      'large'
+    );
+    assert.equal(result.valid, true);
+    assert.equal(result.violations.length, 0);
+  });
+
+  it('units が null の場合 → チェックスキップ', () => {
+    const result = validateDomainBoundary(
+      ['src/api/todos.ts'],
+      'nene',
+      null,
+      'large'
+    );
+    assert.equal(result.valid, true);
+    assert.equal(result.violations.length, 0);
+  });
+
+  it('slug が null（main / director ブランチ）→ チェックスキップ', () => {
+    const result = validateDomainBoundary(
+      ['src/api/todos.ts', 'src/components/App.tsx'],
+      null,
+      units,
+      'large'
+    );
+    assert.equal(result.valid, true);
+    assert.equal(result.violations.length, 0);
+  });
+
+  it('slug がどのユニットにも属さない → チェックスキップ', () => {
+    const result = validateDomainBoundary(
+      ['src/api/todos.ts'],
+      'unknown-cast',
+      units,
+      'large'
+    );
+    assert.equal(result.valid, true);
+    assert.equal(result.violations.length, 0);
+  });
+
+  it('ENSEMBLE-CAST 内部ファイルはドメインチェック対象外', () => {
+    const result = validateDomainBoundary(
+      ['queue/tasks/nene.yaml', 'cast/members/nene/chronicle.yaml', 'logs/nene_status.txt'],
+      'nene',
+      units,
+      'large'
+    );
+    assert.equal(result.valid, true);
+    assert.equal(result.violations.length, 0);
+  });
+
+  it('ドメイン内とドメイン外の混在 → ドメイン外のみ reject', () => {
+    const result = validateDomainBoundary(
+      ['src/components/Button.tsx', 'src/api/todos.ts', 'src/pages/Home.tsx'],
+      'nene',
+      units,
+      'large'
+    );
+    assert.equal(result.valid, false);
+    assert.equal(result.violations.length, 1);
+    assert.ok(result.violations[0].includes('src/api/todos.ts'));
+  });
+
+  it('backendユニットのキャストがbackendドメイン内を変更 → pass', () => {
+    const result = validateDomainBoundary(
+      ['src/api/routes.ts', 'src/services/auth.ts', 'src/db/schema.ts'],
+      'rusty',
+      units,
+      'large'
+    );
+    assert.equal(result.valid, true);
+    assert.equal(result.violations.length, 0);
+  });
+
+  it('backendユニットのキャストがfrontendドメインを変更 → reject', () => {
+    const result = validateDomainBoundary(
+      ['src/components/Header.tsx'],
+      'rusty',
+      units,
+      'large'
+    );
+    assert.equal(result.valid, false);
+    assert.ok(result.violations.length > 0);
+  });
+
+  it('scale が未定義の場合 → チェックスキップ', () => {
+    const result = validateDomainBoundary(
+      ['src/api/todos.ts'],
+      'nene',
+      units,
+      undefined
+    );
+    assert.equal(result.valid, true);
+    assert.equal(result.violations.length, 0);
   });
 });
