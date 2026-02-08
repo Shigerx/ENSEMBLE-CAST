@@ -1,0 +1,23 @@
+ENSEMBLE CAST 起動コマンド
+==========================
+
+■ 起動（WSL ターミナルから）
+  ensemble          … ensemble セッション起動（Producer/Director/Cast ペイン作成）
+  ens-couch         … シアターモード（LIVE画面 + 観戦用Commentary）
+
+■ 再接続（ターミナルが落ちた場合）
+  ens               … ensemble セッションに attach
+  ens-couch         … theater セッションに attach
+
+■ シアター内の管理メニュー
+  Ctrl+b → Shift+M  … 管理メニュー表示（再起動/状態確認/チェックポイント）
+
+■ 手動コマンド
+  bash scripts/ensemble-ctl.sh restart        … 全体再起動
+  bash scripts/ensemble-ctl.sh restart-live   … LIVE画面のみ再起動
+  bash scripts/ensemble-ctl.sh status         … 状態確認
+  bash scripts/ensemble-ctl.sh checkpoint     … チェックポイント保存
+
+■ 起動順序（初回 or ターミナル完全再起動時）
+  1. ensemble       ← まずこれ
+  2. ens-couch      ← 次にこれ（別ターミナルタブ推奨）
