@@ -560,11 +560,31 @@ send_initial_instructions() {
   log_success "Producer に指示書送信完了"
 
   # Director はスタンバイ（Producerが起こす）
-  # 継続モードの場合、Director にも指示を送る
+  # 継続モードの場合、Director と Cast にも指示を送る
   if [ "$FRESH_START" = false ]; then
     sleep 2
-    safe_send_keys "$DIRECTOR_PANE" "CLAUDE.md と instructions/director.md を読んでください。あなたはDirectorです。前回セッションからの再開です。dashboard.md, cast/roster.yaml を確認して、Producerからの指示を待ってください。指示がなければここで停止してください。"
+    safe_send_keys "$DIRECTOR_PANE" "CLAUDE.md と instructions/director.md を読んでください。あなたはDirectorです。前回セッションからの再開です。dashboard.md, cast/roster.yaml, config/panes.yaml を確認して、Producerからの指示を待ってください。指示がなければここで停止してください。"
     log_success "Director に再開指示を送信"
+
+    # Cast にも再開指示を送信
+    if [ -f "$ROSTER_YAML" ]; then
+      local slugs
+      slugs=$(roster_get_slugs "$ROSTER_YAML")
+      if [ -n "$slugs" ]; then
+        sleep 2
+        while IFS= read -r slug; do
+          [ -z "$slug" ] && continue
+          # panes.yaml から Cast の pane ID を取得
+          local cast_pane_id
+          cast_pane_id=$(grep -E "^\s+${slug}:" "$PANES_YAML" 2>/dev/null | sed -E 's/.*"(%[0-9]+)".*/\1/' || true)
+          [ -z "$cast_pane_id" ] && continue
+
+          sleep 1
+          safe_send_keys "$cast_pane_id" "CLAUDE.md と instructions/cast_template.md を読んでください。あなたは ${slug} です。cast/members/${slug}/persona.yaml を読んでキャラクターを把握してください。前回セッションからの再開です。cast/members/${slug}/chronicle.yaml と queue/tasks/${slug}.yaml を確認して、Directorからの指示を待ってください。指示がなければここで停止してください。"
+          log_success "Cast ${slug} (${cast_pane_id}) に再開指示を送信"
+        done <<< "$slugs"
+      fi
+    fi
   fi
 }
 
