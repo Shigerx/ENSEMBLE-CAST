@@ -1,0 +1,19 @@
+# ENSEMBLE CAST — Framework Feedback
+# Cast/Director が ENSEMBLE-CAST フレームワーク自体の改善提案を記録するファイル
+# Owner が次回フレームワーク開発者（Claude Code）を起動した際に参照される
+#
+# 書き込み: Director（Cast のレポートから集約）
+# 読み: Owner + フレームワーク開発者
+#
+# status: open → acknowledged → resolved
+
+feedback: []
+# 例:
+# - id: FB-001
+#   reporter: giorno
+#   category: bug | friction | suggestion
+#   title: "git worktree がないと Cast 間でレース条件が発生する"
+#   detail: "共有ディレクトリで git checkout を競合させると他 Cast のファイルが混入"
+#   impact: high | medium | low
+#   status: open
+#   timestamp: "2026-02-08T12:00:00"

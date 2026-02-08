@@ -199,6 +199,26 @@ Claude Codeは「待機」できない。プロンプトが出た = スクリプ
 **たとえ他セクションに詳細を書いていても、要対応セクションにサマリーを必ず書くこと。**
 **忘れると Owner が気づかない。最優先で守ること。**
 
+### 🔧 フレームワークフィードバック
+
+**プロジェクト固有ではなく、ENSEMBLE-CAST フレームワーク自体の問題・改善提案**は
+`queue/framework_feedback.yaml` に記録する。
+
+**対象の例:**
+- フレームワークのバグ（レース条件、通信の不具合等）
+- ワークフローの摩擦ポイント（手順が煩雑、ルールが不明確等）
+- 新機能の提案（「こういう仕組みがあると助かる」）
+
+**フロー:**
+1. Cast がレポートの `framework_feedback` フィールドに記載
+2. Director がレポート確認時に `queue/framework_feedback.yaml` に集約
+3. Director が dashboard.md の「🔧 フレームワーク改善提案」セクションにサマリー記載
+4. Owner が次回フレームワーク開発者を起動した際にフィードバックを元に改善
+
+**判断基準: プロジェクト問題 vs フレームワーク問題**
+- 「この API の設計が…」→ プロジェクト問題 → 通常のエスカレーション
+- 「ブランチが競合する仕組みが…」→ フレームワーク問題 → framework_feedback
+
 ---
 
 ## 7. ファイル所有権マトリクス
@@ -220,6 +240,7 @@ Claude Codeは「待機」できない。プロンプトが出た = スクリプ
 | queue/reports/<reviewer-slug>_report.yaml | Director | Reviewer のみ |
 | queue/pending_tasks.yaml | Director | Director のみ |
 | queue/file_registry.yaml | Director | Director のみ |
+| queue/framework_feedback.yaml | 全員 | **Director のみ**（Cast レポートから集約） |
 | dashboard.md | 全員 | **Director のみ**（v3ではLPが更新） |
 | logs/activity.log | 全員 | **Director + Cast**（追記のみ。Cast は chat/progress イベントのみ） |
 | logs/<slug>_status.txt | 全員 | **対象Cast のみ**（上書き） |

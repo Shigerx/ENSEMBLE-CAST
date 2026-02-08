@@ -357,6 +357,19 @@ reports:
       name: null        # 例: "api-client-generator"
       description: null # 例: "OpenAPI仕様からクライアントコードを自動生成"
       reason: null      # 例: "同じパターンを3回実行した"
+
+    # ═══════════════════════════════════════════
+    # 【任意】フレームワーク改善提案
+    # ENSEMBLE-CAST 自体の問題・改善案があれば記入
+    # （プロジェクト固有の問題ではなく、仕組みの問題）
+    # ═══════════════════════════════════════════
+    framework_feedback: null  # なければ null
+    # 例:
+    # framework_feedback:
+    #   category: friction     # bug / friction / suggestion
+    #   title: "worktree なしだとブランチ競合する"
+    #   detail: "checkout 時に他 Cast のファイルが混入した"
+    #   impact: high           # high / medium / low
 ```
 
 ### スキル化候補の判定基準

@@ -379,6 +379,7 @@ ls queue/reports/
   - rejected → 修正タスク作成 → Cast起床
   - 🔄 進行中から該当タスクを削除
   - skill_candidate を確認 → found: true なら「🎯 スキル化候補」+ 「🚨 要対応」に記載
+  - framework_feedback を確認 → null でなければ `queue/framework_feedback.yaml` に追記（下記参照）
   - 次のタスクがあれば配布 → なければ停止
 
 **失敗報告（status: failed）を発見:**
@@ -391,10 +392,37 @@ ls queue/reports/
 - 「🚨 要対応」に記載
 - 他のタスクを先に進められるか判断
 
-### 3. dashboard.md を更新
+### 3. framework_feedback の集約
+
+Cast のレポートに `framework_feedback` が記載されていた場合:
+
+1. `queue/framework_feedback.yaml` の `feedback` リストに追記:
+   ```yaml
+   feedback:
+     - id: FB-001  # 連番
+       reporter: <slug>
+       category: <bug | friction | suggestion>
+       title: "<タイトル>"
+       detail: "<詳細>"
+       impact: <high | medium | low>
+       status: open
+       timestamp: <dateコマンドの結果>
+   ```
+
+2. dashboard.md の「🔧 フレームワーク改善提案」セクションにサマリーを追記:
+   ```markdown
+   ### 🔧 フレームワーク改善提案
+   | ID | 報告者 | カテゴリ | 概要 | 影響度 |
+   |----|--------|---------|------|--------|
+   | FB-001 | giorno | friction | worktree なしだとブランチ競合 | high |
+   ```
+
+**判断基準**: 「この問題は別プロジェクトでも起きるか？」→ Yes ならフレームワーク問題。
+
+### 4. dashboard.md を更新
 最終更新時刻を `date "+%Y-%m-%d %H:%M"` で更新。
 
-### 4. Producerに報告（全タスク完了時 or 🚨要対応がある場合）
+### 5. Producerに報告（全タスク完了時 or 🚨要対応がある場合）
 
 **以下のいずれかに該当する場合、Producerを起床させる:**
 - 全タスクが完了した（フェーズ完了）

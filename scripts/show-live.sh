@@ -364,6 +364,73 @@ show_worktree_status() {
 }
 
 # ========================================
+# フレームワークフィードバック
+# ========================================
+show_framework_feedback() {
+  local fb_file="$PROJECT_PATH/queue/framework_feedback.yaml"
+  [ -f "$fb_file" ] || return
+
+  # open ステータスのフィードバックを数える
+  local open_count
+  open_count=$(grep -c 'status: open' "$fb_file" 2>/dev/null || echo 0)
+  local total_count
+  total_count=$(grep -c '^\s*- id: FB-' "$fb_file" 2>/dev/null || echo 0)
+
+  # フィードバックがなければ非表示
+  [ "$total_count" -eq 0 ] && return
+
+  echo -e "  ${WHITE}${BOLD}🔧 FRAMEWORK FEEDBACK${NC}  ${DIM}(${open_count} open / ${total_count} total)${NC}"
+  echo ""
+
+  # open のフィードバックを最新5件表示
+  local in_entry=false current_id="" current_reporter="" current_title="" current_cat="" current_impact="" current_status=""
+
+  while IFS= read -r line; do
+    line=$(echo "$line" | tr -d '\r')
+
+    # id フィールド
+    local fid
+    fid=$(echo "$line" | sed -nE 's/^\s*-?\s*id:\s*(FB-[0-9]+).*/\1/p')
+    if [ -n "$fid" ]; then
+      # 前のエントリを出力
+      if [ -n "$current_id" ] && [ "$current_status" = "open" ]; then
+        local impact_color="${DIM}"
+        case "$current_impact" in
+          "high")   impact_color="${RED}" ;;
+          "medium") impact_color="${YELLOW}" ;;
+          "low")    impact_color="${DIM}" ;;
+        esac
+        printf "  ${DIM}%s${NC}  ${impact_color}%s${NC}  %s  ${DIM}by %s${NC}\n" \
+          "$current_id" "$current_impact" "$current_title" "$current_reporter"
+      fi
+      current_id="$fid"
+      current_reporter="" current_title="" current_cat="" current_impact="" current_status=""
+    fi
+
+    # 各フィールド
+    local val
+    val=$(echo "$line" | sed -nE 's/^\s*reporter:\s*(.+)/\1/p'); [ -n "$val" ] && current_reporter="$val"
+    val=$(echo "$line" | sed -nE 's/^\s*title:\s*"?([^"]*)"?/\1/p'); [ -n "$val" ] && current_title="$val"
+    val=$(echo "$line" | sed -nE 's/^\s*category:\s*(.+)/\1/p'); [ -n "$val" ] && current_cat="$val"
+    val=$(echo "$line" | sed -nE 's/^\s*impact:\s*(.+)/\1/p'); [ -n "$val" ] && current_impact="$val"
+    val=$(echo "$line" | sed -nE 's/^\s*status:\s*(.+)/\1/p'); [ -n "$val" ] && current_status="$val"
+  done < "$fb_file"
+
+  # 最後のエントリ
+  if [ -n "$current_id" ] && [ "$current_status" = "open" ]; then
+    local impact_color="${DIM}"
+    case "$current_impact" in
+      "high")   impact_color="${RED}" ;;
+      "medium") impact_color="${YELLOW}" ;;
+      "low")    impact_color="${DIM}" ;;
+    esac
+    printf "  ${DIM}%s${NC}  ${impact_color}%s${NC}  %s  ${DIM}by %s${NC}\n" \
+      "$current_id" "$current_impact" "$current_title" "$current_reporter"
+  fi
+  echo ""
+}
+
+# ========================================
 # 会話ストリーム（メイン）
 # ========================================
 show_conversation() {
@@ -505,10 +572,11 @@ show_theater() {
 
   echo -e "${DIM}$(hline)${NC}"
 
-  # 下段: キャスト状況 + タスク進捗 + Worktree
+  # 下段: キャスト状況 + タスク進捗 + Worktree + Feedback
   show_cast_status
   show_task_progress
   show_worktree_status
+  show_framework_feedback
 
   show_footer "$mode"
 }
