@@ -374,8 +374,18 @@ show_conversation() {
       *)              prefix="" ;;
     esac
 
-    printf "  ${DIM}%s${NC}  %s ${color}%s${NC} │ %s%s\n" \
-      "$time_only" "$emoji" "$display_name" "$prefix" "$message"
+    # chat/progress/ability はキャラのセリフとして目立たせる
+    case "$event" in
+      "chat"|"progress"|"ability")
+        printf "  ${DIM}%s${NC}  %s ${color}${BOLD}%s${NC}\n" \
+          "$time_only" "$emoji" "$display_name"
+        printf "       ${color}%s %s${NC}\n" "$prefix" "$message"
+        ;;
+      *)
+        printf "  ${DIM}%s  %s %-10s │ %s%s${NC}\n" \
+          "$time_only" "$emoji" "$display_name" "$prefix" "$message"
+        ;;
+    esac
   done
   echo ""
 }
