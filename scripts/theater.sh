@@ -72,28 +72,19 @@ tmux set-option -t "$SESSION" pane-border-style "fg=colour240"
 tmux set-option -t "$SESSION" pane-active-border-style "fg=colour214,bold"
 tmux set-option -t "$SESSION" mouse on
 
-# --- 管理メニュー: Ctrl+b → M ---
-CTL="${PROJECT_PATH}/scripts/ensemble-ctl.sh"
-tmux bind-key M display-menu -T "#[align=centre] ENSEMBLE Control " \
-  "Restart All   (全体再起動)" r "display-popup -E -h 80% -w 80% -d '${PROJECT_PATH}' 'bash ${CTL} restart --wait'" \
-  "Restart LIVE  (LIVE再起動)" l "run-shell -b 'bash ${CTL} restart-live'" \
-  "Restart WebUI (ブラウザ再起動)" w "run-shell -b 'kill $THEATER_PID 2>/dev/null; python3 ${PROJECT_PATH}/scripts/theater-server.py --port 3939 --base ${PROJECT_PATH} &'" \
-  "" "" "" \
-  "Status        (状態確認)"   s "display-popup -E -h 70% -w 80% 'bash ${CTL} status --wait'" \
-  "Checkpoint    (状態保存)"   c "display-popup -E -h 50% -w 70% 'bash ${CTL} checkpoint --wait'" \
-  "" "" "" \
-  "Cancel" q ""
-
 # 右ペイン背景色（ちょっと暗め）
 tmux select-pane -t "$RIGHT_PANE" -P 'bg=#1a1a2e'
 
 # --- Theater Web UI サーバー（バックグラウンド起動） ---
 THEATER_PORT=3939
+THEATER_PIDFILE="${PROJECT_PATH}/logs/.theater-server.pid"
 python3 "${PROJECT_PATH}/scripts/theater-server.py" \
   --port "$THEATER_PORT" --base "$PROJECT_PATH" &
 THEATER_PID=$!
+echo "$THEATER_PID" > "$THEATER_PIDFILE"
 # セッション終了時にサーバーも停止
-tmux set-hook -t "$SESSION" session-closed "run-shell 'kill $THEATER_PID 2>/dev/null || true'"
+tmux set-hook -t "$SESSION" session-closed \
+  "run-shell 'kill \$(cat ${THEATER_PIDFILE} 2>/dev/null) 2>/dev/null; rm -f ${THEATER_PIDFILE}'"
 
 # ブラウザを開く（少し待ってから）
 (
@@ -109,6 +100,18 @@ tmux set-hook -t "$SESSION" session-closed "run-shell 'kill $THEATER_PID 2>/dev/
     cmd.exe /c start "http://localhost:$THEATER_PORT" 2>/dev/null || true
   fi
 ) &
+
+# --- 管理メニュー: Ctrl+b → M ---
+CTL="${PROJECT_PATH}/scripts/ensemble-ctl.sh"
+tmux bind-key M display-menu -T "#[align=centre] ENSEMBLE Control " \
+  "Restart All   (全体再起動)" r "display-popup -E -h 80% -w 80% -d '${PROJECT_PATH}' 'bash ${CTL} restart --wait'" \
+  "Restart LIVE  (LIVE再起動)" l "run-shell -b 'bash ${CTL} restart-live'" \
+  "Restart WebUI (ブラウザ再起動)" w "run-shell -b 'kill \$(cat ${THEATER_PIDFILE} 2>/dev/null) 2>/dev/null; python3 ${PROJECT_PATH}/scripts/theater-server.py --port ${THEATER_PORT} --base ${PROJECT_PATH} & echo \$! > ${THEATER_PIDFILE}'" \
+  "" "" "" \
+  "Status        (状態確認)"   s "display-popup -E -h 70% -w 80% 'bash ${CTL} status --wait'" \
+  "Checkpoint    (状態保存)"   c "display-popup -E -h 50% -w 70% 'bash ${CTL} checkpoint --wait'" \
+  "" "" "" \
+  "Cancel" q ""
 
 # --- 左ペイン: シアターモード起動 ---
 tmux send-keys -t "$LEFT_PANE" "bash scripts/show-live.sh --interactive"
