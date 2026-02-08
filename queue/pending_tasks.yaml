@@ -1,4 +1,3 @@
 # Director が管理する依存待ちタスクのキュー
-# タスクの depends_on が全て approved になるまでここに保持
+# Phase 8: #31-#37 全 approved & merged. #38 配布済み（最終タスク）
 pending_tasks: []
-# #20 は依存解消済み（#16 approved, #19 approved）→ bucciarati に配布済み

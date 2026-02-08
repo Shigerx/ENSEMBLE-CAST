@@ -88,6 +88,10 @@ def parse_episode_yaml(text):
         scene['scene'] = int(sn) if sn and sn.isdigit() else 0
         scene['title'] = yaml_val(sb, 'title')
         scene['narration'] = yaml_val(sb, 'narration')
+        # Optional mood field (scene-level)
+        mood = yaml_val(sb, 'mood')
+        if mood:
+            scene['mood'] = mood
 
         # Parse beats within this scene (preserving order of appearance)
         beats = _parse_beats(sb)
@@ -190,6 +194,32 @@ def load_activity(limit=50):
     return entries[-limit:]
 
 
+def _get_latest_messages():
+    """Scan activity.log in reverse, return dict of slug -> latest chat/progress entry."""
+    path = BASE / 'logs' / 'activity.log'
+    if not path.exists():
+        return {}
+    try:
+        lines = path.read_text(encoding='utf-8').strip().split('\n')
+    except (OSError, UnicodeDecodeError):
+        return {}
+    result = {}
+    for line in reversed(lines):
+        entry = parse_activity_line(line)
+        if not entry:
+            continue
+        actor = entry['actor']
+        if actor in result:
+            continue
+        if entry['event'] in ('chat', 'progress'):
+            result[actor] = dict(
+                event=entry['event'],
+                message=entry['message'],
+                timestamp=entry['timestamp'],
+            )
+    return result
+
+
 CAST_COLORS = {
     'giorno': '#f0c040', 'bucciarati': '#4a9eff', 'narancia': '#ff6b35',
     'mista': '#8b5cf6', 'abbacchio': '#6b7280',
@@ -200,6 +230,7 @@ def load_cast():
     if not roster.exists():
         return []
     content = roster.read_text(encoding='utf-8')
+    latest_msgs = _get_latest_messages()
     cast = []
     for block in yaml_blocks(content, '- slug:'):
         slug = yaml_val(block, 'slug')
@@ -238,6 +269,8 @@ def load_cast():
                     member['task_title'] = yaml_val(tb, 'title') or ''
                     member['task_status'] = yaml_val(tb, 'status') or ''
                     break
+        # Latest chat/progress message from activity.log
+        member['latest_message'] = latest_msgs.get(slug)
         cast.append(member)
     return cast
 
@@ -456,7 +489,50 @@ def load_episode(n):
         return None
     if not content:
         return None
-    return parse_episode_yaml(content)
+    result = parse_episode_yaml(content)
+    # Collect unique characters appearing across all beats
+    seen = set()
+    cast_appearing = []
+    for scene in result.get('scenes', []):
+        for beat in scene.get('beats', []):
+            ch = beat.get('character')
+            if ch and ch not in seen:
+                seen.add(ch)
+                cast_appearing.append(ch)
+    result['cast_appearing'] = cast_appearing
+    return result
+
+
+def load_stats():
+    """Return git statistics: commits today, active branches, last merge."""
+    stats = dict(commits_today=0, active_branches=0, last_merge=None)
+    try:
+        r = subprocess.run(
+            ['git', 'log', '--oneline', '--since=00:00'],
+            capture_output=True, text=True, timeout=10, cwd=str(BASE))
+        if r.returncode == 0:
+            lines = [l for l in r.stdout.strip().split('\n') if l.strip()]
+            stats['commits_today'] = len(lines)
+    except (FileNotFoundError, subprocess.TimeoutExpired, OSError):
+        pass
+    try:
+        r = subprocess.run(
+            ['git', 'branch'],
+            capture_output=True, text=True, timeout=10, cwd=str(BASE))
+        if r.returncode == 0:
+            lines = [l for l in r.stdout.strip().split('\n') if l.strip()]
+            stats['active_branches'] = len(lines)
+    except (FileNotFoundError, subprocess.TimeoutExpired, OSError):
+        pass
+    try:
+        r = subprocess.run(
+            ['git', 'log', '--merges', '-1', '--format=%aI'],
+            capture_output=True, text=True, timeout=10, cwd=str(BASE))
+        if r.returncode == 0 and r.stdout.strip():
+            stats['last_merge'] = r.stdout.strip()
+    except (FileNotFoundError, subprocess.TimeoutExpired, OSError):
+        pass
+    return stats
 
 
 def send_to_producer(msg):
@@ -560,6 +636,16 @@ class Handler(http.server.BaseHTTPRequestHandler):
                 self._json(dict(error=f'Episode {ep_num} not found'), 404)
             else:
                 self._json(result)
+        elif path == '/api/stats':
+            try:
+                result = load_stats()
+            except Exception as ex:
+                print(f'[ERROR] load_stats: {ex}', file=sys.stderr)
+                self._json(dict(error='internal error',
+                                commits_today=0, active_branches=0,
+                                last_merge=None), 500)
+                return
+            self._json(result)
         elif path == '/api/events':
             self._sse()
         elif path == '/api/health':
@@ -629,6 +715,22 @@ class Handler(http.server.BaseHTTPRequestHandler):
         last_size = log_path.stat().st_size if log_path.exists() else 0
         dashboard_mtime = dashboard_path.stat().st_mtime if dashboard_path.exists() else 0
         roster_mtime = roster_path.stat().st_mtime if roster_path.exists() else 0
+
+        # Status file monitoring: build slug list from roster
+        status_mtimes = {}
+        try:
+            rc = roster_path.read_text(encoding='utf-8')
+            for block in yaml_blocks(rc, '- slug:'):
+                slug = yaml_val(block, 'slug')
+                if slug:
+                    sp = BASE / 'logs' / f'{slug}_status.txt'
+                    status_mtimes[slug] = sp.stat().st_mtime if sp.exists() else 0
+        except (OSError, UnicodeDecodeError):
+            pass
+
+        # Branch monitoring via dashboard mtime (branches are derived from dashboard)
+        branch_mtime = dashboard_mtime
+
         tick = 0
         try:
             while True:
@@ -650,7 +752,7 @@ class Handler(http.server.BaseHTTPRequestHandler):
                     elif sz < last_size:
                         last_size = sz  # file truncated
 
-                # Dashboard changes (new)
+                # Dashboard changes (existing)
                 if dashboard_path.exists():
                     mt = dashboard_path.stat().st_mtime
                     if mt > dashboard_mtime:
@@ -666,7 +768,21 @@ class Handler(http.server.BaseHTTPRequestHandler):
                             print(f'[WARN] SSE dashboard: {ex}',
                                   file=sys.stderr)
 
-                # Roster changes (new)
+                    # Branch changes (derived from dashboard)
+                    if mt > branch_mtime:
+                        branch_mtime = mt
+                        try:
+                            branches = load_branches()
+                            d = json.dumps(branches, ensure_ascii=False)
+                            self.wfile.write(
+                                f'event: branch\ndata: {d}\n\n'
+                                .encode('utf-8'))
+                            self.wfile.flush()
+                        except Exception as ex:
+                            print(f'[WARN] SSE branch: {ex}',
+                                  file=sys.stderr)
+
+                # Roster changes (existing)
                 if roster_path.exists():
                     mt = roster_path.stat().st_mtime
                     if mt > roster_mtime:
@@ -681,6 +797,38 @@ class Handler(http.server.BaseHTTPRequestHandler):
                             self.wfile.flush()
                         except Exception as ex:
                             print(f'[WARN] SSE roster: {ex}',
+                                  file=sys.stderr)
+
+                # Status file changes (new: status_change event)
+                for slug, prev_mt in list(status_mtimes.items()):
+                    sp = BASE / 'logs' / f'{slug}_status.txt'
+                    if not sp.exists():
+                        continue
+                    try:
+                        mt = sp.stat().st_mtime
+                    except OSError:
+                        continue
+                    if mt > prev_mt:
+                        status_mtimes[slug] = mt
+                        try:
+                            parts = sp.read_text(encoding='utf-8').strip().split('|')
+                            state = parts[0] if len(parts) > 0 else ''
+                            task_title = parts[1] if len(parts) > 1 else ''
+                            raw_tid = parts[2] if len(parts) > 2 else ''
+                            try:
+                                task_id = int(raw_tid)
+                            except (ValueError, TypeError):
+                                task_id = None
+                            payload = dict(slug=slug, state=state,
+                                           task_title=task_title,
+                                           task_id=task_id)
+                            d = json.dumps(payload, ensure_ascii=False)
+                            self.wfile.write(
+                                f'event: status_change\ndata: {d}\n\n'
+                                .encode('utf-8'))
+                            self.wfile.flush()
+                        except Exception as ex:
+                            print(f'[WARN] SSE status_change ({slug}): {ex}',
                                   file=sys.stderr)
 
                 tick += 1

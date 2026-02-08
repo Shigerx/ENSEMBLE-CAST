@@ -100,7 +100,7 @@ body {
   border-radius: 2px;
 }
 
-/* Live feed entry animation */
+/* Live feed / timeline entry animation */
 @keyframes feed-enter {
   from { opacity: 0; transform: translateX(-8px); }
   to { opacity: 1; transform: translateX(0); }
@@ -161,6 +161,259 @@ body {
 /* Branch folder toggle */
 .branch-folder { cursor: pointer; user-select: none; }
 .branch-folder:hover { background: rgba(0,212,255,.05); }
+
+/* ─── STAGE: Card animations (v3) ─── */
+
+/* Active card pulse (green glow) */
+@keyframes card-active-pulse {
+  0%, 100% { box-shadow: 0 0 8px rgba(34,197,94,.2); }
+  50% { box-shadow: 0 0 16px rgba(34,197,94,.4); }
+}
+.stage-card-active {
+  border-color: #22c55e;
+  box-shadow: 0 0 12px rgba(34,197,94,.3);
+  animation: card-active-pulse 2s ease-in-out infinite;
+}
+
+/* Thinking card (blue glow) */
+@keyframes card-thinking-pulse {
+  0%, 100% { box-shadow: 0 0 6px rgba(96,165,250,.2); }
+  50% { box-shadow: 0 0 14px rgba(96,165,250,.35); }
+}
+.stage-card-thinking {
+  border-color: #60a5fa;
+  animation: card-thinking-pulse 2s ease-in-out infinite;
+}
+
+/* Typing dots for thinking state */
+@keyframes typing-dot-1 {
+  0%, 20% { opacity: 0.2; }
+  40% { opacity: 1; }
+  60%, 100% { opacity: 0.2; }
+}
+@keyframes typing-dot-2 {
+  0%, 33% { opacity: 0.2; }
+  53% { opacity: 1; }
+  73%, 100% { opacity: 0.2; }
+}
+@keyframes typing-dot-3 {
+  0%, 46% { opacity: 0.2; }
+  66% { opacity: 1; }
+  86%, 100% { opacity: 0.2; }
+}
+.typing-dots span:nth-child(1) { animation: typing-dot-1 1.4s ease-in-out infinite; }
+.typing-dots span:nth-child(2) { animation: typing-dot-2 1.4s ease-in-out infinite; }
+.typing-dots span:nth-child(3) { animation: typing-dot-3 1.4s ease-in-out infinite; }
+
+/* Flash gold on completion */
+@keyframes flash-gold {
+  0% { border-color: #f0c040; box-shadow: 0 0 20px rgba(240,192,64,.5); }
+  100% { border-color: #1e3a5f; box-shadow: none; }
+}
+.stage-card-done {
+  animation: flash-gold 1.5s ease-out forwards;
+}
+
+/* Blocked card pulse (red glow) */
+@keyframes card-blocked-pulse {
+  0%, 100% { box-shadow: 0 0 8px rgba(239,68,68,.2); }
+  50% { box-shadow: 0 0 18px rgba(239,68,68,.45); }
+}
+.stage-card-blocked {
+  border-color: #ef4444;
+  animation: card-blocked-pulse 1.5s ease-in-out infinite;
+}
+
+/* Idle card */
+.stage-card-idle {
+  opacity: 0.4;
+  transform: scale(0.95);
+}
+
+/* Speech bubble */
+@keyframes bubble-enter {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.speech-bubble {
+  animation: bubble-enter 0.3s ease-out both;
+}
+
+/* ─── TIMELINE: Dividers & banners (v3) ─── */
+
+.timeline-divider {
+  height: 1px;
+  margin: 8px 0;
+  pointer-events: none;
+}
+.divider-gold {
+  background: linear-gradient(90deg, transparent, rgba(240,192,64,.4), transparent);
+}
+.divider-green {
+  background: linear-gradient(90deg, transparent, rgba(34,197,94,.3), transparent);
+}
+.divider-red {
+  background: linear-gradient(90deg, transparent, rgba(239,68,68,.3), transparent);
+}
+
+/* Timeline banner (task_done, review, phase_complete) */
+@keyframes banner-slide-in {
+  from { opacity: 0; transform: translateX(-12px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+.timeline-banner {
+  animation: banner-slide-in 0.4s ease-out both;
+  border-radius: 4px;
+  padding: 6px 10px;
+  margin: 4px 0;
+}
+
+/* Ability flash */
+@keyframes ability-flash {
+  0% { box-shadow: 0 0 0 rgba(250,204,21,0); }
+  30% { box-shadow: 0 0 12px rgba(250,204,21,.3); }
+  100% { box-shadow: 0 0 0 rgba(250,204,21,0); }
+}
+.timeline-ability {
+  animation: ability-flash 0.8s ease-out both;
+}
+
+/* ─── Alert Bar (v3) ─── */
+
+@keyframes alert-slide-in {
+  from { transform: translateY(-100%); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+@keyframes alert-fade-out {
+  from { opacity: 1; }
+  to { opacity: 0; transform: translateY(-50%); }
+}
+.alert-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  animation: alert-slide-in 0.3s ease-out;
+  font-family: 'JetBrains Mono', monospace;
+}
+.alert-bar-resolved {
+  animation: alert-fade-out 0.5s ease-out forwards;
+}
+
+/* ─── Phase Complete Ceremony (v3 Phase 3) ─── */
+
+@keyframes phase-flash {
+  0% { background: rgba(255,255,255,.3); }
+  100% { background: transparent; }
+}
+.phase-complete-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+.phase-complete-overlay canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+@keyframes phase-title-enter {
+  0% { opacity: 0; transform: scale(0.7); letter-spacing: .6em; }
+  40% { opacity: 1; transform: scale(1.05); }
+  100% { opacity: 1; transform: scale(1); letter-spacing: .3em; }
+}
+@keyframes phase-title-exit {
+  0% { opacity: 1; }
+  100% { opacity: 0; transform: translateY(-20px); }
+}
+.phase-complete-title {
+  font-size: 2.5rem;
+  color: #f0c040;
+  letter-spacing: .3em;
+  text-shadow: 0 0 40px rgba(240,192,64,.5), 0 0 80px rgba(240,192,64,.2);
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 700;
+  text-transform: uppercase;
+  z-index: 201;
+  animation: phase-title-enter 0.8s ease-out both;
+}
+.phase-complete-title.exiting,
+.phase-complete-subtitle.exiting {
+  animation: phase-title-exit 0.5s ease-in forwards;
+}
+.phase-complete-subtitle {
+  font-size: 1rem;
+  color: rgba(240,192,64,.6);
+  letter-spacing: .2em;
+  font-family: 'JetBrains Mono', monospace;
+  margin-top: 8px;
+  z-index: 201;
+  animation: phase-title-enter 0.8s ease-out 0.2s both;
+}
+
+/* ─── Micro progress bar for tasks (v3 Phase 3) ─── */
+
+.micro-progress-bar {
+  height: 6px;
+  border-radius: 3px;
+  background: rgba(255,255,255,.05);
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.micro-progress-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.5s ease-out;
+}
+.micro-progress-fill.status-done {
+  background: #22c55e;
+}
+.micro-progress-fill.status-in-progress {
+  background: linear-gradient(90deg, #00d4ff, #22c55e);
+}
+.micro-progress-fill.status-assigned {
+  background: #00d4ff;
+}
+.micro-progress-fill.status-in-review {
+  background: linear-gradient(90deg, #22c55e, #f0c040);
+}
+.micro-progress-fill.status-pending {
+  background: rgba(255,255,255,.1);
+}
+
+/* ─── Git stats footer (v3 Phase 3) ─── */
+
+.git-stats-footer {
+  border-top: 1px solid rgba(30,58,95,.5);
+  padding: 8px 16px;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* ─── Unit group (v3 Phase 4 skeleton) ─── */
+
+.unit-group {
+  border: 1px solid rgba(30,58,95,.3);
+  border-radius: 6px;
+  padding: 8px;
+}
+.unit-group-header {
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(0,212,255,.5);
+  font-family: 'JetBrains Mono', monospace;
+  padding-bottom: 6px;
+  border-bottom: 1px solid rgba(30,58,95,.2);
+  margin-bottom: 8px;
+}
 </style>
 </head>
 
@@ -179,6 +432,16 @@ const FEED_EVENTS = new Set([
   'arrival','task_blocked','task_assign','review',
 ]);
 
+// v3: Extended state map for STAGE card animations
+const STAGE_STATE_MAP = {
+  '\u51e6\u7406\u4e2d':   { label:'\u7a3c\u50cd\u4e2d',  cardCls:'stage-card-active',   dotIcon:'\u25cf', dotColor:'#22c55e' },
+  '\u8d77\u52d5\u4e2d':   { label:'\u8003\u3048\u4e2d',  cardCls:'stage-card-thinking', dotIcon:'\u25cf', dotColor:'#60a5fa' },
+  '\u5b8c\u4e86\u5f85\u6a5f': { label:'\u5b8c\u4e86\uff01',  cardCls:'stage-card-done',    dotIcon:'\u2728', dotColor:'#f0c040' },
+  'blocked':  { label:'blocked', cardCls:'stage-card-blocked',  dotIcon:'\u26a0\ufe0f', dotColor:'#ef4444' },
+};
+const DEF_STAGE_STATE = { label:'\u5f85\u6a5f\u4e2d', cardCls:'stage-card-idle', dotIcon:'\u25cb', dotColor:'#6b7280' };
+
+// v2 compat state map (for MissionPanel dot display)
 const STATE_MAP = {
   '\u51e6\u7406\u4e2d':  { label:'\u7a3c\u50cd', cls:'bg-cr-active dot-active', icon:'\u25cf' },
   '\u8d77\u52d5\u4e2d':  { label:'\u8d77\u52d5', cls:'bg-blue-400 dot-active', icon:'\u25cf' },
@@ -187,22 +450,37 @@ const STATE_MAP = {
 };
 const DEF_STATE = { label:'\u505c\u6b62', cls:'bg-gray-600', icon:'\u25cb' };
 
+// v3: Event priority & styling for timeline
+const EVENT_STYLE = {
+  phase_complete: { priority: 4, icon: '\ud83c\udf89', bg: 'rgba(240,192,64,.08)', border: 'rgba(240,192,64,.3)', divider: 'divider-gold', label: 'Phase Complete' },
+  ability:        { priority: 3, icon: '\u26a1',       bg: 'rgba(250,204,21,.06)', border: 'rgba(250,204,21,.25)', divider: null, label: null },
+  task_done:      { priority: 3, icon: '\u2705',       bg: 'rgba(34,197,94,.06)',  border: 'rgba(34,197,94,.25)',  divider: 'divider-green', label: null },
+  task_blocked:   { priority: 3, icon: '\u26a0\ufe0f', bg: 'rgba(239,68,68,.08)', border: 'rgba(239,68,68,.3)',  divider: 'divider-red', label: null },
+  review:         { priority: 3, icon: '\u26a0\ufe0f', bg: 'rgba(239,68,68,.06)', border: 'rgba(239,68,68,.25)', divider: 'divider-red', label: null },
+  task_assign:    { priority: 2, icon: '\ud83d\udccb',  bg: 'rgba(0,212,255,.04)', border: 'rgba(0,212,255,.15)', divider: null, label: null },
+  arrival:        { priority: 2, icon: '\ud83c\udfac',  bg: 'rgba(0,212,255,.04)', border: 'rgba(0,212,255,.15)', divider: null, label: null },
+  progress:       { priority: 1, icon: '\ud83d\udd27',  bg: null, border: null, divider: null, label: null },
+  chat:           { priority: 0, icon: null,            bg: null, border: null, divider: null, label: null },
+};
+
 const api = (u) => fetch(u).then(r => {
   if(!r.ok) { console.warn(`[ControlRoom] ${u} returned ${r.status}`); return null; }
   return r.json();
 }).catch(ex => { console.warn(`[ControlRoom] ${u} failed:`, ex.message); return null; });
 
-// ─── SSE with exponential backoff ───
-function useSSE(onEvent, onDashboard, onRoster) {
+// ─── SSE with exponential backoff (v3: status_change added) ───
+function useSSE(onEvent, onDashboard, onRoster, onStatusChange) {
   const [connected, setConnected] = useState(false);
   const retryRef = useRef(1000);
   const esRef = useRef(null);
   const onEventRef = useRef(onEvent);
   const onDashboardRef = useRef(onDashboard);
   const onRosterRef = useRef(onRoster);
+  const onStatusChangeRef = useRef(onStatusChange);
   onEventRef.current = onEvent;
   onDashboardRef.current = onDashboard;
   onRosterRef.current = onRoster;
+  onStatusChangeRef.current = onStatusChange;
 
   useEffect(() => {
     let destroyed = false;
@@ -236,6 +514,14 @@ function useSSE(onEvent, onDashboard, onRoster) {
         } catch(ex) { console.warn('[ControlRoom] roster parse error:', ex.message); }
       });
 
+      // v3: status_change event
+      es.addEventListener('status_change', e => {
+        try {
+          const data = JSON.parse(e.data);
+          if(onStatusChangeRef.current) onStatusChangeRef.current(data);
+        } catch(ex) { console.warn('[ControlRoom] status_change parse error:', ex.message); }
+      });
+
       es.onopen = () => {
         retryRef.current = 1000;
         setConnected(true);
@@ -263,28 +549,40 @@ function useSSE(onEvent, onDashboard, onRoster) {
   return connected;
 }
 
-// ─── App ───
+// ─── App (v3: alert bar + StagePanel + TimelinePanel) ───
 function App() {
   const [cast, setCast] = useState([]);
   const [phases, setPhases] = useState({ current_phase: 0, phases: [] });
   const [tasks, setTasks] = useState([]);
   const [production, setProd] = useState({});
   const [feed, setFeed] = useState([]);
-  const [branches, setBranches] = useState([]);
   const [loading, setLoading] = useState(true);
+  // v3: alert bar state
+  const [alerts, setAlerts] = useState([]);
+  // v3 Phase 3: git stats
+  const [gitStats, setGitStats] = useState(null);
+  // v3 Phase 3: phase complete ceremony
+  const [phaseCompleteVisible, setPhaseCompleteVisible] = useState(false);
+  const [phaseCompleteNum, setPhaseCompleteNum] = useState(0);
+  // v3 Phase 4: scale mode (small/large)
+  const [scaleMode, setScaleMode] = useState('small');
 
   // Initial fetch
   useEffect(() => {
     Promise.all([
       api('/api/cast'), api('/api/phases'), api('/api/tasks'),
-      api('/api/production'), api('/api/activity?limit=50'), api('/api/branches'),
-    ]).then(([c, ph, tk, pr, act, br]) => {
+      api('/api/production'), api('/api/activity?limit=50'),
+      api('/api/stats'),
+    ]).then(([c, ph, tk, pr, act, st]) => {
       if(c) setCast(c.cast || []);
       if(ph) setPhases(ph);
       if(tk) setTasks(tk.tasks || []);
-      if(pr) setProd(pr);
+      if(pr) {
+        setProd(pr);
+        if(pr.scale) setScaleMode(pr.scale);
+      }
       if(act) setFeed((act.entries || []).filter(e => FEED_EVENTS.has(e.event)).slice(-50));
-      if(br) setBranches(br.branches || []);
+      if(st) setGitStats(st);
       setLoading(false);
     });
   }, []);
@@ -294,7 +592,27 @@ function App() {
     if(FEED_EVENTS.has(entry.event)) {
       setFeed(prev => [...prev, entry].slice(-100));
     }
-  }, []);
+    // v3: detect blocked/resolved for alert bar via activity events
+    if(entry.event === 'task_blocked') {
+      setAlerts(prev => {
+        const existing = prev.find(a => a.slug === entry.actor);
+        if(existing) return prev;
+        return [...prev, {
+          slug: entry.actor,
+          message: entry.message || 'blocked',
+          type: 'blocked',
+          time: Date.now()
+        }];
+      });
+    }
+    // v3 Phase 3: phase_complete ceremony
+    if(entry.event === 'phase_complete') {
+      const phaseNum = entry.phase || phases.current_phase || 0;
+      setPhaseCompleteNum(phaseNum);
+      setPhaseCompleteVisible(true);
+      setTimeout(() => setPhaseCompleteVisible(false), 5000);
+    }
+  }, [phases.current_phase]);
 
   const handleDashboard = useCallback((data) => {
     if(data) setPhases(data);
@@ -304,18 +622,68 @@ function App() {
     if(data && data.cast) setCast(data.cast);
   }, []);
 
-  const sseConnected = useSSE(handleSSE, handleDashboard, handleRoster);
+  // v3: status_change handler
+  const handleStatusChange = useCallback((data) => {
+    if(!data || !data.slug) return;
+    setCast(prev => prev.map(c => {
+      if(c.slug !== data.slug) return c;
+      return {
+        ...c,
+        state: data.state || c.state,
+        task_title: data.task_title || c.task_title,
+        task_id: data.task_id || c.task_id,
+      };
+    }));
+  }, []);
 
-  // Periodic refresh (every 5s)
+  const sseConnected = useSSE(handleSSE, handleDashboard, handleRoster, handleStatusChange);
+
+  // v3: sync alerts with cast blocked state
+  useEffect(() => {
+    const blockedSlugs = new Set(cast.filter(c => c.state === 'blocked').map(c => c.slug));
+    // Add alerts for newly blocked cast
+    blockedSlugs.forEach(slug => {
+      setAlerts(prev => {
+        if(prev.find(a => a.slug === slug && a.type === 'blocked')) return prev;
+        const c = cast.find(cc => cc.slug === slug);
+        return [...prev, {
+          slug,
+          message: (c && c.task_title) ? `${c.character_name || slug}: ${c.task_title}` : slug,
+          type: 'blocked',
+          time: Date.now()
+        }];
+      });
+    });
+    // Mark resolved alerts
+    setAlerts(prev => prev.map(a => {
+      if(a.type === 'blocked' && !blockedSlugs.has(a.slug) && !a.resolved) {
+        return { ...a, resolved: true, resolvedTime: Date.now() };
+      }
+      return a;
+    }));
+  }, [cast]);
+
+  // Remove resolved alerts after fade-out
+  useEffect(() => {
+    const resolved = alerts.filter(a => a.resolved);
+    if(resolved.length === 0) return;
+    const timer = setTimeout(() => {
+      setAlerts(prev => prev.filter(a => !a.resolved));
+    }, 600);
+    return () => clearTimeout(timer);
+  }, [alerts]);
+
+  // Periodic refresh (every 5s) — v3 Phase 3: added /api/stats
   useEffect(() => {
     const iv = setInterval(() => {
       Promise.all([
-        api('/api/cast'), api('/api/phases'), api('/api/tasks'), api('/api/branches'),
-      ]).then(([c, ph, tk, br]) => {
+        api('/api/cast'), api('/api/phases'), api('/api/tasks'),
+        api('/api/stats'),
+      ]).then(([c, ph, tk, st]) => {
         if(c) setCast(c.cast || []);
         if(ph) setPhases(ph);
         if(tk) setTasks(tk.tasks || []);
-        if(br) setBranches(br.branches || []);
+        if(st) setGitStats(st);
       });
     }, 5000);
     return () => clearInterval(iv);
@@ -333,36 +701,77 @@ function App() {
   const totalAll = phases.phases.reduce((s, p) => s + p.tasks_total, 0);
 
   return html`
+    <!-- v3: Alert Bar -->
+    <${AlertBar} alerts=${alerts} cast=${cast} />
+
+    <!-- v3 Phase 3: Phase Complete Ceremony -->
+    ${phaseCompleteVisible ? html`
+      <${PhaseCompleteCeremony} phaseNum=${phaseCompleteNum}
+        onDone=${() => setPhaseCompleteVisible(false)} />
+    ` : null}
+
     <div class="max-w-7xl mx-auto px-4 py-4 relative z-10">
       <!-- Top bar -->
       <${TopBar} production=${production} phase=${phases.current_phase}
                  sseConnected=${sseConnected} />
 
-      <!-- Main grid: Left sidebar + Right content -->
+      <!-- v3 Phase 3 layout: Left sidebar (STAGE + MISSION + COMMAND) / Right (TIMELINE) -->
       <div class="grid grid-cols-1 lg:grid-cols-[340px_1fr] gap-4 mt-4">
 
         <!-- Left column -->
         <div class="flex flex-col gap-4">
+          <${StagePanel} cast=${cast} scaleMode=${scaleMode} />
           <${MissionPanel} phases=${phases} tasks=${tasks} cast=${cast}
-                           curPhase=${curPhase} totalDone=${totalDone} totalAll=${totalAll} />
-          <${CastStatusPanel} cast=${cast} />
-          <${BranchesPanel} branches=${branches} currentPhase=${phases.current_phase} />
+                           curPhase=${curPhase} totalDone=${totalDone} totalAll=${totalAll}
+                           gitStats=${gitStats} scaleMode=${scaleMode} />
+          <${CommandConsole} />
         </div>
 
         <!-- Right column -->
         <div class="flex flex-col gap-4">
-          <${LiveFeedPanel} feed=${feed} cast=${cast} />
-          <${CommandConsole} />
+          <${TimelinePanel} feed=${feed} cast=${cast} />
         </div>
       </div>
 
       <div class="text-center text-cr-idle/40 text-xs mt-6 pb-6 font-mono">
-        ENSEMBLE CAST Control Room v2.0
+        ENSEMBLE CAST Control Room v3.1
         <span class="mx-1">\u00b7</span>
         <a href="/theater"
            class="text-cr-idle/40 hover:text-cr-accent transition-colors no-underline"
            style="text-decoration:none"
            >\ud83c\udfac Theater \u2192</a>
+      </div>
+    </div>`;
+}
+
+// ─── Alert Bar (v3) ───
+function AlertBar({ alerts, cast }) {
+  const activeAlerts = alerts.filter(a => a.type === 'blocked');
+  if(activeAlerts.length === 0) return null;
+
+  const castMap = useMemo(() => {
+    const m = {};
+    (cast || []).forEach(c => { m[c.slug] = c; });
+    return m;
+  }, [cast]);
+
+  return html`
+    <div class="alert-bar ${activeAlerts.every(a => a.resolved) ? 'alert-bar-resolved' : ''}"
+         style="background: ${activeAlerts.some(a => !a.resolved)
+           ? 'linear-gradient(90deg, rgba(239,68,68,.9), rgba(185,28,28,.9))'
+           : 'linear-gradient(90deg, rgba(34,197,94,.9), rgba(22,101,52,.9))'}">
+      <div class="max-w-7xl mx-auto px-4 py-2 flex items-center gap-3">
+        <span class="text-white text-sm">${activeAlerts.some(a => !a.resolved) ? '\u26a0\ufe0f' : '\u2705'}</span>
+        <div class="flex-1 flex flex-wrap gap-x-4 gap-y-1">
+          ${activeAlerts.map(a => {
+            const c = castMap[a.slug];
+            const name = c ? (c.character_name || a.slug) : a.slug;
+            return html`
+              <span class="text-white/90 text-xs font-mono ${a.resolved ? 'line-through opacity-60' : ''}">
+                ${a.resolved ? '\u2705' : '\u26a0\ufe0f'} ${name} ${a.resolved ? 'resolved' : 'blocked'}${a.message && !a.resolved ? `: ${a.message}` : ''}
+              </span>`;
+          })}
+        </div>
       </div>
     </div>`;
 }
@@ -391,8 +800,19 @@ function TopBar({ production, phase, sseConnected }) {
     </div>`;
 }
 
-// ─── MISSION Panel ───
-function MissionPanel({ phases, tasks, cast, curPhase, totalDone, totalAll }) {
+// ─── MISSION Panel (v3 Phase 3: micro progress + git stats + Phase 4: unit grouping skeleton) ───
+
+// Status to progress percentage mapping
+const STATUS_PROGRESS = {
+  pending: 0,
+  assigned: 25,
+  in_progress: 50,
+  in_review: 80,
+  approved: 100,
+  done: 100,
+};
+
+function MissionPanel({ phases, tasks, cast, curPhase, totalDone, totalAll, gitStats, scaleMode }) {
   const phasePct = curPhase
     ? (curPhase.tasks_total > 0 ? Math.round(curPhase.tasks_done / curPhase.tasks_total * 100) : 0)
     : 0;
@@ -414,6 +834,21 @@ function MissionPanel({ phases, tasks, cast, curPhase, totalDone, totalAll }) {
 
   // If no phase filter works, show all tasks
   const displayTasks = phaseTasks.length > 0 ? phaseTasks : (tasks || []);
+
+  // v3 Phase 4: group tasks by unit (skeleton — uses cast.unit if available)
+  const unitGroupedTasks = useMemo(() => {
+    if(scaleMode !== 'large') return null;
+    const groups = {};
+    displayTasks.forEach(t => {
+      const c = castMap[t.assignee];
+      const unit = (c && c.unit) || 'default';
+      if(!groups[unit]) groups[unit] = { tasks: [], done: 0, total: 0 };
+      groups[unit].tasks.push(t);
+      groups[unit].total++;
+      if(t.status === 'done' || t.status === 'approved') groups[unit].done++;
+    });
+    return Object.keys(groups).length > 1 ? groups : null;
+  }, [displayTasks, castMap, scaleMode]);
 
   return html`
     <div class="cr-panel">
@@ -447,194 +882,302 @@ function MissionPanel({ phases, tasks, cast, curPhase, totalDone, totalAll }) {
           <div class="text-xs text-cr-text/30 mb-4 italic">No active phase</div>
         `}
 
-        <!-- Task list -->
-        <div class="space-y-1.5 max-h-[200px] overflow-y-auto pr-1">
-          ${displayTasks.map(t => {
-            const assignee = castMap[t.assignee];
-            const emoji = assignee ? (assignee.emoji || '') : '';
-            const statusCls = t.status === 'done' || t.status === 'approved'
-              ? 'text-cr-active' : t.status === 'blocked'
-              ? 'text-cr-alert' : t.status === 'in_progress' || t.status === 'assigned'
-              ? 'text-cr-accent' : 'text-cr-idle';
-            const dotChar = t.status === 'done' || t.status === 'approved'
-              ? '\u2713' : t.status === 'blocked'
-              ? '\u25c9' : t.status === 'in_progress' || t.status === 'assigned'
-              ? '\u25cf' : '\u25cb';
-            return html`
-              <div class="flex items-center gap-2 text-xs py-1 px-2 rounded
-                          hover:bg-white/[.02] transition-colors">
-                <span class="font-mono text-cr-text/30 w-8 text-right">#${t.task_id || t.id || '?'}</span>
-                <span class="truncate flex-1 text-cr-text/60" title=${t.title || ''}>
-                  ${t.assignee ? html`<span>${emoji || ''} ${t.assignee}</span>` : html`<span class="text-cr-idle italic">(\u4f9d\u5b58\u5f85\u3061)</span>`}
-                </span>
-                <span class="${statusCls} font-mono text-[11px]">${dotChar}</span>
-              </div>`;
-          })}
-          ${displayTasks.length === 0 ? html`
-            <div class="text-xs text-cr-text/20 italic text-center py-4">No tasks</div>
-          ` : null}
+        <!-- Task list: v3 Phase 4 unit grouping or flat list -->
+        ${unitGroupedTasks ? html`
+          <!-- v3 Phase 4: Unit-grouped task display -->
+          <div class="flex flex-wrap gap-2 max-h-[260px] overflow-y-auto pr-1">
+            ${Object.entries(unitGroupedTasks).map(([unit, grp]) => html`
+              <div class="unit-group flex-1 min-w-[140px]">
+                <div class="unit-group-header flex items-center justify-between">
+                  <span>${unit}</span>
+                  <span class="text-cr-text/30">${grp.done}/${grp.total}</span>
+                </div>
+                <div class="space-y-1">
+                  ${grp.tasks.map(t => html`<${TaskRow} key=${t.task_id || t.id} task=${t} castMap=${castMap} />`)}
+                </div>
+              </div>
+            `)}
+          </div>
+        ` : html`
+          <!-- Flat task list -->
+          <div class="space-y-1.5 max-h-[260px] overflow-y-auto pr-1">
+            ${displayTasks.map(t => html`<${TaskRow} key=${t.task_id || t.id} task=${t} castMap=${castMap} />`)}
+            ${displayTasks.length === 0 ? html`
+              <div class="text-xs text-cr-text/20 italic text-center py-4">No tasks</div>
+            ` : null}
+          </div>
+        `}
+      </div>
+
+      <!-- v3 Phase 3: Git stats footer -->
+      <${GitStatsFooter} stats=${gitStats} />
+    </div>`;
+}
+
+// ─── Task Row with micro progress bar (v3 Phase 3) ───
+function TaskRow({ task: t, castMap }) {
+  const assignee = castMap[t.assignee];
+  const emoji = assignee ? (assignee.emoji || '') : '';
+  const statusCls = t.status === 'done' || t.status === 'approved'
+    ? 'text-cr-active' : t.status === 'blocked'
+    ? 'text-cr-alert' : t.status === 'in_progress' || t.status === 'assigned'
+    ? 'text-cr-accent' : 'text-cr-idle';
+  const dotChar = t.status === 'done' || t.status === 'approved'
+    ? '\u2713' : t.status === 'blocked'
+    ? '\u25c9' : t.status === 'in_progress' || t.status === 'assigned'
+    ? '\u25cf' : '\u25cb';
+  const progressPct = STATUS_PROGRESS[t.status] || 0;
+  const progressCls = t.status === 'done' || t.status === 'approved'
+    ? 'status-done' : t.status === 'in_review'
+    ? 'status-in-review' : t.status === 'in_progress'
+    ? 'status-in-progress' : t.status === 'assigned'
+    ? 'status-assigned' : 'status-pending';
+
+  return html`
+    <div class="flex items-center gap-2 text-xs py-1 px-2 rounded
+                hover:bg-white/[.02] transition-colors">
+      <span class="font-mono text-cr-text/30 w-8 text-right flex-shrink-0">#${t.task_id || t.id || '?'}</span>
+      <span class="truncate text-cr-text/60 w-16 flex-shrink-0" title=${t.title || ''}>
+        ${t.assignee ? html`<span>${emoji || ''} ${t.assignee}</span>` : html`<span class="text-cr-idle italic">\u2014</span>`}
+      </span>
+      <div class="micro-progress-bar flex-1">
+        <div class="micro-progress-fill ${progressCls}" style="width:${progressPct}%"></div>
+      </div>
+      <span class="${statusCls} font-mono text-[11px] flex-shrink-0">${dotChar}</span>
+    </div>`;
+}
+
+// ─── Git Stats Footer (v3 Phase 3) ───
+function GitStatsFooter({ stats }) {
+  if(!stats) return null;
+
+  const relTime = useMemo(() => {
+    if(!stats.last_merge) return null;
+    const now = Date.now();
+    const mergeTime = new Date(stats.last_merge).getTime();
+    if(isNaN(mergeTime)) return null;
+    const diffMs = now - mergeTime;
+    const diffMin = Math.floor(diffMs / 60000);
+    if(diffMin < 1) return 'just now';
+    if(diffMin < 60) return `${diffMin}min ago`;
+    const diffH = Math.floor(diffMin / 60);
+    if(diffH < 24) return `${diffH}h ago`;
+    return `${Math.floor(diffH / 24)}d ago`;
+  }, [stats.last_merge]);
+
+  const commits = stats.commits_today || 0;
+  const activeBranches = stats.active_branches || 0;
+
+  return html`
+    <div class="git-stats-footer">
+      <div class="flex items-center gap-1 text-[10px] text-cr-text/30 flex-wrap">
+        <span class="text-cr-text/20">Git:</span>
+        <span>${commits} commit${commits !== 1 ? 's' : ''} today</span>
+        <span class="text-cr-text/15">|</span>
+        <span>${activeBranches} branch${activeBranches !== 1 ? 'es' : ''} active</span>
+        ${relTime ? html`
+          <span class="text-cr-text/15">|</span>
+          <span>last merge ${relTime}</span>
+        ` : null}
+      </div>
+    </div>`;
+}
+
+// ─── STAGE Panel (v3: replaces CastStatusPanel / v3 Phase 4: unit grouping skeleton) ───
+function StagePanel({ cast, scaleMode }) {
+  if(!cast || !cast.length) return null;
+
+  // v3 Phase 4: group by unit if scale=large and cast have unit info
+  const unitGroups = useMemo(() => {
+    if(scaleMode !== 'large') return null;
+    const groups = {};
+    let hasUnits = false;
+    (cast || []).forEach(c => {
+      const unit = c.unit || 'default';
+      if(c.unit) hasUnits = true;
+      if(!groups[unit]) groups[unit] = [];
+      groups[unit].push(c);
+    });
+    return hasUnits ? groups : null;
+  }, [cast, scaleMode]);
+
+  return html`
+    <div class="cr-panel">
+      <div class="panel-header">Stage</div>
+      <div class="p-3">
+        ${unitGroups ? html`
+          <!-- v3 Phase 4: Unit-grouped stage layout -->
+          <div class="flex flex-wrap gap-3">
+            ${Object.entries(unitGroups).map(([unit, members]) => html`
+              <div class="unit-group flex-1 min-w-[160px]">
+                <div class="unit-group-header">Unit: ${unit}</div>
+                <div class="flex flex-wrap gap-2 justify-center">
+                  ${members.map(c => html`<${StageCard} key=${c.slug} cast=${c} compact=${true} />`)}
+                </div>
+              </div>
+            `)}
+          </div>
+        ` : html`
+          <!-- Default: flat card layout -->
+          <div class="flex flex-wrap justify-center gap-3">
+            ${cast.map(c => html`<${StageCard} key=${c.slug} cast=${c} compact=${true} />`)}
+          </div>
+        `}
+      </div>
+    </div>`;
+}
+
+// ─── Stage Card (v3 / v3 Phase 3: compact mode for sidebar layout) ───
+function StageCard({ cast: c, compact }) {
+  const st = STAGE_STATE_MAP[c.state] || DEF_STAGE_STATE;
+  const isThinking = c.state === '\u8d77\u52d5\u4e2d';
+  const isBlocked = c.state === 'blocked';
+  const isIdle = !STAGE_STATE_MAP[c.state];
+  const isDone = c.state === '\u5b8c\u4e86\u5f85\u6a5f';
+  const latestMsg = c.latest_message;
+  const hasMessage = latestMsg && latestMsg.message;
+
+  const cardWidth = compact ? '120px' : '150px';
+
+  return html`
+    <div class="flex flex-col items-center transition-all duration-300 ${isIdle ? 'stage-card-idle' : ''}"
+         style="width: ${cardWidth}">
+      <!-- Card -->
+      <div class="w-full rounded-lg border-2 ${compact ? 'p-2' : 'p-3'} transition-all duration-300 ${st.cardCls}"
+           style="background: rgba(17,24,39,.8); border-color: ${isIdle ? '#1e3a5f' : ''}">
+        <!-- Emoji -->
+        <div class="text-center ${compact ? 'text-xl' : 'text-2xl'} mb-1">${c.emoji || '\ud83d\udc64'}</div>
+        <!-- Character name -->
+        <div class="text-center ${compact ? 'text-[10px]' : 'text-xs'} font-medium truncate" style="color: ${c.color || '#e2e8f0'}">
+          ${c.character_name || c.slug}</div>
+        <!-- Dev role -->
+        <div class="text-center text-[9px] text-cr-text/30 mt-0.5 truncate">
+          ${c.dev_role || c.slug}</div>
+
+        <!-- Speech bubble -->
+        <div class="mt-1.5 ${compact ? 'min-h-[32px]' : 'min-h-[40px]'}">
+          ${isThinking ? html`
+            <!-- Thinking dots -->
+            <div class="rounded px-2 py-1 text-center"
+                 style="background: rgba(96,165,250,.08); border: 1px solid rgba(96,165,250,.15)">
+              <span class="typing-dots text-blue-400 text-sm font-mono">
+                <span>.</span><span>.</span><span>.</span>
+              </span>
+            </div>
+          ` : hasMessage ? html`
+            <!-- Latest message bubble -->
+            <div class="speech-bubble rounded px-2 py-1"
+                 style="background: ${isBlocked ? 'rgba(239,68,68,.08)' : 'rgba(0,212,255,.04)'};
+                        border: 1px solid ${isBlocked ? 'rgba(239,68,68,.2)' : 'rgba(0,212,255,.1)'}">
+              <div class="text-[9px] leading-tight ${isBlocked ? 'text-cr-alert/80' : 'text-cr-text/50'}"
+                   style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
+                \ud83d\udcac ${latestMsg.message}</div>
+            </div>
+          ` : html`
+            <div class="rounded px-2 py-1 text-center"
+                 style="background: rgba(255,255,255,.02)">
+              <span class="text-[9px] text-cr-text/15">\u2014</span>
+            </div>
+          `}
+        </div>
+
+        <!-- Current task -->
+        <div class="mt-1.5 flex items-center justify-center gap-1">
+          <span class="text-[9px]" style="color: ${st.dotColor}">${st.dotIcon}</span>
+          <span class="text-[9px] text-cr-text/40 font-mono truncate max-w-[90px]">
+            ${c.task_title || st.label}</span>
         </div>
       </div>
     </div>`;
 }
 
-// ─── CAST STATUS Panel ───
-function CastStatusPanel({ cast }) {
-  if(!cast || !cast.length) return null;
+// ─── Phase Complete Ceremony (v3 Phase 3) ───
+function PhaseCompleteCeremony({ phaseNum, onDone }) {
+  const canvasRef = useRef(null);
+  const [exiting, setExiting] = useState(false);
 
-  return html`
-    <div class="cr-panel">
-      <div class="panel-header">Cast Status</div>
-      <div class="p-3 space-y-1">
-        ${cast.map(c => {
-          const s = STATE_MAP[c.state] || DEF_STATE;
-          const clr = c.color || '#888';
-          return html`
-            <div class="flex items-center gap-2.5 py-1.5 px-2 rounded
-                        hover:bg-white/[.02] transition-colors">
-              <span class="text-sm w-6 text-center">${c.emoji || '\ud83d\udc64'}</span>
-              <span class="text-xs font-medium flex-1 truncate" style="color:${clr}">
-                ${c.character_name || c.slug}</span>
-              <div class="flex items-center gap-1.5">
-                <div class="w-2 h-2 rounded-full ${s.cls}" style="color:${
-                  s === DEF_STATE ? '#6b7280' : s.cls.includes('active') ? '#22c55e'
-                  : s.cls.includes('alert') ? '#ef4444' : '#6b7280'
-                }"></div>
-                <span class="text-[10px] text-cr-text/40 font-mono w-10">${s.label}</span>
-              </div>
-            </div>`;
-        })}
-      </div>
-    </div>`;
-}
-
-// ─── BRANCHES Panel (Phase-collapsible text list) ───
-function BranchesPanel({ branches, currentPhase }) {
-  const [expanded, setExpanded] = useState({});
-
-  // Group branches by phase
-  const grouped = useMemo(() => {
-    const byPhase = {};
-    (branches || []).forEach(b => {
-      const p = b.phase || 0;
-      if(!byPhase[p]) byPhase[p] = [];
-      byPhase[p].push(b);
-    });
-    return byPhase;
-  }, [branches]);
-
-  const phaseNums = useMemo(() =>
-    Object.keys(grouped).map(Number).sort((a, b) => b - a),
-  [grouped]);
-
-  // Auto-expand current phase on mount/change
   useEffect(() => {
-    if(currentPhase > 0) {
-      setExpanded(prev => ({ ...prev, [currentPhase]: true }));
+    // 1. Flash effect (handled by CSS)
+    // 2. Gold particle rain on canvas
+    const canvas = canvasRef.current;
+    if(!canvas) return;
+    const ctx = canvas.getContext('2d');
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    const particles = [];
+    const PARTICLE_COUNT = 80;
+
+    for(let i = 0; i < PARTICLE_COUNT; i++) {
+      particles.push({
+        x: Math.random() * canvas.width,
+        y: -Math.random() * canvas.height * 0.5,
+        vx: (Math.random() - 0.5) * 2,
+        vy: Math.random() * 3 + 1.5,
+        size: Math.random() * 4 + 2,
+        opacity: Math.random() * 0.7 + 0.3,
+        hue: 40 + Math.random() * 20, // gold range
+      });
     }
-  }, [currentPhase]);
 
-  if(!branches || branches.length === 0) return null;
+    let animId;
+    let startTime = Date.now();
 
-  // Determine which phases to consolidate (4+ before current)
-  const consolidateThreshold = currentPhase - 4;
+    function animate() {
+      const elapsed = Date.now() - startTime;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  // Separate: recent phases vs old phases to consolidate
-  const recentPhases = phaseNums.filter(p => p > consolidateThreshold);
-  const oldPhases = phaseNums.filter(p => p <= consolidateThreshold && p > 0);
-  const oldCount = oldPhases.reduce((sum, p) => sum + (grouped[p] || []).length, 0);
+      // Fade out after 2.5s
+      const globalAlpha = elapsed > 2500 ? Math.max(0, 1 - (elapsed - 2500) / 500) : 1;
 
-  const togglePhase = (p) => {
-    setExpanded(prev => ({ ...prev, [p]: !prev[p] }));
-  };
+      particles.forEach(p => {
+        p.x += p.vx;
+        p.y += p.vy;
+        p.vy += 0.02; // gravity
+        p.vx += (Math.random() - 0.5) * 0.1; // drift
 
-  const toggleOld = () => {
-    setExpanded(prev => ({ ...prev, '_old': !prev['_old'] }));
-  };
+        ctx.save();
+        ctx.globalAlpha = p.opacity * globalAlpha;
+        ctx.fillStyle = `hsl(${p.hue}, 80%, 60%)`;
+        ctx.shadowColor = `hsl(${p.hue}, 80%, 60%)`;
+        ctx.shadowBlur = 6;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      });
+
+      if(elapsed < 3000) {
+        animId = requestAnimationFrame(animate);
+      }
+    }
+
+    animate();
+
+    // 3. Start exit after 3.5s, fully hide at 5s
+    const exitTimer = setTimeout(() => setExiting(true), 3500);
+    const doneTimer = setTimeout(() => { if(onDone) onDone(); }, 5000);
+
+    return () => {
+      if(animId) cancelAnimationFrame(animId);
+      clearTimeout(exitTimer);
+      clearTimeout(doneTimer);
+    };
+  }, [onDone]);
 
   return html`
-    <div class="cr-panel">
-      <div class="panel-header">Branches</div>
-      <div class="p-2 max-h-[300px] overflow-y-auto">
-        ${recentPhases.map(pn => {
-          const items = grouped[pn] || [];
-          const isCurrent = pn === currentPhase;
-          const allMerged = items.every(b => b.status === 'merged');
-          const isOpen = expanded[pn] || false;
-          const activeCount = items.filter(b => b.status !== 'merged').length;
-          const label = isCurrent
-            ? `Phase ${pn} (${activeCount} active)`
-            : `Phase ${pn} (${items.length} ${allMerged ? 'merged' : 'branches'})`;
-
-          return html`
-            <div class="mb-1">
-              <div class="branch-folder flex items-center gap-1.5 py-1.5 px-2 rounded text-xs"
-                   onClick=${() => togglePhase(pn)}>
-                <span class="font-mono text-cr-accent/50 w-4">${isOpen ? '\u25be' : '\u25b8'}</span>
-                <span class="${isCurrent ? 'text-cr-accent/80' : 'text-cr-text/30'} font-mono">
-                  ${label}</span>
-              </div>
-              ${isOpen ? html`
-                <div class="ml-6 space-y-0.5">
-                  ${items.map(b => {
-                    const merged = b.status === 'merged';
-                    const active = b.status === 'in_progress' || b.status === 'assigned';
-                    const shortName = formatBranchName(b);
-                    return html`
-                      <div class="flex items-center gap-2 text-[11px] py-0.5 px-1 rounded
-                                  hover:bg-white/[.02]">
-                        <span class="${active ? 'text-cr-active' : merged ? 'text-cr-text/20' : 'text-cr-accent/50'}
-                                     font-mono">${active ? '\u25cf' : merged ? '\u2713' : '\u25cb'}</span>
-                        <span class="${merged ? 'text-cr-text/20' : 'text-cr-text/50'} font-mono truncate"
-                              title=${b.name || ''}>
-                          ${shortName}</span>
-                      </div>`;
-                  })}
-                </div>
-              ` : null}
-            </div>`;
-        })}
-
-        ${oldPhases.length > 0 ? html`
-          <div class="mb-1">
-            <div class="branch-folder flex items-center gap-1.5 py-1.5 px-2 rounded text-xs"
-                 onClick=${toggleOld}>
-              <span class="font-mono text-cr-text/30 w-4">${expanded['_old'] ? '\u25be' : '\u25b8'}</span>
-              <span class="text-cr-text/20 font-mono">
-                Phase ${oldPhases[oldPhases.length-1]}-${oldPhases[0]} (${oldCount} merged)</span>
-            </div>
-            ${expanded['_old'] ? html`
-              <div class="ml-6 space-y-0.5">
-                ${oldPhases.map(pn => (grouped[pn] || []).map(b => html`
-                  <div class="flex items-center gap-2 text-[11px] py-0.5 px-1">
-                    <span class="text-cr-text/15 font-mono">\u2713</span>
-                    <span class="text-cr-text/15 font-mono truncate">${formatBranchName(b)}</span>
-                  </div>
-                `))}
-              </div>
-            ` : null}
-          </div>
-        ` : null}
-
-        ${phaseNums.length === 0 ? html`
-          <div class="text-xs text-cr-text/20 italic text-center py-4">No branches</div>
-        ` : null}
-      </div>
+    <div class="phase-complete-overlay"
+         style="animation: phase-flash 0.6s ease-out both">
+      <canvas ref=${canvasRef}></canvas>
+      <div class="phase-complete-title ${exiting ? 'exiting' : ''}">
+        Phase ${phaseNum}</div>
+      <div class="phase-complete-subtitle ${exiting ? 'exiting' : ''}">
+        COMPLETE</div>
     </div>`;
 }
 
-function formatBranchName(b) {
-  // Shorten branch name to cast/slug/id format
-  const name = b.name || '';
-  // Try to parse "cast/<slug>/<id>-description"
-  const m = name.match(/^cast\/([^/]+)\/(\d+)/);
-  if(m) return `cast/${m[1]}/${m[2]}`;
-  // Fallback: truncate long names
-  return name.length > 30 ? name.slice(0, 30) + '...' : name;
-}
-
-// ─── LIVE FEED Panel ───
-function LiveFeedPanel({ feed, cast }) {
+// ─── TIMELINE Panel (v3: replaces LiveFeedPanel) ───
+function TimelinePanel({ feed, cast }) {
   const feedRef = useRef(null);
   const [autoScroll, setAutoScroll] = useState(true);
 
@@ -660,15 +1203,21 @@ function LiveFeedPanel({ feed, cast }) {
     setAutoScroll(atBottom);
   }, []);
 
+  // Determine if a divider should be shown before an event
+  const needsDividerBefore = (event) => {
+    const style = EVENT_STYLE[event] || {};
+    return style.divider || null;
+  };
+
   return html`
     <div class="cr-panel flex flex-col" style="min-height:400px">
       <div class="panel-header flex items-center justify-between">
-        <span>Live Feed</span>
+        <span>Timeline</span>
         <span class="text-cr-text/20 normal-case tracking-normal text-[9px]">
           ${feed.length} events</span>
       </div>
       <div ref=${feedRef} onScroll=${onScroll}
-           class="flex-1 overflow-y-auto p-3 space-y-1" style="max-height:500px">
+           class="flex-1 overflow-y-auto p-3 space-y-0.5" style="max-height:500px">
         ${feed.length === 0 ? html`
           <div class="flex items-center justify-center h-full">
             <div class="text-cr-text/20 text-xs italic font-mono">Waiting for events...</div>
@@ -677,20 +1226,72 @@ function LiveFeedPanel({ feed, cast }) {
           const c = castMap[e.actor] || { emoji: '', name: e.actor || 'SYSTEM', color: '#6b7280' };
           const isDir = e.actor === 'DIRECTOR';
           const time = fmtTime(e.timestamp);
+          const evStyle = EVENT_STYLE[e.event] || {};
+          const divCls = needsDividerBefore(e.event);
+          const isBanner = evStyle.priority >= 3;
+          const isAbility = e.event === 'ability';
+          const isPhaseComplete = e.event === 'phase_complete';
+
           return html`
-            <div key=${(e.timestamp||'') + i} class="feed-entry flex gap-2 py-1.5 px-2 rounded
-                        hover:bg-white/[.02] transition-colors"
-                 style="animation-delay:${Math.max(0, i - feed.length + 5) * 0.05}s">
-              <span class="text-[10px] text-cr-text/25 font-mono w-10 flex-shrink-0 pt-0.5">${time}</span>
-              <span class="text-sm flex-shrink-0 w-5 text-center">${isDir ? '\ud83c\udfac' : c.emoji || '\ud83d\udc64'}</span>
-              <div class="min-w-0 flex-1">
-                <span class="text-[11px] font-medium mr-1.5"
-                      style="color:${isDir ? '#6b7280' : c.color}">
-                  ${isDir ? 'Director' : c.name}</span>
-                <span class="text-[11px] ${isDir ? 'text-cr-text/30 italic' : 'text-cr-text/60'}">
-                  ${e.message || ''}</span>
+            <!-- Divider before high-priority events -->
+            ${divCls ? html`<div class="timeline-divider ${divCls}"></div>` : null}
+
+            ${isPhaseComplete ? html`
+              <!-- Phase Complete: special banner -->
+              <div class="timeline-banner feed-entry"
+                   style="background: rgba(240,192,64,.08); border: 1px solid rgba(240,192,64,.25)">
+                <div class="flex items-center gap-2">
+                  <span class="text-lg">\ud83c\udf89</span>
+                  <div class="flex-1">
+                    <div class="text-xs font-medium text-yellow-400/90 font-mono">
+                      Phase Complete</div>
+                    <div class="text-[11px] text-cr-text/50 mt-0.5">${e.message || ''}</div>
+                  </div>
+                  <span class="text-[10px] text-cr-text/25 font-mono">${time}</span>
+                </div>
               </div>
-            </div>`;
+            ` : isBanner ? html`
+              <!-- High priority banner (task_done, task_blocked, review, ability) -->
+              <div class="timeline-banner feed-entry ${isAbility ? 'timeline-ability' : ''}"
+                   style="background: ${evStyle.bg || 'transparent'}; border: 1px solid ${evStyle.border || 'transparent'}">
+                <div class="flex items-center gap-2">
+                  <span class="text-[10px] text-cr-text/25 font-mono w-10 flex-shrink-0">${time}</span>
+                  <span class="text-sm flex-shrink-0">${evStyle.icon || ''}</span>
+                  <span class="text-sm flex-shrink-0">${isDir ? '\ud83c\udfac' : c.emoji || '\ud83d\udc64'}</span>
+                  <div class="min-w-0 flex-1">
+                    <span class="text-[11px] font-medium mr-1.5"
+                          style="color:${isDir ? '#6b7280' : c.color}">
+                      ${isDir ? 'Director' : c.name}</span>
+                    <span class="text-[11px] text-cr-text/70">${e.message || ''}</span>
+                    ${isAbility && e.ability_name ? html`
+                      <span class="ml-1 text-[10px] text-yellow-400/80 font-mono">\u300e${e.ability_name}\u300f</span>
+                    ` : null}
+                  </div>
+                </div>
+              </div>
+            ` : html`
+              <!-- Normal event (chat, progress, task_assign, arrival) -->
+              <div key=${(e.timestamp||'') + i}
+                   class="feed-entry flex gap-2 py-1.5 px-2 rounded hover:bg-white/[.02] transition-colors"
+                   style="animation-delay:${Math.max(0, i - feed.length + 5) * 0.05}s">
+                <span class="text-[10px] text-cr-text/25 font-mono w-10 flex-shrink-0 pt-0.5">${time}</span>
+                ${evStyle.icon ? html`
+                  <span class="text-xs flex-shrink-0 w-4 text-center opacity-50">${evStyle.icon}</span>
+                ` : null}
+                <span class="text-sm flex-shrink-0 w-5 text-center">${isDir ? '\ud83c\udfac' : c.emoji || '\ud83d\udc64'}</span>
+                <div class="min-w-0 flex-1">
+                  <span class="text-[11px] font-medium mr-1.5"
+                        style="color:${isDir ? '#6b7280' : c.color}">
+                    ${isDir ? 'Director' : c.name}</span>
+                  <span class="text-[11px] ${isDir ? 'text-cr-text/30 italic' : 'text-cr-text/60'}">
+                    ${e.message || ''}</span>
+                </div>
+              </div>
+            `}
+
+            <!-- Divider after high-priority events -->
+            ${divCls ? html`<div class="timeline-divider ${divCls}"></div>` : null}
+          `;
         })}
       </div>
       ${!autoScroll ? html`

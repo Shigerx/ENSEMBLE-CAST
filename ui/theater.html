@@ -17,15 +17,103 @@ tailwind.config = {
 <script src="https://cdn.jsdelivr.net/npm/preact@10/hooks/dist/hooks.umd.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/htm@3/dist/htm.umd.js"></script>
 <style>
-body { margin:0; background:linear-gradient(180deg,#0a0a0f 0%,#10101c 40%,#12121a 100%);
-       min-height:100vh; overflow-x:hidden; }
+body { margin:0; background:#000; min-height:100vh; overflow-x:hidden; }
 
-/* Vignette overlay */
-#app::after { content:''; position:fixed; inset:0;
-  background:radial-gradient(ellipse at 50% 40%,transparent 50%,rgba(0,0,0,.55) 100%);
-  pointer-events:none; z-index:50; }
+/* ===== v4: Theater Frame ===== */
+.theater-frame {
+  position:relative;
+  max-width:1100px;
+  margin:0 auto;
+  min-height:100vh;
+}
 
-/* Screen panel */
+/* Letterbox bars */
+.letterbox { position:fixed; left:0; right:0; background:#000; z-index:60; pointer-events:none; }
+.letterbox-top { top:0; height:8vh; }
+.letterbox-bottom { bottom:0; height:8vh; }
+@media (max-width:768px) {
+  .letterbox-top, .letterbox-bottom { height:4vh; }
+}
+
+/* Screen surface with glow */
+.screen-surface {
+  position:relative;
+  overflow:hidden;
+  background:linear-gradient(180deg,#1a1a2e,#1c1c32 40%,#1a1a2e);
+  border:1px solid rgba(240,192,64,.10);
+  border-radius:8px;
+  box-shadow:
+    0 0 80px var(--glow-color, rgba(240,192,64,.04)),
+    0 0 160px var(--glow-color, rgba(240,192,64,.02)),
+    0 8px 60px rgba(0,0,0,.7),
+    inset 0 1px 0 rgba(255,255,255,.03);
+  transition: box-shadow .8s ease;
+}
+.screen-surface::before {
+  content:''; position:absolute; inset:-1px; border-radius:9px;
+  background:linear-gradient(180deg,rgba(240,192,64,.06),transparent 30%,transparent 70%,rgba(240,192,64,.03));
+  pointer-events:none; z-index:1;
+}
+
+/* v4: Mood-based glow colors (applied via JS on screen-surface) */
+.glow-calm    { --glow-color: rgba(240,192,64,.04); }
+.glow-tense   { --glow-color: rgba(200,40,40,.04); }
+.glow-triumph { --glow-color: rgba(240,192,64,.06); }
+.glow-comedy  { --glow-color: rgba(255,255,255,.03); }
+.glow-crisis  { --glow-color: rgba(200,40,40,.05); }
+@keyframes glow-pulse {
+  0%,100% { box-shadow: 0 0 80px rgba(200,40,40,.05), 0 0 160px rgba(200,40,40,.02), 0 8px 60px rgba(0,0,0,.7), inset 0 1px 0 rgba(255,255,255,.03); }
+  50%     { box-shadow: 0 0 120px rgba(200,40,40,.08), 0 0 200px rgba(200,40,40,.04), 0 8px 60px rgba(0,0,0,.7), inset 0 1px 0 rgba(255,255,255,.03); }
+}
+.glow-crisis-pulse { animation: glow-pulse 3s ease-in-out infinite; }
+
+/* Film grain overlay */
+.film-grain::after {
+  content:'';
+  position:absolute; inset:0;
+  border-radius:8px;
+  opacity:0.035;
+  pointer-events:none;
+  z-index:5;
+  background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)' opacity='1'/%3E%3C/svg%3E");
+  background-size:200px 200px;
+  animation:grain-shift .4s steps(4) infinite;
+  mix-blend-mode:overlay;
+}
+@keyframes grain-shift {
+  0%   { transform:translate(0,0); }
+  25%  { transform:translate(-2%,3%); }
+  50%  { transform:translate(3%,-1%); }
+  75%  { transform:translate(-1%,-2%); }
+  100% { transform:translate(2%,1%); }
+}
+
+/* Red curtains */
+.curtain {
+  position:absolute;
+  top:0; bottom:0;
+  width:50%;
+  z-index:10;
+  background:
+    radial-gradient(ellipse at 30% 50%, #8b1a1a, #5c0e0e 40%, #3a0808 80%);
+  transition: transform 2s cubic-bezier(.4,0,.2,1);
+}
+.curtain-left  { left:0;  border-radius:8px 0 0 8px; transform:translateX(0); }
+.curtain-right { right:0; border-radius:0 8px 8px 0; transform:translateX(0); }
+.curtain-left.open  { transform:translateX(-100%); }
+.curtain-right.open { transform:translateX(100%); }
+/* Curtain fabric folds */
+.curtain::after {
+  content:'';
+  position:absolute; inset:0;
+  background:repeating-linear-gradient(90deg,
+    transparent,transparent 18px,
+    rgba(0,0,0,.15) 18px,rgba(0,0,0,.15) 20px,
+    transparent 20px,transparent 38px);
+  pointer-events:none;
+}
+
+/* Legacy compat: .screen maps to .screen-surface */
 .screen { position:relative;
   background:linear-gradient(180deg,#1a1a2e,#1c1c32 40%,#1a1a2e);
   border:1px solid rgba(240,192,64,.10); border-radius:8px;
@@ -58,20 +146,8 @@ body { margin:0; background:linear-gradient(180deg,#0a0a0f 0%,#10101c 40%,#12121
 @keyframes beat-slide { from{opacity:0;transform:translateX(-20px)} to{opacity:1;transform:translateX(0)} }
 .beat-enter { animation:beat-slide .5s ease-out both; }
 
-@keyframes narration-fade { from{opacity:0} to{opacity:1} }
-.narration-enter { animation:narration-fade 1s ease-out both; }
-
-@keyframes direction-fade { from{opacity:0} to{opacity:.6} }
-.direction-enter { animation:direction-fade .4s ease-out both; }
-
-@keyframes fin-fade { from{opacity:0;transform:scale(.95)} to{opacity:1;transform:scale(1)} }
-.fin-enter { animation:fin-fade 1.5s ease-out both; }
-
 /* Gold accent line */
 .gold-line { height:1px; background:linear-gradient(90deg,transparent,#f0c040,transparent); }
-
-/* Scene divider dots */
-.scene-break { color:#f0c040; opacity:.3; letter-spacing:.6em; }
 
 /* Progress bar shine */
 @keyframes bar-shine { 0%{background-position:-200% 0} 100%{background-position:200% 0} }
@@ -95,6 +171,754 @@ body { margin:0; background:linear-gradient(180deg,#0a0a0f 0%,#10101c 40%,#12121
 /* Play button pulse */
 @keyframes play-pulse { 0%,100%{box-shadow:0 0 0 0 rgba(240,192,64,.3)} 50%{box-shadow:0 0 0 8px rgba(240,192,64,0)} }
 .play-btn { animation:play-pulse 2.5s ease-in-out infinite; }
+
+/* ===== v3: Phase 1 — Typography & Character Styling ===== */
+
+/* 1-2. Beat block with character color bar */
+.beat-block {
+  border-left: 3px solid var(--char-color, #888);
+  padding-left: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+/* 1-3. Dialogue styles */
+.dialogue {
+  font-size: 1.5rem;
+  color: rgba(255,255,255,.85);
+  line-height: 1.7;
+  text-shadow: 0 1px 8px rgba(0,0,0,.5);
+}
+.dialogue-dramatic {
+  font-size: 2rem;
+  color: #fff;
+  text-shadow: 0 0 30px rgba(240,192,64,.4);
+  letter-spacing: .05em;
+  line-height: 1.7;
+}
+
+/* 1-4. Narration block */
+.narration-block {
+  font-size: 1.125rem;
+  font-style: italic;
+  color: #a0aec0;
+  line-height: 1.8;
+  text-align: center;
+  max-width: 36rem;
+  margin: 2rem auto;
+  padding: 1.5rem 0;
+}
+.narration-block::before, .narration-block::after {
+  content: '';
+  display: block;
+  width: 60px;
+  height: 1px;
+  background: rgba(160,174,192,.3);
+  margin: 0 auto 1rem;
+}
+.narration-block::after { margin: 1rem auto 0; }
+
+/* 1-5. Character entrance animation */
+@keyframes char-entrance {
+  0% { opacity: 0; transform: translateX(-30px); }
+  50% { opacity: 1; text-shadow: 0 0 20px var(--char-color, #888); }
+  100% { opacity: 1; transform: translateX(0); text-shadow: none; }
+}
+.char-entrance { animation: char-entrance .6s ease-out both; }
+
+/* ===== v4: Phase 3 — Mood-driven Entry Animations ===== */
+
+/* calm: gentle fade + slight slide */
+@keyframes entry-calm {
+  from { opacity:0; transform:translateY(10px); }
+  to   { opacity:1; transform:translateY(0); }
+}
+.mood-entry-calm { animation: entry-calm .6s ease-out both; }
+
+/* tense: sharp cut-in with scale */
+@keyframes entry-tense {
+  from { opacity:0; transform:scale(1.3); }
+  to   { opacity:1; transform:scale(1); }
+}
+.mood-entry-tense { animation: entry-tense .2s ease-out both; }
+
+/* triumph: rise from below with golden glow */
+@keyframes entry-triumph {
+  from { opacity:0; transform:translateY(40px); }
+  to   { opacity:1; transform:translateY(0); }
+}
+.mood-entry-triumph { animation: entry-triumph .8s ease-out both; }
+.mood-entry-triumph .dialogue,
+.mood-entry-triumph .dialogue-dramatic {
+  text-shadow: 0 0 20px rgba(240,192,64,.3);
+}
+
+/* comedy: bouncy pop-in */
+@keyframes entry-comedy {
+  0%   { opacity:0; transform:scale(0.5); }
+  70%  { opacity:1; transform:scale(1.05); }
+  100% { opacity:1; transform:scale(1); }
+}
+.mood-entry-comedy { animation: entry-comedy .4s cubic-bezier(.68,-.55,.27,1.55) both; }
+
+/* crisis: shake-in from left */
+@keyframes entry-crisis {
+  from { opacity:0; transform:translateX(-50px); }
+  to   { opacity:1; transform:translateX(0); }
+}
+.mood-entry-crisis { animation: entry-crisis .3s ease-out both; }
+
+/* Screen shake for crisis */
+@keyframes screen-shake {
+  0%   { transform:translate(0,0); }
+  20%  { transform:translate(-3px,2px); }
+  40%  { transform:translate(2px,-2px); }
+  60%  { transform:translate(-2px,1px); }
+  80%  { transform:translate(3px,-1px); }
+  100% { transform:translate(0,0); }
+}
+.screen-shake { animation: screen-shake .15s ease-in-out; }
+
+/* Comedy bubble */
+.dialogue-bubble {
+  background: rgba(255,255,255,.06);
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 16px;
+  padding: 1rem 1.5rem;
+  position: relative;
+  margin-top: .5rem;
+}
+.dialogue-bubble::after {
+  content: '';
+  position: absolute;
+  bottom: -8px;
+  width: 0; height: 0;
+  border-left: 8px solid transparent;
+  border-right: 8px solid transparent;
+  border-top: 8px solid rgba(255,255,255,.06);
+}
+.dialogue-bubble-left::after  { left: 1.5rem; }
+.dialogue-bubble-right::after { right: 1.5rem; }
+
+/* ===== v4: Phase 2 — Cinematic Left/Right Dialogue ===== */
+.beat-block-left {
+  max-width: 80%;
+  border-left: 3px solid var(--char-color, #888);
+  border-right: none;
+  padding-left: 1.5rem;
+  padding-right: 0;
+  margin-right: auto;
+  margin-left: 0;
+}
+.beat-block-right {
+  max-width: 80%;
+  border-right: 3px solid var(--char-color, #888);
+  border-left: none;
+  padding-right: 1.5rem;
+  padding-left: 0;
+  margin-left: auto;
+  margin-right: 0;
+  text-align: right;
+}
+.beat-block-right .flex { justify-content: flex-end; }
+
+/* ===== v3: Phase 2 — Transitions & FIN ===== */
+
+/* 2-1. Opening title reveal */
+@keyframes title-reveal {
+  0% { opacity: 0; transform: scale(.8); letter-spacing: .1em; }
+  60% { opacity: 1; transform: scale(1.02); letter-spacing: .15em; }
+  100% { opacity: 1; transform: scale(1); letter-spacing: .12em; }
+}
+.title-reveal { animation: title-reveal 1.5s ease-out both; }
+
+@keyframes subtitle-rise {
+  from { opacity: 0; transform: translateY(20px); filter: blur(4px); }
+  to { opacity: 1; transform: translateY(0); filter: blur(0); }
+}
+.subtitle-rise { animation: subtitle-rise 1s ease-out both; animation-delay: .8s; opacity: 0; }
+
+@keyframes ep-label-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.ep-label-fade { animation: ep-label-fade .8s ease-out both; animation-delay: .2s; opacity: 0; }
+
+@keyframes gold-line-expand {
+  from { width: 0; opacity: 0; }
+  to { width: 100%; opacity: .4; }
+}
+.gold-line-expand { animation: gold-line-expand 1.2s ease-out both; animation-delay: .6s; }
+
+/* 2-2. Scene wipe transition */
+@keyframes scene-wipe {
+  0% { width: 0; opacity: 0; }
+  30% { width: 60%; opacity: 1; }
+  70% { width: 100%; opacity: 1; }
+  100% { width: 100%; opacity: 0; }
+}
+.scene-transition-line {
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #f0c040, transparent);
+  animation: scene-wipe 1.5s ease-in-out both;
+  margin: 2rem auto;
+}
+
+/* 2-3. Final scene background glow */
+.final-scene-glow {
+  background: linear-gradient(180deg, rgba(240,192,64,.02) 0%, transparent 40%, transparent 60%, rgba(240,192,64,.02) 100%);
+  border-radius: 8px;
+  padding: 1rem;
+}
+
+/* 2-4. FIN grand animation */
+@keyframes fin-grand {
+  0% { opacity: 0; transform: scale(.7); letter-spacing: .3em; }
+  40% { opacity: 1; transform: scale(1.05); letter-spacing: .5em; }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+    letter-spacing: .4em;
+    text-shadow: 0 0 60px rgba(240,192,64,.5), 0 0 120px rgba(240,192,64,.2);
+  }
+}
+.fin-grand {
+  font-size: 3.75rem;
+  font-weight: 300;
+  color: #f0c040;
+  animation: fin-grand 2s ease-out both;
+}
+
+@keyframes fin-line-expand {
+  0% { width: 0; }
+  100% { width: 100%; }
+}
+.fin-line {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, #f0c040, transparent);
+  animation: fin-line-expand 1.5s ease-out both;
+  animation-delay: 1s;
+  margin: 1.5rem auto 0;
+}
+
+/* 2-6. Narration reveal animation */
+@keyframes narration-reveal {
+  from { opacity: 0; transform: translateY(15px); filter: blur(3px); }
+  to { opacity: 1; transform: translateY(0); filter: blur(0); }
+}
+.narration-reveal { animation: narration-reveal .8s ease-out both; }
+
+/* ===== v4: Phase 6 — Parallax 3-Layer System ===== */
+
+/* Layer base */
+.layer-foreground { position:relative; z-index:3; }
+.layer-midground  { position:relative; z-index:2; opacity:0.85; }
+.layer-background { position:relative; z-index:1; opacity:0.45; }
+
+/* Parallax depth using transform (applied via JS based on scroll) */
+.parallax-subtle .layer-midground  { transform:translateY(calc(var(--scroll-offset,0) * -0.02)); }
+.parallax-subtle .layer-background { transform:translateY(calc(var(--scroll-offset,0) * -0.04)); }
+.parallax-normal .layer-midground  { transform:translateY(calc(var(--scroll-offset,0) * -0.04)); }
+.parallax-normal .layer-background { transform:translateY(calc(var(--scroll-offset,0) * -0.08)); }
+
+/* Action text (background layer) — subtle drift */
+.action-drift {
+  font-size: 0.75rem;
+  color: rgba(255,255,255,.3);
+  font-style: italic;
+  letter-spacing: .05em;
+  animation: subtle-drift 6s ease-in-out infinite alternate;
+  position: relative;
+}
+@keyframes subtle-drift {
+  from { transform: translateX(-3px); }
+  to   { transform: translateX(3px); }
+}
+
+/* Narration as midground — centered, italic, medium opacity */
+.narration-midground {
+  font-size: 1.125rem;
+  font-style: italic;
+  color: rgba(160,174,192,.85);
+  line-height: 1.8;
+  text-align: center;
+  max-width: 36rem;
+  margin: 2rem auto;
+  padding: 1.5rem 0;
+}
+.narration-midground::before, .narration-midground::after {
+  content: '';
+  display: block;
+  width: 60px;
+  height: 1px;
+  background: rgba(160,174,192,.2);
+  margin: 0 auto 1rem;
+}
+.narration-midground::after { margin: 1rem auto 0; }
+
+/* ===== v4: Phase 5 — Dramatic Moment ===== */
+
+/* Full-screen takeover */
+.dramatic-takeover {
+  position: relative;
+  margin: 3rem -2rem;
+  padding: 4rem 2rem;
+  min-height: 40vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  scroll-snap-align: center;
+}
+.dramatic-takeover::before {
+  content: '';
+  position: absolute; inset: 0;
+  background: radial-gradient(ellipse at 50% 50%, rgba(0,0,0,.3) 0%, rgba(0,0,0,.7) 100%);
+  border-radius: 8px;
+  pointer-events: none;
+}
+.dramatic-takeover .dialogue-dramatic {
+  position: relative;
+  z-index: 2;
+  font-size: 2.5rem;
+  text-shadow: 0 0 40px rgba(240,192,64,.4), 0 0 80px rgba(240,192,64,.15);
+  text-align: center;
+  max-width: 90%;
+}
+
+/* Scale-in for dramatic */
+@keyframes dramatic-scale-in {
+  from { opacity:0; transform:scale(1.1); filter:blur(2px); }
+  to   { opacity:1; transform:scale(1); filter:blur(0); }
+}
+.dramatic-scale-in { animation: dramatic-scale-in .8s ease-out both; }
+
+/* Final beat golden pulse */
+@keyframes golden-pulse {
+  0%   { text-shadow: 0 0 40px rgba(240,192,64,.4); }
+  50%  { text-shadow: 0 0 80px rgba(240,192,64,.7), 0 0 120px rgba(240,192,64,.3); }
+  100% { text-shadow: 0 0 40px rgba(240,192,64,.4); }
+}
+.golden-pulse { animation: golden-pulse 2s ease-in-out infinite; }
+
+/* Snap container hint */
+.snap-container {
+  scroll-snap-type: y proximity;
+}
+
+/* ===== v4: Phase 4 — Scene Transition System ===== */
+
+/* Iris out/in */
+@keyframes iris-out {
+  from { clip-path: circle(100% at 50% 50%); opacity:1; }
+  to   { clip-path: circle(0% at 50% 50%); opacity:1; }
+}
+@keyframes iris-in {
+  from { clip-path: circle(0% at 50% 50%); opacity:1; }
+  to   { clip-path: circle(100% at 50% 50%); opacity:1; }
+}
+
+/* Fade to black */
+@keyframes fade-to-black {
+  0%   { opacity:1; }
+  40%  { opacity:0; }
+  60%  { opacity:0; }
+  100% { opacity:1; }
+}
+
+/* Quick cut (brief black flash) */
+@keyframes quick-cut {
+  0%   { opacity:1; }
+  45%  { opacity:0; }
+  55%  { opacity:0; }
+  100% { opacity:1; }
+}
+
+/* Glitch transition for crisis */
+@keyframes glitch-transition {
+  0%   { opacity:1; filter:none; }
+  15%  { opacity:.8; filter:hue-rotate(90deg) saturate(3); transform:translateX(5px); }
+  30%  { opacity:1; filter:invert(1); transform:translateX(-3px); }
+  45%  { opacity:.6; filter:none; transform:translateX(2px); }
+  60%  { opacity:0; filter:none; transform:none; }
+  75%  { opacity:0; }
+  100% { opacity:1; filter:none; transform:none; }
+}
+
+.scene-transition-v4 {
+  position:relative;
+  margin:2rem auto;
+  height:4px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+
+/* Iris ring indicator */
+.iris-ring {
+  width:40px; height:40px;
+  border:2px solid rgba(240,192,64,.2);
+  border-radius:50%;
+  animation: iris-ring-pulse 1.2s ease-out both;
+}
+@keyframes iris-ring-pulse {
+  0%   { transform:scale(0); opacity:0; }
+  50%  { transform:scale(1.2); opacity:.5; }
+  100% { transform:scale(1); opacity:.3; }
+}
+
+/* Gold triumph ring */
+.iris-ring-gold {
+  border-color: rgba(240,192,64,.4);
+  box-shadow: 0 0 15px rgba(240,192,64,.2);
+}
+
+/* ===== v3: Phase 3 — Episode List & Background ===== */
+
+/* 3-1. Episode card poster style */
+.ep-card {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(255,255,255,.05);
+  background: rgba(255,255,255,.02);
+  border-radius: 8px;
+  padding: 1.5rem 1.75rem;
+  cursor: pointer;
+  transition: all .35s cubic-bezier(.4,0,.2,1);
+}
+.ep-card:hover:not(.ep-locked) {
+  transform: translateY(-4px);
+  border-color: rgba(240,192,64,.18);
+  background: rgba(240,192,64,.04);
+  box-shadow: 0 12px 40px rgba(0,0,0,.4), 0 0 30px rgba(240,192,64,.04);
+}
+.ep-card.ep-locked {
+  cursor: not-allowed;
+  opacity: .6;
+}
+.ep-card .ep-watermark {
+  position: absolute;
+  top: 50%;
+  right: 1.5rem;
+  transform: translateY(-50%);
+  font-size: 5rem;
+  font-weight: 700;
+  color: rgba(240,192,64,.04);
+  pointer-events: none;
+  user-select: none;
+  line-height: 1;
+}
+.ep-card:hover:not(.ep-locked) .ep-watermark {
+  color: rgba(240,192,64,.07);
+}
+.ep-card .ep-play-btn {
+  position: absolute;
+  bottom: 1rem;
+  right: 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: .4rem;
+  font-size: .75rem;
+  color: rgba(240,192,64,.5);
+  letter-spacing: .1em;
+  font-weight: 500;
+  transition: color .2s;
+}
+.ep-card:hover:not(.ep-locked) .ep-play-btn {
+  color: #f0c040;
+}
+
+/* 3-2. Recording indicator */
+@keyframes rec-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+.ep-recording-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: .3rem;
+  color: #ef4444;
+  font-size: 0.7rem;
+  letter-spacing: .1em;
+  font-weight: 500;
+}
+.ep-recording-badge::before {
+  content: '\25CF';
+  animation: rec-blink 1.5s ease-in-out infinite;
+}
+
+/* 3-3. Background dust particles (CSS only) */
+@keyframes float-dust {
+  0% { transform: translateY(100vh) rotate(0deg); opacity: 0; }
+  10% { opacity: 0.3; }
+  90% { opacity: 0.3; }
+  100% { transform: translateY(-10vh) rotate(360deg); opacity: 0; }
+}
+.dust-particle {
+  position: fixed;
+  width: 2px;
+  height: 2px;
+  background: #f0c040;
+  border-radius: 50%;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 0;
+  animation: float-dust var(--duration) linear infinite;
+  animation-delay: var(--delay);
+  left: var(--left);
+}
+
+/* 3-4. Settings panel */
+.settings-panel {
+  position: fixed;
+  top: 3.5rem;
+  right: 1rem;
+  width: 260px;
+  background: rgba(20,20,35,.95);
+  border: 1px solid rgba(240,192,64,.12);
+  border-radius: 8px;
+  padding: 1rem;
+  z-index: 100;
+  box-shadow: 0 8px 30px rgba(0,0,0,.6);
+  backdrop-filter: blur(10px);
+}
+.settings-panel h3 {
+  font-size: .7rem;
+  letter-spacing: .15em;
+  text-transform: uppercase;
+  color: rgba(240,192,64,.5);
+  margin-bottom: .75rem;
+}
+.settings-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: .4rem 0;
+}
+.settings-row label {
+  font-size: .8rem;
+  color: rgba(255,255,255,.6);
+}
+.settings-toggle {
+  position: relative;
+  width: 36px;
+  height: 20px;
+  background: rgba(255,255,255,.1);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background .2s;
+  border: none;
+  padding: 0;
+}
+.settings-toggle.active {
+  background: rgba(240,192,64,.4);
+}
+.settings-toggle::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  background: #fff;
+  border-radius: 50%;
+  transition: transform .2s;
+}
+.settings-toggle.active::after {
+  transform: translateX(16px);
+}
+.settings-select {
+  background: rgba(255,255,255,.08);
+  border: 1px solid rgba(255,255,255,.1);
+  border-radius: 4px;
+  color: rgba(255,255,255,.7);
+  font-size: .75rem;
+  padding: .2rem .4rem;
+  cursor: pointer;
+}
+.settings-select:focus {
+  outline: none;
+  border-color: rgba(240,192,64,.3);
+}
+.settings-gear {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  z-index: 101;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: rgba(255,255,255,.05);
+  border: 1px solid rgba(255,255,255,.08);
+  cursor: pointer;
+  color: rgba(255,255,255,.4);
+  font-size: 1.1rem;
+  transition: all .2s;
+}
+.settings-gear:hover {
+  background: rgba(240,192,64,.1);
+  border-color: rgba(240,192,64,.2);
+  color: #f0c040;
+}
+
+/* ===== v3: Phase 4 — Auto Play & Mood ===== */
+
+/* 4-1/4-2. Seek bar (Auto Play) */
+.autoplay-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 90;
+  background: rgba(10,10,18,.92);
+  border-top: 1px solid rgba(240,192,64,.1);
+  backdrop-filter: blur(8px);
+  padding: .5rem 1rem;
+  display: flex;
+  align-items: center;
+  gap: .75rem;
+}
+.autoplay-bar .ap-btn {
+  background: none;
+  border: none;
+  color: rgba(255,255,255,.6);
+  cursor: pointer;
+  font-size: .9rem;
+  padding: .25rem;
+  transition: color .2s;
+}
+.autoplay-bar .ap-btn:hover {
+  color: #f0c040;
+}
+.autoplay-bar .ap-progress-track {
+  flex: 1;
+  height: 4px;
+  background: rgba(255,255,255,.08);
+  border-radius: 2px;
+  overflow: hidden;
+  cursor: pointer;
+}
+.autoplay-bar .ap-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #f0c040, #f5d060);
+  border-radius: 2px;
+  transition: width .3s linear;
+}
+.autoplay-bar .ap-time {
+  font-size: .65rem;
+  color: rgba(255,255,255,.3);
+  min-width: 70px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+.autoplay-bar .ap-speed {
+  font-size: .65rem;
+  color: rgba(240,192,64,.5);
+  cursor: pointer;
+  padding: .15rem .4rem;
+  border: 1px solid rgba(240,192,64,.15);
+  border-radius: 3px;
+  background: none;
+  transition: all .2s;
+  min-width: 30px;
+  text-align: center;
+}
+.autoplay-bar .ap-speed:hover {
+  border-color: rgba(240,192,64,.3);
+  color: #f0c040;
+}
+
+/* 4-3. Mood backgrounds */
+.mood-tense {
+  background: linear-gradient(180deg, rgba(100,20,20,.08) 0%, transparent 40%, transparent 60%, rgba(100,20,20,.06) 100%);
+  border-radius: 8px;
+  padding: 1rem;
+}
+.mood-triumph {
+  background: linear-gradient(180deg, rgba(240,192,64,.03) 0%, transparent 40%, transparent 60%, rgba(240,192,64,.03) 100%);
+  border-radius: 8px;
+  padding: 1rem;
+}
+.mood-comedy {
+  background: linear-gradient(180deg, rgba(255,255,255,.02) 0%, transparent 40%, transparent 60%, rgba(255,255,255,.015) 100%);
+  border-radius: 8px;
+  padding: 1rem;
+}
+@keyframes crisis-pulse {
+  0%, 100% { box-shadow: inset 0 0 30px rgba(200,40,40,0); }
+  50% { box-shadow: inset 0 0 30px rgba(200,40,40,.06); }
+}
+.mood-crisis {
+  border-radius: 8px;
+  padding: 1rem;
+  animation: crisis-pulse 3s ease-in-out infinite;
+}
+
+/* ===== Reduced motion ===== */
+@media (prefers-reduced-motion: reduce) {
+  .char-entrance,
+  .title-reveal,
+  .subtitle-rise,
+  .ep-label-fade,
+  .gold-line-expand,
+  .scene-transition-line,
+  .fin-grand,
+  .fin-line,
+  .narration-reveal,
+  .narration-block,
+  .scene-enter,
+  .beat-enter,
+  .loading-title,
+  .play-btn,
+  .progress-fill,
+  .dust-particle,
+  .mood-crisis,
+  .glow-crisis-pulse,
+  .film-grain::after {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+    filter: none !important;
+  }
+  .film-grain::after { display: none; }
+  .mood-entry-calm,
+  .mood-entry-tense,
+  .mood-entry-triumph,
+  .mood-entry-comedy,
+  .mood-entry-crisis,
+  .screen-shake,
+  .dramatic-scale-in,
+  .golden-pulse,
+  .iris-ring,
+  .action-drift,
+  .iris-ring-pulse {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+  .ep-recording-badge::before {
+    animation: none !important;
+  }
+  .curtain { transition: none !important; }
+  .curtain-left, .curtain-right { transform: translateX(0) !important; display: none; }
+  .fin-grand {
+    letter-spacing: .4em;
+    text-shadow: 0 0 60px rgba(240,192,64,.5), 0 0 120px rgba(240,192,64,.2);
+  }
+  .gold-line-expand { width: 100%; opacity: .4; }
+  .fin-line { width: 100%; }
+  .dust-particle { display: none; }
+  .parallax-subtle .layer-midground,
+  .parallax-subtle .layer-background,
+  .parallax-normal .layer-midground,
+  .parallax-normal .layer-background {
+    transform: none !important;
+  }
+  .snap-container { scroll-snap-type: none !important; }
+  .dramatic-takeover { min-height: auto; }
+}
 </style>
 </head>
 
@@ -167,11 +991,535 @@ const DEMO_PRODUCTION = {
 // ─── Utilities ───
 const safeColor = (c) => /^#[0-9a-fA-F]{3,8}$/.test(c) ? c : '#888';
 
+// Check if reduced motion is preferred
+const prefersReducedMotion = () =>
+  window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
 // ─── API Helper ───
 const api = (u) => fetch(u).then(r => {
   if(!r.ok) { console.warn(`[Theater] ${u} returned ${r.status}`); return null; }
   return r.json();
 }).catch(ex => { console.warn(`[Theater] ${u} failed:`, ex.message); return null; });
+
+// ─── Gold Particle System (Phase 2-5) ───
+class GoldParticle {
+  constructor(canvas) {
+    this.x = Math.random() * canvas.width;
+    this.y = canvas.height + 10;
+    this.size = Math.random() * 3 + 1;
+    this.speedY = -(Math.random() * 1 + 0.5);
+    this.opacity = Math.random() * 0.6 + 0.2;
+    this.drift = (Math.random() - 0.5) * 0.5;
+  }
+  update() {
+    this.y += this.speedY;
+    this.x += this.drift;
+    this.opacity -= 0.002;
+  }
+  draw(ctx) {
+    if (this.opacity <= 0) return;
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(240, 192, 64, ${this.opacity})`;
+    ctx.fill();
+  }
+  isDead() {
+    return this.opacity <= 0 || this.y < -10;
+  }
+}
+
+function createParticleCanvas(container) {
+  if (prefersReducedMotion()) return null;
+  const canvas = document.createElement('canvas');
+  canvas.style.position = 'absolute';
+  canvas.style.inset = '0';
+  canvas.style.width = '100%';
+  canvas.style.height = '100%';
+  canvas.style.pointerEvents = 'none';
+  canvas.style.zIndex = '2';
+  container.style.position = 'relative';
+  container.appendChild(canvas);
+
+  const rect = container.getBoundingClientRect();
+  canvas.width = rect.width;
+  canvas.height = rect.height;
+
+  const ctx = canvas.getContext('2d');
+  const particles = [];
+  const PARTICLE_COUNT = 25;
+  for (let i = 0; i < PARTICLE_COUNT; i++) {
+    const p = new GoldParticle(canvas);
+    // Stagger initial positions
+    p.y = canvas.height + Math.random() * 100;
+    particles.push(p);
+  }
+
+  const startTime = performance.now();
+  const DURATION = 5000;
+  let rafId;
+
+  function animate(now) {
+    const elapsed = now - startTime;
+    if (elapsed > DURATION) {
+      canvas.remove();
+      return;
+    }
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    for (const p of particles) {
+      p.update();
+      p.draw(ctx);
+    }
+    rafId = requestAnimationFrame(animate);
+  }
+  rafId = requestAnimationFrame(animate);
+
+  return () => {
+    if (rafId) cancelAnimationFrame(rafId);
+    if (canvas.parentNode) canvas.remove();
+  };
+}
+
+// ─── IntersectionObserver hook for scroll-triggered animations ───
+function useInView(ref, options) {
+  const [inView, setInView] = useState(false);
+  useEffect(() => {
+    if (!ref.current) return;
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) {
+        setInView(true);
+        observer.disconnect();
+      }
+    }, { threshold: 0.1, ...options });
+    observer.observe(ref.current);
+    return () => observer.disconnect();
+  }, [ref.current]);
+  return inView;
+}
+
+// ─── Settings Hook (Phase 3-4) ───
+const DEFAULT_SETTINGS = {
+  particles: true,
+  animationIntensity: 'normal', // 'subtle' | 'normal' | 'flashy'
+  autoPlay: false,
+  autoPlaySpeed: 1, // 0.5 | 1 | 1.5 | 2
+  // v4 settings
+  filmGrain: true,
+  curtainOpen: true,
+  dialogueStyle: 'cinematic', // 'classic' | 'cinematic'
+  transitionStyle: 'iris',    // 'simple' | 'iris' | 'fade'
+  dramaticEffects: true,
+  parallaxDepth: 'normal',    // 'off' | 'subtle' | 'normal'
+};
+
+function useSettings() {
+  const [settings, setSettingsState] = useState(() => {
+    try {
+      const saved = localStorage.getItem('theater-settings');
+      return saved ? { ...DEFAULT_SETTINGS, ...JSON.parse(saved) } : DEFAULT_SETTINGS;
+    } catch (e) {
+      return DEFAULT_SETTINGS;
+    }
+  });
+
+  const setSettings = useCallback((updater) => {
+    setSettingsState(prev => {
+      const next = typeof updater === 'function' ? updater(prev) : { ...prev, ...updater };
+      try { localStorage.setItem('theater-settings', JSON.stringify(next)); } catch (e) {}
+      return next;
+    });
+  }, []);
+
+  return [settings, setSettings];
+}
+
+// ─── Background Dust Particles (Phase 3-3, CSS-only rendered via Preact) ───
+function DustParticles({ enabled }) {
+  if (!enabled || prefersReducedMotion()) return null;
+
+  const particles = useMemo(() => {
+    const count = 10;
+    const result = [];
+    for (let i = 0; i < count; i++) {
+      result.push({
+        id: i,
+        duration: (15 + Math.random() * 10).toFixed(1) + 's',
+        delay: (Math.random() * 15).toFixed(1) + 's',
+        left: (Math.random() * 100).toFixed(1) + '%',
+      });
+    }
+    return result;
+  }, []);
+
+  return html`
+    ${particles.map(p => html`
+      <div key=${p.id} class="dust-particle"
+           style="--duration:${p.duration};--delay:${p.delay};--left:${p.left}"></div>
+    `)}
+  `;
+}
+
+// ─── Letterbox Component (v4 Phase 1) ───
+function Letterbox() {
+  return html`
+    <div class="letterbox letterbox-top"></div>
+    <div class="letterbox letterbox-bottom"></div>
+  `;
+}
+
+// ─── Curtain Component (v4 Phase 1) ───
+function Curtains({ open }) {
+  const reduced = prefersReducedMotion();
+  return html`
+    <div class="curtain curtain-left ${open || reduced ? 'open' : ''}"></div>
+    <div class="curtain curtain-right ${open || reduced ? 'open' : ''}"></div>
+  `;
+}
+
+// ─── Scene Transition Component (v4 Phase 4) ───
+function SceneTransition({ nextMood, transitionStyle, inView }) {
+  if (!inView) return html`<div class="scene-transition-v4"></div>`;
+
+  // simple = v3 gold wipe
+  if (transitionStyle === 'simple') {
+    return html`
+      <div class="flex justify-center mt-8">
+        <div class="scene-transition-line" style="max-width:80%"></div>
+      </div>`;
+  }
+
+  // fade
+  if (transitionStyle === 'fade') {
+    return html`
+      <div class="scene-transition-v4">
+        <div style="width:60%; height:1px; background:rgba(255,255,255,.05);"></div>
+      </div>`;
+  }
+
+  // iris (default) — with mood-based ring style
+  const isGold = nextMood === 'triumph';
+  const ringClass = isGold ? 'iris-ring iris-ring-gold' : 'iris-ring';
+  return html`
+    <div class="scene-transition-v4">
+      <div class="${ringClass}"></div>
+    </div>`;
+}
+
+// ─── Settings Panel (Phase 3-4) ───
+function SettingsPanel({ settings, setSettings, onClose }) {
+  return html`
+    <div class="settings-panel" onClick=${(e) => e.stopPropagation()}>
+      <h3>Settings</h3>
+
+      <div class="settings-row">
+        <label>背景パーティクル</label>
+        <button class="settings-toggle ${settings.particles ? 'active' : ''}"
+                onClick=${() => setSettings(s => ({ ...s, particles: !s.particles }))}></button>
+      </div>
+
+      <div class="settings-row">
+        <label>アニメーション強度</label>
+        <select class="settings-select"
+                value=${settings.animationIntensity}
+                onChange=${(e) => setSettings(s => ({ ...s, animationIntensity: e.target.value }))}>
+          <option value="subtle">控えめ</option>
+          <option value="normal">標準</option>
+          <option value="flashy">派手</option>
+        </select>
+      </div>
+
+      <div class="settings-row">
+        <label>Auto Play</label>
+        <button class="settings-toggle ${settings.autoPlay ? 'active' : ''}"
+                onClick=${() => setSettings(s => ({ ...s, autoPlay: !s.autoPlay }))}></button>
+      </div>
+
+      <div class="settings-row">
+        <label>Auto Play 速度</label>
+        <select class="settings-select"
+                value=${settings.autoPlaySpeed}
+                onChange=${(e) => setSettings(s => ({ ...s, autoPlaySpeed: parseFloat(e.target.value) }))}>
+          <option value="0.5">0.5x</option>
+          <option value="1">1x</option>
+          <option value="1.5">1.5x</option>
+          <option value="2">2x</option>
+        </select>
+      </div>
+
+      <div style="margin-top:.5rem; padding-top:.5rem; border-top:1px solid rgba(255,255,255,.05)">
+        <h3 style="margin-top:.5rem">Cinematic</h3>
+
+        <div class="settings-row">
+          <label>フィルムグレイン</label>
+          <button class="settings-toggle ${settings.filmGrain ? 'active' : ''}"
+                  onClick=${() => setSettings(s => ({ ...s, filmGrain: !s.filmGrain }))}></button>
+        </div>
+
+        <div class="settings-row">
+          <label>カーテン開幕</label>
+          <button class="settings-toggle ${settings.curtainOpen ? 'active' : ''}"
+                  onClick=${() => setSettings(s => ({ ...s, curtainOpen: !s.curtainOpen }))}></button>
+        </div>
+
+        <div class="settings-row">
+          <label>会話レイアウト</label>
+          <select class="settings-select"
+                  value=${settings.dialogueStyle}
+                  onChange=${(e) => setSettings(s => ({ ...s, dialogueStyle: e.target.value }))}>
+            <option value="classic">クラシック</option>
+            <option value="cinematic">シネマティック</option>
+          </select>
+        </div>
+
+        <div class="settings-row">
+          <label>シーン転換</label>
+          <select class="settings-select"
+                  value=${settings.transitionStyle}
+                  onChange=${(e) => setSettings(s => ({ ...s, transitionStyle: e.target.value }))}>
+            <option value="simple">シンプル</option>
+            <option value="iris">アイリス</option>
+            <option value="fade">フェード</option>
+          </select>
+        </div>
+
+        <div class="settings-row">
+          <label>演出効果</label>
+          <button class="settings-toggle ${settings.dramaticEffects ? 'active' : ''}"
+                  onClick=${() => setSettings(s => ({ ...s, dramaticEffects: !s.dramaticEffects }))}></button>
+        </div>
+
+        <div class="settings-row">
+          <label>パララックス</label>
+          <select class="settings-select"
+                  value=${settings.parallaxDepth}
+                  onChange=${(e) => setSettings(s => ({ ...s, parallaxDepth: e.target.value }))}>
+            <option value="off">OFF</option>
+            <option value="subtle">控えめ</option>
+            <option value="normal">標準</option>
+          </select>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function SettingsGear({ settings, setSettings }) {
+  const [open, setOpen] = useState(false);
+
+  // Close on outside click
+  useEffect(() => {
+    if (!open) return;
+    const handler = () => setOpen(false);
+    document.addEventListener('click', handler);
+    return () => document.removeEventListener('click', handler);
+  }, [open]);
+
+  return html`
+    <div>
+      <button class="settings-gear" onClick=${(e) => { e.stopPropagation(); setOpen(o => !o); }}
+              title="設定">
+        \u2699
+      </button>
+      ${open && html`<${SettingsPanel} settings=${settings} setSettings=${setSettings} onClose=${() => setOpen(false)} />`}
+    </div>
+  `;
+}
+
+// ─── Auto Play Hook (Phase 4-1) ───
+function useAutoPlay(epDetail, settings, setSettings) {
+  const [playing, setPlaying] = useState(false);
+  const [currentBeatIndex, setCurrentBeatIndex] = useState(0);
+  const timerRef = useRef(null);
+  const beatRefs = useRef([]);
+  const totalBeats = useRef(0);
+
+  // Flatten all beats/narrations into a linear list for auto play
+  const flatBeats = useMemo(() => {
+    if (!epDetail || !epDetail.scenes) return [];
+    const items = [];
+    epDetail.scenes.forEach((scene, si) => {
+      // Scene intro (narration)
+      items.push({ type: 'scene', sceneIndex: si, scene });
+      if (scene.narration) {
+        items.push({ type: 'narration', text: scene.narration, sceneIndex: si });
+      }
+      (scene.beats || []).forEach((beat, bi) => {
+        if (beat.narration || (!beat.character && !beat.dialogue)) {
+          items.push({ type: 'narration', text: beat.narration || beat.dialogue || '', sceneIndex: si });
+        } else {
+          items.push({ type: 'dialogue', text: beat.dialogue || '', sceneIndex: si, beat });
+        }
+      });
+    });
+    // FIN
+    items.push({ type: 'fin' });
+    return items;
+  }, [epDetail]);
+
+  totalBeats.current = flatBeats.length;
+
+  // Calculate display time for a beat
+  const getDisplayTime = useCallback((item) => {
+    const speed = settings.autoPlaySpeed || 1;
+    let ms;
+    switch (item.type) {
+      case 'scene':
+        ms = 2000;
+        break;
+      case 'narration':
+        ms = (item.text || '').length * 50 + 2000;
+        break;
+      case 'dialogue':
+        ms = (item.text || '').length * 40 + 1500;
+        break;
+      case 'fin':
+        ms = 4000;
+        break;
+      default:
+        ms = 2000;
+    }
+    return ms / speed;
+  }, [settings.autoPlaySpeed]);
+
+  // Auto advance
+  useEffect(() => {
+    if (!playing || !settings.autoPlay) {
+      if (timerRef.current) clearTimeout(timerRef.current);
+      return;
+    }
+    if (currentBeatIndex >= flatBeats.length) {
+      setPlaying(false);
+      return;
+    }
+
+    const item = flatBeats[currentBeatIndex];
+    const time = getDisplayTime(item);
+
+    timerRef.current = setTimeout(() => {
+      setCurrentBeatIndex(i => i + 1);
+    }, time);
+
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
+  }, [playing, currentBeatIndex, flatBeats, getDisplayTime, settings.autoPlay]);
+
+  // Scroll to current beat element
+  useEffect(() => {
+    if (!playing) return;
+    const el = beatRefs.current[currentBeatIndex];
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }, [currentBeatIndex, playing]);
+
+  // Stop auto play on manual scroll
+  useEffect(() => {
+    if (!playing) return;
+    let scrollTimeout;
+    const handler = () => {
+      // Debounce: ignore programmatic scrolls
+      clearTimeout(scrollTimeout);
+      scrollTimeout = setTimeout(() => {
+        setPlaying(false);
+        setSettings(s => ({ ...s, autoPlay: false }));
+      }, 100);
+    };
+    window.addEventListener('wheel', handler, { passive: true });
+    window.addEventListener('touchmove', handler, { passive: true });
+    return () => {
+      window.removeEventListener('wheel', handler);
+      window.removeEventListener('touchmove', handler);
+      clearTimeout(scrollTimeout);
+    };
+  }, [playing, setSettings]);
+
+  const togglePlay = useCallback(() => {
+    if (!settings.autoPlay) {
+      setSettings(s => ({ ...s, autoPlay: true }));
+    }
+    setPlaying(p => {
+      if (!p) {
+        // Starting: reset to 0 if at end
+        if (currentBeatIndex >= flatBeats.length) {
+          setCurrentBeatIndex(0);
+        }
+      }
+      return !p;
+    });
+  }, [settings.autoPlay, currentBeatIndex, flatBeats.length, setSettings]);
+
+  const seekTo = useCallback((fraction) => {
+    const idx = Math.floor(fraction * flatBeats.length);
+    setCurrentBeatIndex(Math.min(idx, flatBeats.length - 1));
+  }, [flatBeats.length]);
+
+  // Estimated times for progress display
+  const estimatedTotal = useMemo(() => {
+    return flatBeats.reduce((sum, item) => sum + getDisplayTime(item), 0);
+  }, [flatBeats, getDisplayTime]);
+
+  const estimatedElapsed = useMemo(() => {
+    let sum = 0;
+    for (let i = 0; i < currentBeatIndex && i < flatBeats.length; i++) {
+      sum += getDisplayTime(flatBeats[i]);
+    }
+    return sum;
+  }, [currentBeatIndex, flatBeats, getDisplayTime]);
+
+  const formatTime = (ms) => {
+    const s = Math.floor(ms / 1000);
+    const m = Math.floor(s / 60);
+    const sec = s % 60;
+    return `${m}:${String(sec).padStart(2, '0')}`;
+  };
+
+  return {
+    playing,
+    togglePlay,
+    currentBeatIndex,
+    totalBeats: flatBeats.length,
+    beatRefs,
+    seekTo,
+    progress: flatBeats.length > 0 ? currentBeatIndex / flatBeats.length : 0,
+    elapsedStr: formatTime(estimatedElapsed),
+    totalStr: formatTime(estimatedTotal),
+    speedLabel: settings.autoPlaySpeed + 'x',
+    cycleSpeed: () => {
+      const speeds = [0.5, 1, 1.5, 2];
+      const idx = speeds.indexOf(settings.autoPlaySpeed);
+      const next = speeds[(idx + 1) % speeds.length];
+      setSettings(s => ({ ...s, autoPlaySpeed: next }));
+    },
+  };
+}
+
+// ─── Auto Play Seek Bar (Phase 4-2) ───
+function AutoPlayBar({ autoPlay }) {
+  const { playing, togglePlay, progress, elapsedStr, totalStr, speedLabel, cycleSpeed, seekTo } = autoPlay;
+  const trackRef = useRef(null);
+
+  const handleTrackClick = useCallback((e) => {
+    if (!trackRef.current) return;
+    const rect = trackRef.current.getBoundingClientRect();
+    const fraction = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+    seekTo(fraction);
+  }, [seekTo]);
+
+  return html`
+    <div class="autoplay-bar">
+      <button class="ap-btn" onClick=${togglePlay} title=${playing ? '一時停止' : '再生'}>
+        ${playing ? '\u275A\u275A' : '\u25B6'}
+      </button>
+      <div class="ap-progress-track" ref=${trackRef} onClick=${handleTrackClick}>
+        <div class="ap-progress-fill" style="width:${(progress * 100).toFixed(1)}%"></div>
+      </div>
+      <div class="ap-time">${elapsedStr} / ${totalStr}</div>
+      <button class="ap-speed" onClick=${cycleSpeed} title="速度切替">
+        ${speedLabel}
+      </button>
+    </div>
+  `;
+}
 
 // ─── App ───
 function App() {
@@ -183,6 +1531,7 @@ function App() {
   const [epDetail, setEpDetail] = useState(null);
   const [loading, setLoading] = useState(true);
   const [epLoading, setEpLoading] = useState(false);
+  const [settings, setSettings] = useSettings();
 
   // Initial data fetch
   useEffect(() => {
@@ -278,6 +1627,8 @@ function App() {
 
   return html`
     <div class="relative z-10">
+      <${DustParticles} enabled=${settings.particles} />
+      <${SettingsGear} settings=${settings} setSettings=${setSettings} />
       ${view === 'list'
         ? html`<${EpisodeList}
             episodes=${episodes}
@@ -291,7 +1642,9 @@ function App() {
             castMap=${castMap}
             currentEp=${currentEp}
             onBack=${backToList}
-            onPlay=${playEpisode} />`
+            onPlay=${playEpisode}
+            settings=${settings}
+            setSettings=${setSettings} />`
       }
     </div>`;
 }
@@ -344,13 +1697,13 @@ function EpisodeList({ episodes, production, onPlay, onPlayLatest }) {
                    text-[#f0c040] text-sm font-medium tracking-wide
                    hover:bg-[#f0c040]/15 hover:border-[#f0c040]/30 transition-all">
             <span>最新エピソードを再生</span>
-            <span class="text-lg">▶</span>
+            <span class="text-lg">\u25b6</span>
           </button>
         </div>`}
 
       <!-- Footer -->
       <div class="text-center text-gray-700 text-xs mt-10 pb-8">
-        \ud83c\udf7f ENSEMBLE CAST Theater v2.0
+        \ud83c\udf7f ENSEMBLE CAST Theater v4.0
         <span class="mx-1">\u00b7</span>
         <a href="/"
            class="text-gray-700 hover:text-[#f0c040] transition-colors"
@@ -360,47 +1713,57 @@ function EpisodeList({ episodes, production, onPlay, onPlayLatest }) {
     </div>`;
 }
 
-// ─── Episode Item ───
+// ─── Episode Item (v3 Phase 3: Movie Poster Style) ───
 function EpisodeItem({ ep, onPlay }) {
   const isRecording = ep.status === 'recording';
   const isAvailable = ep.status === 'available';
 
   return html`
     <div onClick=${() => isAvailable && onPlay(ep.number)}
-         class="ep-item ${isRecording ? 'ep-locked' : ''}
-                flex items-center gap-4 px-4 py-3 rounded-lg
-                border border-white/5 bg-white/[.02]">
-      <!-- Episode number -->
-      <div class="flex-shrink-0 w-14 text-right">
-        <span class="text-[#f0c040]/70 text-sm font-medium">EP.${ep.number}</span>
-      </div>
+         class="ep-card ${isRecording ? 'ep-locked' : ''} mb-3">
+      <!-- Watermark EP number -->
+      <div class="ep-watermark">EP.${ep.number}</div>
 
-      <!-- Title + Synopsis -->
-      <div class="flex-1 min-w-0">
+      <!-- Content -->
+      <div class="relative z-[1]">
+        <!-- EP label -->
+        <div class="text-xs tracking-[.3em] text-[#f0c040]/50 font-medium mb-2">
+          EP.${ep.number}</div>
+
         ${isRecording
-          ? html`<div class="text-white/30 text-sm flex items-center gap-2">
-              <span>🔒</span>
-              <span class="italic">撮影中...</span>
+          ? html`
+            <div class="text-white/30 text-lg mb-1 italic">撮影中...</div>
+            <div class="mt-3">
+              <span class="ep-recording-badge">REC</span>
             </div>`
           : html`
-            <div class="text-white/80 text-sm font-medium truncate">${ep.title || 'Untitled'}</div>
+            <div class="text-white/80 text-lg font-medium mb-1">
+              ${ep.title || 'Untitled'}</div>
             ${ep.synopsis && html`
-              <div class="text-white/30 text-xs mt-0.5 truncate">${ep.synopsis}</div>`}`
+              <div class="text-white/30 text-sm leading-relaxed">
+                ${ep.synopsis}</div>`}
+            <div class="mt-3 flex items-center gap-2">
+              <span class="text-xs text-white/20">${ep.scene_count} scenes</span>
+            </div>`
         }
       </div>
 
-      <!-- Scene count + Play -->
+      <!-- Play button (bottom right) -->
       ${isAvailable && html`
-        <div class="flex-shrink-0 flex items-center gap-3">
-          <span class="text-[10px] text-white/20">${ep.scene_count} scenes</span>
-          <span class="text-[#f0c040]/60 text-lg hover:text-[#f0c040] transition-colors">▶</span>
+        <div class="ep-play-btn">
+          <span>\u25B6</span>
+          <span>PLAY</span>
         </div>`}
     </div>`;
 }
 
-// ─── Episode Player ───
-function EpisodePlayer({ epDetail, epLoading, episodes, castMap, currentEp, onBack, onPlay }) {
+// ─── Episode Player (v3 Phase 3-4: Auto Play + Mood) ───
+function EpisodePlayer({ epDetail, epLoading, episodes, castMap, currentEp, onBack, onPlay, settings, setSettings }) {
   const scrollRef = useRef(null);
+  const finRef = useRef(null);
+
+  // Auto Play
+  const autoPlay = useAutoPlay(epDetail, settings, setSettings);
 
   // Navigation
   const allEps = episodes || [];
@@ -416,6 +1779,14 @@ function EpisodePlayer({ epDetail, epLoading, episodes, castMap, currentEp, onBa
     window.scrollTo(0, 0);
   }, [currentEp]);
 
+  // FIN particle effect (Phase 2-5)
+  const finInView = useInView(finRef);
+  useEffect(() => {
+    if (!finInView || !finRef.current) return;
+    const cleanup = createParticleCanvas(finRef.current);
+    return cleanup || undefined;
+  }, [finInView]);
+
   // Loading state
   if (epLoading || !epDetail) return html`
     <div class="max-w-3xl mx-auto px-4 py-8">
@@ -427,51 +1798,108 @@ function EpisodePlayer({ epDetail, epLoading, episodes, castMap, currentEp, onBa
 
   const isFinalScene = (idx) => idx === epDetail.scenes.length - 1;
 
+  // Build beat ref index counter for auto play refs
+  let beatRefCounter = 0;
+
+  // Curtain state: open after a short delay once content is loaded
+  const [curtainOpen, setCurtainOpen] = useState(false);
+  useEffect(() => {
+    if (!epDetail || !settings.curtainOpen) {
+      setCurtainOpen(true); // skip animation
+      return;
+    }
+    const t = setTimeout(() => setCurtainOpen(true), 800);
+    return () => clearTimeout(t);
+  }, [epDetail, settings.curtainOpen]);
+
+  // Determine dominant mood for screen glow
+  const dominantMood = useMemo(() => {
+    if (!epDetail || !epDetail.scenes) return 'calm';
+    // Use first scene's mood as default; auto play will update per-scene
+    return epDetail.scenes[0]?.mood || 'calm';
+  }, [epDetail]);
+  const [activeMood, setActiveMood] = useState(dominantMood);
+
+  // Track visible scene mood for glow
+  const sceneMoodRef = useRef('calm');
+
+  const glowClass = activeMood === 'crisis'
+    ? 'glow-crisis glow-crisis-pulse'
+    : `glow-${activeMood || 'calm'}`;
+
   return html`
-    <div ref=${scrollRef} class="max-w-3xl mx-auto px-4 py-6 md:py-10">
+    <${Letterbox} />
+    <div class="theater-frame">
+    <div ref=${scrollRef} class="px-4 py-6 md:py-10 ${settings.dramaticEffects ? 'snap-container' : ''}"
+         style="${settings.autoPlay ? 'padding-bottom:4rem' : ''}; padding-top:max(8vh + 1rem, 5rem); padding-bottom:max(8vh + 1rem, 5rem);">
       <!-- Back button -->
       <button onClick=${onBack}
-        class="back-link flex items-center gap-2 text-white/40 text-sm mb-6 hover:text-[#f0c040]">
-        <span>◀</span>
+        class="back-link flex items-center gap-2 text-white/40 text-sm mb-6 hover:text-[#f0c040]"
+        style="position:relative; z-index:20;">
+        <span>\u25c0</span>
         <span>エピソード一覧</span>
       </button>
 
-      <!-- Episode title -->
-      <div class="screen p-6 md:p-10 mb-0">
+      <!-- Episode content -->
+      <div class="screen-surface ${settings.filmGrain ? 'film-grain' : ''} ${glowClass} p-6 md:p-10 mb-0">
+        <${Curtains} open=${curtainOpen} />
         <div class="relative z-10">
-          <!-- Episode header -->
-          <div class="mb-8">
-            <div class="text-[10px] tracking-[.4em] uppercase text-[#f0c040]/40 mb-2">
+          <!-- v3 Opening (Phase 2-1) -->
+          <div class="mb-10 text-center py-8">
+            <div class="ep-label-fade text-xs tracking-[.5em] uppercase text-[#f0c040]/50 mb-4">
               Episode ${epDetail.episode}</div>
-            <h2 class="text-xl md:text-2xl font-light text-white/90 tracking-wide">
-              EP.${epDetail.episode} — ${epDetail.title}</h2>
-            <div class="gold-line mt-4 opacity-40"></div>
+            <h2 class="title-reveal text-3xl md:text-5xl font-light text-white/90"
+                style="text-shadow:0 0 40px rgba(240,192,64,.15)">
+              ${epDetail.title}</h2>
+            <div class="gold-line gold-line-expand mt-6 mx-auto"></div>
             ${epDetail.synopsis && html`
-              <div class="text-sm text-white/30 mt-3 italic">${epDetail.synopsis}</div>`}
+              <div class="subtitle-rise text-lg text-white/30 mt-4 italic max-w-xl mx-auto">
+                ${epDetail.synopsis}</div>`}
           </div>
 
           <!-- Scenes -->
-          <div class="space-y-10">
-            ${epDetail.scenes.map((scene, si) => html`
-              <${SceneBlock}
-                key=${scene.scene}
-                scene=${scene}
-                castMap=${castMap}
-                index=${si}
-                isFinal=${isFinalScene(si)}
-                totalScenes=${epDetail.scenes.length} />
-            `)}
+          <div class="space-y-10 ${settings.parallaxDepth !== 'off' && !settings.autoPlay ? `parallax-${settings.parallaxDepth}` : ''}">
+            ${epDetail.scenes.map((scene, si) => {
+              const sceneRefStart = beatRefCounter;
+              // scene intro = 1 ref, narration = 1 ref if present, beats = N refs
+              beatRefCounter += 1; // scene intro
+              if (scene.narration) beatRefCounter += 1;
+              beatRefCounter += (scene.beats || []).length;
+
+              const nextScene = epDetail.scenes[si + 1];
+              const nextMood = nextScene ? (nextScene.mood || 'calm') : 'calm';
+              return html`
+                <${SceneBlock}
+                  key=${scene.scene}
+                  scene=${scene}
+                  castMap=${castMap}
+                  index=${si}
+                  isFinal=${isFinalScene(si)}
+                  totalScenes=${epDetail.scenes.length}
+                  beatRefs=${autoPlay.beatRefs}
+                  beatRefStart=${sceneRefStart}
+                  dialogueStyle=${settings.dialogueStyle}
+                  onMoodVisible=${(mood) => setActiveMood(mood)}
+                  transitionStyle=${settings.transitionStyle}
+                  nextMood=${nextMood} />
+              `;
+            })}
           </div>
 
-          <!-- FIN -->
-          <div class="mt-12 mb-4">
+          <!-- FIN (Phase 2-4) -->
+          <div class="mt-16 mb-6" ref=${(el) => {
+            finRef.current = el;
+            // Last beat ref for auto play
+            if (el && autoPlay.beatRefs) {
+              autoPlay.beatRefs.current[beatRefCounter] = el;
+            }
+          }}>
             <div class="gold-line opacity-60"></div>
-            <div class="fin-enter text-center py-8">
-              <div class="text-xs tracking-[.5em] text-[#f0c040]/40 mb-2 uppercase">
+            <div class="text-center py-12">
+              <div class="text-xs tracking-[.5em] text-[#f0c040]/40 mb-4 uppercase">
                 Episode ${epDetail.episode}</div>
-              <div class="text-xl font-light text-[#f0c040]/80 tracking-[.4em]"
-                   style="text-shadow:0 0 20px rgba(240,192,64,.2)">
-                FIN</div>
+              <div class="fin-grand">FIN</div>
+              <div class="fin-line max-w-xs mx-auto"></div>
             </div>
           </div>
 
@@ -483,7 +1911,7 @@ function EpisodePlayer({ epDetail, epLoading, episodes, castMap, currentEp, onBa
                   disabled=${!prevAvailable}
                   class="nav-btn flex items-center gap-2 px-4 py-2 rounded-lg
                          border border-white/5 text-sm text-white/50">
-                  <span>◀</span>
+                  <span>\u25c0</span>
                   <span>EP.${prevEp.number}</span>
                 </button>` : html`<div></div>`}
             </div>
@@ -502,8 +1930,8 @@ function EpisodePlayer({ epDetail, epLoading, episodes, castMap, currentEp, onBa
                   disabled=${!nextAvailable}
                   class="nav-btn flex items-center gap-2 px-4 py-2 rounded-lg
                          border border-white/5 text-sm text-white/50">
-                  <span>EP.${nextEp.number}${nextEp.status === 'recording' ? ' (🔒)' : ''}</span>
-                  <span>▶</span>
+                  <span>EP.${nextEp.number}${nextEp.status === 'recording' ? ' (\ud83d\udd12)' : ''}</span>
+                  <span>\u25b6</span>
                 </button>` : html`<div></div>`}
             </div>
           </div>
@@ -514,94 +1942,247 @@ function EpisodePlayer({ epDetail, epLoading, episodes, castMap, currentEp, onBa
 
       <!-- Footer -->
       <div class="text-center text-gray-700 text-xs mt-8 pb-8">
-        \ud83c\udf7f ENSEMBLE CAST Theater v2.0
+        \ud83c\udf7f ENSEMBLE CAST Theater v4.0
         <span class="mx-1">\u00b7</span>
         <a href="/"
            class="text-gray-700 hover:text-[#f0c040] transition-colors"
            style="text-decoration:none"
            >\ud83d\udce1 Control Room \u2192</a>
       </div>
-    </div>`;
+    </div>
+    </div>
+
+    <!-- Auto Play seek bar -->
+    ${settings.autoPlay && html`<${AutoPlayBar} autoPlay=${autoPlay} />`}
+  `;
 }
 
-// ─── Scene Block ───
-function SceneBlock({ scene, castMap, index, isFinal, totalScenes }) {
+// ─── Scene Block (v3 Phase 3-4: Mood support + Auto Play refs) ───
+function SceneBlock({ scene, castMap, index, isFinal, totalScenes, beatRefs, beatRefStart, dialogueStyle, onMoodVisible, transitionStyle, nextMood }) {
+  const ref = useRef(null);
+  const inView = useInView(ref);
+
+  // Track which characters have appeared in this scene (for entrance animation)
+  const appearedChars = useRef(new Set());
+  // Reset on scene change
+  useEffect(() => {
+    appearedChars.current = new Set();
+  }, [scene.scene]);
+
+  // Mood class (Phase 4-3) — must be before useEffect that references it
+  const mood = scene.mood || 'calm';
+
+  // v4: Character left/right positioning for cinematic mode
+  const charPositions = useMemo(() => {
+    if (dialogueStyle !== 'cinematic') return {};
+    const map = {};
+    let nextSide = 'left';
+    (scene.beats || []).forEach(beat => {
+      if (beat.character && !map[beat.character]) {
+        map[beat.character] = nextSide;
+        nextSide = nextSide === 'left' ? 'right' : 'left';
+      }
+    });
+    return map;
+  }, [scene.beats, dialogueStyle]);
+
+  // Notify parent of mood when this scene becomes visible
+  useEffect(() => {
+    if (inView && onMoodVisible) {
+      onMoodVisible(mood);
+    }
+  }, [inView, mood, onMoodVisible]);
+
   const sceneLabel = isFinal && totalScenes > 1
-    ? `FINAL SCENE — ${scene.title}`
-    : `SCENE ${scene.scene} — ${scene.title}`;
+    ? `FINAL SCENE \u2014 ${scene.title}`
+    : `SCENE ${scene.scene} \u2014 ${scene.title}`;
+  const moodClass = isFinal ? 'final-scene-glow'
+    : mood === 'tense' ? 'mood-tense'
+    : mood === 'triumph' ? 'mood-triumph'
+    : mood === 'comedy' ? 'mood-comedy'
+    : mood === 'crisis' ? 'mood-crisis'
+    : '';
+
+  // Beat ref index tracking
+  let localRefIdx = beatRefStart || 0;
 
   return html`
-    <div class="scene-enter" style="animation-delay:${index * 0.15}s">
-      <!-- Scene header -->
-      <div class="mb-4">
-        <div class="text-sm font-medium tracking-wide
-                    ${isFinal ? 'text-[#f0c040]/80' : 'text-white/60'}">
+    <div ref=${(el) => {
+           ref.current = el;
+           if (beatRefs && el) beatRefs.current[localRefIdx] = el;
+         }}
+         class="${inView ? 'scene-enter' : 'opacity-0'} ${moodClass}"
+         style="${inView ? `animation-delay:${index * 0.15}s` : ''}">
+      ${(() => { localRefIdx++; return null; })()}
+      <!-- Scene header (v3: text-2xl) -->
+      <div class="mb-5">
+        <div class="text-xl md:text-2xl font-medium tracking-wide
+                    ${isFinal
+                      ? 'text-[#f0c040]'
+                      : 'text-white/60'}"
+             style="${isFinal ? 'text-shadow: 0 0 20px rgba(240,192,64,.3)' : ''}">
           ${sceneLabel}</div>
-        <div class="h-px mt-2 ${isFinal
+        <div class="h-px mt-3 ${isFinal
           ? 'bg-gradient-to-r from-transparent via-[#f0c040]/30 to-transparent'
           : 'bg-white/5'}"
              style="border-top:1px dashed ${isFinal ? 'rgba(240,192,64,.2)' : 'rgba(255,255,255,.06)'}">
         </div>
       </div>
 
-      <!-- Narration -->
+      <!-- Narration (v4: midground parallax layer) -->
       ${scene.narration && html`
-        <div class="narration-enter text-[#a0aec0] italic text-sm leading-relaxed mb-6 pl-2"
-             style="animation-delay:${index * 0.15 + 0.2}s">
+        <div class="narration-block layer-midground ${inView ? 'narration-reveal' : 'opacity-0'}"
+             ref=${(el) => { if (beatRefs && el) beatRefs.current[localRefIdx] = el; }}
+             style="${inView ? `animation-delay:${index * 0.15 + 0.2}s` : ''}">
           ${scene.narration}
-        </div>`}
+        </div>
+        ${(() => { localRefIdx++; return null; })()}`}
 
       <!-- Beats -->
-      <div class="space-y-5 pl-2 md:pl-6">
-        ${(scene.beats || []).map((beat, bi) => html`
-          <${BeatBlock}
-            key=${'beat-' + index + '-' + bi}
-            beat=${beat}
-            castMap=${castMap}
-            animDelay=${index * 0.15 + 0.3 + bi * 0.12} />
-        `)}
+      <div class="space-y-1 pl-2 md:pl-4">
+        ${(scene.beats || []).map((beat, bi) => {
+          const refIdx = localRefIdx + bi;
+          const charSide = charPositions[beat.character] || 'left';
+          return html`
+            <${BeatBlock}
+              key=${'beat-' + index + '-' + bi}
+              beat=${beat}
+              castMap=${castMap}
+              animDelay=${index * 0.15 + 0.3 + bi * 0.12}
+              isFinal=${isFinal}
+              isLastBeat=${isFinal && bi === (scene.beats || []).length - 1}
+              appearedChars=${appearedChars}
+              beatRefs=${beatRefs}
+              beatRefIdx=${refIdx}
+              dialogueStyle=${dialogueStyle}
+              charSide=${charSide}
+              sceneMood=${scene.mood || 'calm'} />
+          `;
+        })}
       </div>
 
-      <!-- Scene break -->
+      <!-- Scene transition (v4: mood-aware transitions) -->
       ${!isFinal && html`
-        <div class="text-center mt-8">
-          <span class="scene-break text-sm select-none">---- ☕ ----</span>
-        </div>`}
+        <${SceneTransition}
+          nextMood=${nextMood || 'calm'}
+          transitionStyle=${transitionStyle || 'iris'}
+          inView=${inView} />`}
     </div>`;
 }
 
-// ─── Beat Block ───
-function BeatBlock({ beat, castMap, animDelay }) {
-  // Narration beat (no character)
+// ─── Beat Block (v3 Phase 3-4: Auto Play ref support) ───
+function BeatBlock({ beat, castMap, animDelay, isFinal, isLastBeat, appearedChars, beatRefs, beatRefIdx, dialogueStyle, charSide, sceneMood }) {
+  const ref = useRef(null);
+  const inView = useInView(ref);
+
+  const setRef = useCallback((el) => {
+    ref.current = el;
+    if (beatRefs && el && beatRefIdx != null) {
+      beatRefs.current[beatRefIdx] = el;
+    }
+  }, [beatRefs, beatRefIdx]);
+
+  // Narration beat (no character) — uses narration-block style
   if (beat.narration || (!beat.character && !beat.dialogue)) {
     const text = beat.narration || beat.dialogue || '';
     return html`
-      <div class="narration-enter text-[#a0aec0] italic text-sm leading-relaxed"
-           style="animation-delay:${animDelay}s">
+      <div ref=${setRef}
+           class="narration-block ${inView ? 'narration-reveal' : 'opacity-0'}"
+           style="${inView ? `animation-delay:${animDelay}s` : ''}">
         ${text}
       </div>`;
   }
 
-  const raw = castMap[beat.character] || { emoji: '👤', name: beat.character || '???', color: '#888' };
+  const raw = castMap[beat.character] || { emoji: '\ud83d\udc64', name: beat.character || '???', color: '#888' };
   const cast = { ...raw, color: safeColor(raw.color) };
 
-  return html`
-    <div class="beat-enter" style="animation-delay:${animDelay}s">
-      <!-- Character name + action -->
-      <div class="flex items-center gap-2 mb-1">
-        <span class="text-base">${cast.emoji}</span>
-        <span class="text-sm font-medium" style="color:${cast.color}">
-          ${cast.name}:</span>
+  // Check if this is the character's first appearance in this scene
+  const isFirstAppearance = appearedChars && !appearedChars.current.has(beat.character);
+  if (isFirstAppearance && appearedChars) {
+    appearedChars.current.add(beat.character);
+  }
+
+  // Determine dialogue class (dramatic for dramatic:true beats or last beat of final scene)
+  const isDramatic = beat.dramatic || isLastBeat;
+
+  // v4: cinematic left/right layout
+  const isCinematic = dialogueStyle === 'cinematic';
+  const sideClass = isCinematic
+    ? (charSide === 'right' ? 'beat-block-right' : 'beat-block-left')
+    : 'beat-block';
+
+  // v4: mood-driven entry animation class
+  const mood = sceneMood || 'calm';
+  const moodEntryClass = inView ? `mood-entry-${mood}` : 'opacity-0';
+
+  // v4: typography intensity auto-detection
+  const dialogueFontSize = useMemo(() => {
+    if (isDramatic) return '2.5rem';
+    const d = beat.dialogue || '';
+    if (mood === 'crisis' || mood === 'tense') {
+      if (d.endsWith('\uff01') || d.endsWith('!')) return '2rem';
+      return '1.75rem';
+    }
+    if (d.endsWith('\uff01') || d.endsWith('!')) return '1.75rem';
+    if (d.includes('...') || d.includes('\u2014\u2014') || d.includes('\u2026')) return '1.25rem';
+    return '1.5rem';
+  }, [beat.dialogue, isDramatic, mood]);
+
+  // v4: comedy bubble mode
+  const isComedy = mood === 'comedy';
+  const bubbleClass = isComedy ? `dialogue-bubble dialogue-bubble-${charSide || 'left'}` : '';
+
+  // v4 Phase 5: dramatic takeover mode
+  if (isDramatic && beat.dialogue) {
+    const isFinalBeat = isLastBeat;
+    return html`
+      <div ref=${setRef}
+           class="dramatic-takeover ${inView ? 'dramatic-scale-in' : 'opacity-0'}"
+           style="--char-color:${cast.color}; ${inView ? `animation-delay:${animDelay}s` : ''}">
+        <!-- Character name (centered for dramatic) -->
+        <div class="flex items-center gap-2 mb-3 relative z-[2]
+                    ${isFirstAppearance && inView ? 'char-entrance' : ''}"
+             style="--char-color:${cast.color}">
+          <span class="text-lg">${cast.emoji}</span>
+          <span class="text-xl font-bold" style="color:${cast.color}">
+            ${cast.name}</span>
+        </div>
+
         ${beat.action && html`
-          <span class="direction-enter text-xs text-[#6b7280] italic">
-            (${beat.action})</span>`}
+          <div class="action-drift layer-background mb-3 relative z-[2]">
+            ${beat.action}</div>`}
+
+        <div class="dialogue-dramatic layer-foreground ${isFinalBeat ? 'golden-pulse' : ''}">
+          \u300c${beat.dialogue}\u300d
+        </div>
+      </div>`;
+  }
+
+  return html`
+    <div ref=${setRef}
+         class="${sideClass} ${moodEntryClass}"
+         style="--char-color:${cast.color}; ${inView ? `animation-delay:${animDelay}s` : ''}; margin-bottom:2rem;">
+      <!-- Character name -->
+      <div class="flex items-center gap-2 mb-1
+                  ${isFirstAppearance && inView ? 'char-entrance' : ''}"
+           style="--char-color:${cast.color}">
+        <span class="text-lg">${cast.emoji}</span>
+        <span class="text-xl font-bold" style="color:${cast.color}">
+          ${cast.name}</span>
       </div>
 
-      <!-- Dialogue -->
+      <!-- Action / stage direction (v4: background layer with drift) -->
+      ${beat.action && html`
+        <div class="action-drift layer-background mb-2">
+          ${beat.action}</div>`}
+
+      <!-- Dialogue (v4: foreground layer) -->
       ${beat.dialogue && html`
-        <div class="pl-8 text-sm text-white/85 leading-relaxed"
-             style="text-shadow:0 1px 8px rgba(0,0,0,.5)">
-          「${beat.dialogue}」
+        <div class="layer-foreground ${isComedy ? bubbleClass : ''}">
+          <div class="${isDramatic ? 'dialogue-dramatic' : 'dialogue'}"
+               style="${isDramatic ? '' : `font-size:${dialogueFontSize}`}">
+            \u300c${beat.dialogue}\u300d
+          </div>
         </div>`}
     </div>`;
 }
