@@ -391,9 +391,11 @@ show_framework_feedback() {
 
   # open ステータスのフィードバックを数える
   local open_count
-  open_count=$(grep -c 'status: open' "$fb_file" 2>/dev/null || echo 0)
+  open_count=$(grep -c 'status: open' "$fb_file" 2>/dev/null || true)
+  [ -z "$open_count" ] && open_count=0
   local total_count
-  total_count=$(grep -c '^\s*- id: FB-' "$fb_file" 2>/dev/null || echo 0)
+  total_count=$(grep -c '^\s*- id: FB-' "$fb_file" 2>/dev/null || true)
+  [ -z "$total_count" ] && total_count=0
 
   # フィードバックがなければ非表示
   [ "$total_count" -eq 0 ] && return
