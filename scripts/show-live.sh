@@ -261,7 +261,7 @@ show_task_progress() {
       total=$((total + 1))
       local pct=0 pct_icon="⏳"
       case "$current_status" in
-        "done"|"complete"|"merged") pct=100; done_count=$((done_count + 1)); pct_icon="✅" ;;
+        "done"|"complete"|"merged"|"approved") pct=100; done_count=$((done_count + 1)); pct_icon="✅" ;;
         "in_progress"|"assigned")   pct=50; in_progress=$((in_progress + 1)); pct_icon="🔄" ;;
         "review"|"in_review")       pct=80; in_progress=$((in_progress + 1)); pct_icon="🔍" ;;
         "blocked")                  pct=25; pct_icon="🚫" ;;
@@ -270,13 +270,8 @@ show_task_progress() {
       get_char_info "$slug"
       local bar
       bar=$(progress_bar "$pct" 15)
-      local title_short
-      tw_p=$(get_term_width)
-      ts_max=$((tw_p - 45))
-      [ "$ts_max" -lt 10 ] && ts_max=10
-      title_short=$(echo "$current_title" | cut -c1-"$ts_max")
       task_lines+=$(printf "  %s #%-2s ${DIM}%s${NC} %3d%% ${CHAR_COLORS[$slug]}%s${NC}  %s\n" \
-        "$pct_icon" "$current_id" "$bar" "$pct" "$slug" "$title_short")
+        "$pct_icon" "$current_id" "$bar" "$pct" "$slug" "$current_title")
       task_lines+=$'\n'
     fi
   done
@@ -295,6 +290,76 @@ show_task_progress() {
   else
     echo -e "  ${DIM}(タスクなし)${NC}"
   fi
+  echo ""
+}
+
+# ========================================
+# Git Worktree 状態
+# ========================================
+show_worktree_status() {
+  # target_path を production.yaml から取得
+  local target_path
+  target_path=$(grep -m1 'target_path:' "$PROJECT_PATH/config/production.yaml" 2>/dev/null \
+    | sed 's/.*target_path: *//' | tr -d '"' | tr -d "'" | tr -d '\r' \
+    | sed 's/#.*//' | sed 's/[[:space:]]*$//')
+
+  # null や空なら表示しない
+  if [ -z "$target_path" ] || [ "$target_path" = "null" ]; then
+    return
+  fi
+
+  # git worktree list
+  local worktrees
+  worktrees=$(git -C "$target_path" worktree list 2>/dev/null || true)
+  [ -z "$worktrees" ] && return
+
+  # worktree が main だけなら表示しない
+  local wt_count
+  wt_count=$(echo "$worktrees" | wc -l)
+  [ "$wt_count" -le 1 ] && return
+
+  echo -e "  ${WHITE}${BOLD}🌳 WORKTREES${NC}"
+  echo ""
+
+  echo "$worktrees" | while IFS= read -r line; do
+    local wt_path wt_branch wt_hash
+    wt_path=$(echo "$line" | awk '{print $1}')
+    wt_hash=$(echo "$line" | awk '{print $2}')
+    wt_branch=$(echo "$line" | sed -n 's/.*\[\(.*\)\].*/\1/p')
+
+    # main は薄く表示
+    if [ "$wt_branch" = "main" ]; then
+      printf "  ${DIM}📁 %-30s %s${NC}\n" "$wt_branch" "$wt_path"
+      continue
+    fi
+
+    # Cast ブランチから slug を抽出
+    local slug=""
+    slug=$(echo "$wt_branch" | sed -n 's|cast/\([^/]*\)/.*|\1|p')
+
+    # dirty チェック
+    local dirty=""
+    local changes
+    changes=$(git -C "$wt_path" status --short 2>/dev/null | wc -l)
+    if [ "$changes" -gt 0 ]; then
+      dirty=" ${YELLOW}(${changes} changes)${NC}"
+    fi
+
+    # slug に対応するカラーとキャラ名
+    local color="${CYAN}"
+    local display_name="$wt_branch"
+    if [ -n "$slug" ]; then
+      slug=$(echo "$slug" | sed 's/[^a-zA-Z0-9_-]//g')
+      get_char_info "$slug"
+      if [ -n "${CHAR_NAMES[$slug]+x}" ]; then
+        color="${CHAR_COLORS[$slug]}"
+        display_name="${CHAR_EMOJIS[$slug]} ${CHAR_NAMES[$slug]} → ${wt_branch}"
+      fi
+    fi
+
+    printf "  ${color}📁 %s${NC}%b\n" "$display_name" "$dirty"
+    printf "     ${DIM}%s${NC}\n" "$wt_path"
+  done
   echo ""
 }
 
@@ -440,9 +505,10 @@ show_theater() {
 
   echo -e "${DIM}$(hline)${NC}"
 
-  # 下段: キャスト状況 + タスク進捗
+  # 下段: キャスト状況 + タスク進捗 + Worktree
   show_cast_status
   show_task_progress
+  show_worktree_status
 
   show_footer "$mode"
 }

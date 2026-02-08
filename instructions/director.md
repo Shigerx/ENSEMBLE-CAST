@@ -691,9 +691,10 @@ tmux capture-pane -t "%5" -p | tail -20
 
 ## 🔴 Git ブランチ管理（v2 追加）
 
-### タスク配布時のブランチ作成
+### タスク配布時のブランチ作成（git worktree 必須）
 
-各 Cast にタスクを配布する際、**専用ブランチを作成**する:
+**🔴 全 Cast に独立したワーキングディレクトリを割り当てること。**
+共有ディレクトリで `git checkout` を競合させると、他 Cast のファイルが混入するレース条件が発生する。
 
 1. メインブランチの最新を取得:
    ```bash
@@ -701,19 +702,50 @@ tmux capture-pane -t "%5" -p | tail -20
    git checkout main && git pull origin main
    ```
 
-2. Cast 用ブランチを作成:
+2. Cast 用ブランチ + worktree を作成:
    ```bash
-   git checkout -b cast/<slug>/<task-id>-<短い説明>
-   git checkout main  # Director 自身は main に戻る
+   # ブランチ作成
+   git branch cast/<slug>/<task-id>-<短い説明>
+   # worktree 割り当て（/tmp/<slug>-<task-id> に独立ディレクトリ）
+   git worktree add /tmp/<slug>-<task-id> cast/<slug>/<task-id>-<短い説明>
    ```
 
-3. タスク YAML にブランチ名を記載:
+3. タスク YAML にブランチ名と worktree パスを記載:
    ```yaml
    tasks:
      - id: 1
-       branch: "cast/botan/1-deadline-feature"  # ← 追加
+       branch: "cast/botan/1-deadline-feature"
+       worktree: "/tmp/botan-1"   # ← Cast はここで作業する
        # ... 他のフィールド
    ```
+
+4. Cast への指示で **worktree パスを作業ディレクトリとして指定**:
+   ```
+   作業ディレクトリは /tmp/<slug>-<task-id> です。
+   cd /tmp/<slug>-<task-id> で移動してから作業してください。
+   ⚠️ <target_path> では絶対に作業しないこと。
+   ```
+
+### worktree が既にある場合
+
+同じ slug の前回 worktree が残っている場合は先に削除:
+```bash
+git -C <target_path> worktree remove /tmp/<slug>-<前回task-id> --force 2>/dev/null || true
+```
+
+### なぜ worktree が必要か
+
+```
+❌ 共有ディレクトリ（レース条件発生）:
+  Cast A: cd /project && git checkout branch-A
+  Cast B: cd /project && git checkout branch-B  ← A の作業が消える
+  Cast A: git add . && git commit              ← B のファイルが混入
+
+✅ worktree（完全分離）:
+  Cast A: cd /tmp/a-1  ← branch-A 専用
+  Cast B: cd /tmp/b-2  ← branch-B 専用
+  → お互いに干渉しない
+```
 
 ### 統合タスクのマージフロー
 
@@ -735,6 +767,8 @@ Director がレビュー承認後に main へマージ:
 cd <target_path>
 git checkout main
 git merge cast/<slug>/<task-id>-<説明> --no-edit
+# worktree を削除してからブランチ削除
+git worktree remove /tmp/<slug>-<task-id> --force 2>/dev/null || true
 git branch -d cast/<slug>/<task-id>-<説明>
 ```
 
