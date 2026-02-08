@@ -77,6 +77,7 @@ CTL="${PROJECT_PATH}/scripts/ensemble-ctl.sh"
 tmux bind-key M display-menu -T "#[align=centre] ENSEMBLE Control " \
   "Restart All   (全体再起動)" r "display-popup -E -h 80% -w 80% -d '${PROJECT_PATH}' 'bash ${CTL} restart --wait'" \
   "Restart LIVE  (LIVE再起動)" l "run-shell -b 'bash ${CTL} restart-live'" \
+  "Restart WebUI (ブラウザ再起動)" w "run-shell -b 'kill $THEATER_PID 2>/dev/null; python3 ${PROJECT_PATH}/scripts/theater-server.py --port 3939 --base ${PROJECT_PATH} &'" \
   "" "" "" \
   "Status        (状態確認)"   s "display-popup -E -h 70% -w 80% 'bash ${CTL} status --wait'" \
   "Checkpoint    (状態保存)"   c "display-popup -E -h 50% -w 70% 'bash ${CTL} checkpoint --wait'" \
@@ -85,6 +86,29 @@ tmux bind-key M display-menu -T "#[align=centre] ENSEMBLE Control " \
 
 # 右ペイン背景色（ちょっと暗め）
 tmux select-pane -t "$RIGHT_PANE" -P 'bg=#1a1a2e'
+
+# --- Theater Web UI サーバー（バックグラウンド起動） ---
+THEATER_PORT=3939
+python3 "${PROJECT_PATH}/scripts/theater-server.py" \
+  --port "$THEATER_PORT" --base "$PROJECT_PATH" &
+THEATER_PID=$!
+# セッション終了時にサーバーも停止
+tmux set-hook -t "$SESSION" session-closed "run-shell 'kill $THEATER_PID 2>/dev/null || true'"
+
+# ブラウザを開く（少し待ってから）
+(
+  for i in $(seq 1 10); do
+    curl -s "http://localhost:$THEATER_PORT/api/health" >/dev/null 2>&1 && break
+    sleep 0.5
+  done
+  if command -v wslview >/dev/null 2>&1; then
+    wslview "http://localhost:$THEATER_PORT"
+  elif command -v xdg-open >/dev/null 2>&1; then
+    xdg-open "http://localhost:$THEATER_PORT" 2>/dev/null || true
+  elif command -v cmd.exe >/dev/null 2>&1; then
+    cmd.exe /c start "http://localhost:$THEATER_PORT" 2>/dev/null || true
+  fi
+) &
 
 # --- 左ペイン: シアターモード起動 ---
 tmux send-keys -t "$LEFT_PANE" "bash scripts/show-live.sh --interactive"

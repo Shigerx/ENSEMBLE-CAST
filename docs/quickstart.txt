@@ -19,10 +19,9 @@ ENSEMBLE CAST 起動コマンド
   bash scripts/ensemble-ctl.sh checkpoint     … チェックポイント保存
 
 ■ Theater Web UI（ブラウザで鑑賞）
-  bash scripts/theater-ui.sh    … ブラウザで http://localhost:3939 を開く
-  python3 scripts/theater-server.py  … サーバーのみ起動（手動でブラウザを開く場合）
+  ens-couch 起動時に自動でサーバー起動 + ブラウザオープン（http://localhost:3939）
+  python3 scripts/theater-server.py  … サーバーのみ手動起動したい場合
 
 ■ 起動順序（初回 or ターミナル完全再起動時）
   1. ensemble       ← まずこれ
-  2. ens-couch      ← 次にこれ（別ターミナルタブ推奨）
-  3. theater-ui.sh  ← ブラウザ鑑賞したい場合（オプション）
+  2. ens-couch      ← 次にこれ（別ターミナルタブ推奨。Web UIも自動起動）
