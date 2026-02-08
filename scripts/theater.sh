@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # =============================================================================
-# theater.sh — ENSEMBLE CAST シアター + コメンタリー席
+# theater.sh — ENSEMBLE CAST Theater & Couch v2
 #
-# 左: シアターモード（進捗ライブ + Producer指示）
-# 右: Claude Code（副音声コメンタリー・雑談）
+# 左: Theater Web UI（ブラウザ）+ show-live.sh（ターミナル確認用）
+# 右: Claude Code（🍿 Couch — 副音声コメンタリー・感想戦）
 #
 # Usage: bash scripts/theater.sh
 # =============================================================================
@@ -46,8 +46,8 @@ cat << 'BANNER'
   ╚════════════════════════════════════════════╝
 BANNER
 echo -e "${NC}"
-echo -e "${DIM}  左画面: シアターモード（ライブ進捗 + Producer指示）${NC}"
-echo -e "${DIM}  右画面: コメンタリー席（Claude と雑談・感想戦）${NC}"
+echo -e "${DIM}  左画面: Theater Web UI（ブラウザ）+ ターミナル LIVE${NC}"
+echo -e "${DIM}  右画面: 🍿 Couch（Claude と副音声コメンタリー・感想戦）${NC}"
 echo ""
 
 # セッション作成（左ペイン = シアター）
@@ -93,11 +93,11 @@ tmux set-hook -t "$SESSION" session-closed \
     sleep 0.5
   done
   if command -v wslview >/dev/null 2>&1; then
-    wslview "http://localhost:$THEATER_PORT"
+    wslview "http://localhost:$THEATER_PORT/theater"
   elif command -v xdg-open >/dev/null 2>&1; then
-    xdg-open "http://localhost:$THEATER_PORT" 2>/dev/null || true
+    xdg-open "http://localhost:$THEATER_PORT/theater" 2>/dev/null || true
   elif command -v cmd.exe >/dev/null 2>&1; then
-    cmd.exe /c start "http://localhost:$THEATER_PORT" 2>/dev/null || true
+    cmd.exe /c start "http://localhost:$THEATER_PORT/theater" 2>/dev/null || true
   fi
 ) &
 
@@ -113,7 +113,11 @@ tmux bind-key M display-menu -T "#[align=centre] ENSEMBLE Control " \
   "" "" "" \
   "Cancel" q ""
 
-# --- 左ペイン: シアターモード起動 ---
+# --- 左ペイン: Theater Web UI 案内 + show-live.sh 起動 ---
+tmux send-keys -t "$LEFT_PANE" "echo -e '\\n  🎬 Theater Web UI: \\033[1;36mhttp://localhost:${THEATER_PORT}/theater\\033[0m\\n  📺 Control Room:   \\033[1;36mhttp://localhost:${THEATER_PORT}\\033[0m\\n  \\033[2m(ブラウザで自動的に Theater が開きます。以下はターミナル LIVE 表示)\\033[0m\\n'"
+sleep 0.3
+tmux send-keys -t "$LEFT_PANE" Enter
+sleep 0.5
 tmux send-keys -t "$LEFT_PANE" "bash scripts/show-live.sh --interactive"
 sleep 0.3
 tmux send-keys -t "$LEFT_PANE" Enter
@@ -137,8 +141,9 @@ echo ""
 
 sleep 8
 
-# Claude Code に初期プロンプト送信
-tmux send-keys -t "$RIGHT_PANE" "あなたはENSEMBLE CASTのコメンタリー席の相棒です。左画面でマルチエージェント開発が進行中です。Ownerと一緒に進捗を見ながら、感想・冗談・解説を楽しく話してください。映画の副音声コメンタリーのノリで。まず logs/activity.log と cast/roster.yaml を読んで、今何が起きているか把握してください。"
+# Claude Code に初期プロンプト送信（v2: Theater + 撮影中の両方をカバー）
+# 注意: tmux send-keys は改行を Enter として解釈するため、1行で送信する
+tmux send-keys -t "$RIGHT_PANE" "あなたは ENSEMBLE CAST の Theater で映画を一緒に見る相棒（🍿）です。左画面にはブラウザで Theater Web UI が表示されています。できること: episodes/ の脚本YAMLを読んでエピソード内容を把握する / Ownerと感想戦を楽しむ（副音声コメンタリーのノリで技術的な裏話も交える） / Ownerが「EP.N の脚本書いて」と言ったら素材を集めて脚本を生成する / 撮影中なら logs/activity.log や cast/roster.yaml から現在の状況も把握できる。まず episodes/ と cast/roster.yaml を読んで、今の状況を把握してください。"
 sleep 0.5
 tmux send-keys -t "$RIGHT_PANE" Enter
 
@@ -156,9 +161,10 @@ echo -e "${NC}"
 echo -e "${WHITE}  次のコマンドでシアターに入ってください:${NC}"
 echo -e "    ${CYAN}tmux attach-session -t theater${NC}"
 echo ""
-echo -e "${DIM}  左画面で進捗を見ながら、右画面でClaudeと雑談できます。${NC}"
-echo -e "${DIM}  左画面の 🍿 Owner ▶ でProducerに指示も出せます。${NC}"
+echo -e "${DIM}  ブラウザ: Theater Web UI で映画鑑賞${NC}"
+echo -e "${DIM}  左画面: ターミナル LIVE 表示（確認用）${NC}"
+echo -e "${DIM}  右画面: 🍿 Couch（Claude と副音声コメンタリー）${NC}"
 echo ""
 echo -e "${YELLOW}  管理メニュー: Ctrl+b → M${NC}"
-echo -e "${DIM}    再起動・LIVE再起動・状態確認・チェックポイント保存${NC}"
+echo -e "${DIM}    再起動・LIVE再起動・WebUI再起動・状態確認・チェックポイント保存${NC}"
 echo ""
