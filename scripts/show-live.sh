@@ -226,7 +226,7 @@ show_task_progress() {
           total=$((total + 1))
           local pct=0 pct_icon="⏳"
           case "$current_status" in
-            "done"|"complete"|"merged") pct=100; done_count=$((done_count + 1)); pct_icon="✅" ;;
+            "done"|"complete"|"merged"|"approved") pct=100; done_count=$((done_count + 1)); pct_icon="✅" ;;
             "in_progress"|"assigned")   pct=50; in_progress=$((in_progress + 1)); pct_icon="🔄" ;;
             "review"|"in_review")       pct=80; in_progress=$((in_progress + 1)); pct_icon="🔍" ;;
             "blocked")                  pct=25; pct_icon="🚫" ;;
