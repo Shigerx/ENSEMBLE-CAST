@@ -1,0 +1,792 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ENSEMBLE CAST — Control Room</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = {
+  theme: { extend: {
+    fontFamily: {
+      sans: ['"Noto Sans JP"','system-ui','sans-serif'],
+      mono: ['"JetBrains Mono"','monospace'],
+    },
+    colors: {
+      cr: {
+        bg:      '#0c1222',
+        bgDeep:  '#0a0f1a',
+        panel:   '#111827',
+        border:  '#1e3a5f',
+        accent:  '#00d4ff',
+        active:  '#22c55e',
+        idle:    '#6b7280',
+        alert:   '#ef4444',
+        text:    '#e2e8f0',
+      }
+    }
+  }}
+};
+</script>
+<script src="https://cdn.jsdelivr.net/npm/preact@10/dist/preact.umd.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/preact@10/hooks/dist/hooks.umd.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/htm@3/dist/htm.umd.js"></script>
+<style>
+body {
+  margin: 0;
+  background: linear-gradient(180deg, #0c1222 0%, #0a0f1a 100%);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Panel styling */
+.cr-panel {
+  background: #111827;
+  border: 1px solid #1e3a5f;
+  border-radius: 6px;
+  position: relative;
+  overflow: hidden;
+}
+.cr-panel::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(0,212,255,.3), transparent);
+  pointer-events: none;
+}
+
+/* Panel header */
+.panel-header {
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: #00d4ff;
+  opacity: 0.7;
+  padding: 12px 16px 8px;
+  border-bottom: 1px solid rgba(30,58,95,.5);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* Status dot animations */
+@keyframes pulse-active {
+  0%, 100% { opacity: 1; box-shadow: 0 0 4px currentColor; }
+  50% { opacity: 0.5; box-shadow: 0 0 8px currentColor; }
+}
+.dot-active {
+  animation: pulse-active 2s ease-in-out infinite;
+}
+@keyframes pulse-blocked {
+  0%, 100% { opacity: 1; box-shadow: 0 0 4px #ef4444; }
+  50% { opacity: 0.5; box-shadow: 0 0 12px #ef4444; }
+}
+.dot-blocked {
+  animation: pulse-blocked 1.5s ease-in-out infinite;
+}
+
+/* Progress bar */
+@keyframes bar-scan {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.progress-fill-cr {
+  background: linear-gradient(90deg, #00d4ff, #22c55e, #00d4ff);
+  background-size: 200% 100%;
+  animation: bar-scan 4s linear infinite;
+  border-radius: 2px;
+}
+
+/* Live feed entry animation */
+@keyframes feed-enter {
+  from { opacity: 0; transform: translateX(-8px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+.feed-entry {
+  animation: feed-enter 0.3s ease-out both;
+}
+
+/* Command console */
+.console-input {
+  background: rgba(0,212,255,.03);
+  border: 1px solid rgba(0,212,255,.15);
+  caret-color: #00d4ff;
+}
+.console-input:focus {
+  border-color: rgba(0,212,255,.4);
+  background: rgba(0,212,255,.05);
+  outline: none;
+  box-shadow: 0 0 12px rgba(0,212,255,.1);
+}
+
+/* Scanline overlay */
+.scanline-overlay {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 50;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0,0,0,.03) 2px,
+    rgba(0,0,0,.03) 4px
+  );
+}
+
+/* Loading */
+@keyframes loading-glow {
+  0%, 100% { text-shadow: 0 0 20px rgba(0,212,255,.3); }
+  50% { text-shadow: 0 0 40px rgba(0,212,255,.7); }
+}
+.loading-title { animation: loading-glow 2s ease-in-out infinite; }
+
+/* SSE status indicator */
+@keyframes sse-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+.sse-connected { color: #22c55e; animation: sse-pulse 3s ease-in-out infinite; }
+.sse-disconnected { color: #ef4444; }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(0,212,255,.15); border-radius: 2px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(0,212,255,.3); }
+
+/* Branch folder toggle */
+.branch-folder { cursor: pointer; user-select: none; }
+.branch-folder:hover { background: rgba(0,212,255,.05); }
+</style>
+</head>
+
+<body class="text-cr-text font-sans">
+<div class="scanline-overlay"></div>
+<div id="app"></div>
+
+<script>
+const { h, render } = preact;
+const { useState, useEffect, useRef, useCallback, useMemo } = preactHooks;
+const html = htm.bind(h);
+
+// ─── Constants ───
+const FEED_EVENTS = new Set([
+  'chat','progress','ability','task_done','phase_complete',
+  'arrival','task_blocked','task_assign','review',
+]);
+
+const STATE_MAP = {
+  '\u51e6\u7406\u4e2d':  { label:'\u7a3c\u50cd', cls:'bg-cr-active dot-active', icon:'\u25cf' },
+  '\u8d77\u52d5\u4e2d':  { label:'\u8d77\u52d5', cls:'bg-blue-400 dot-active', icon:'\u25cf' },
+  '\u5b8c\u4e86\u5f85\u6a5f':{ label:'\u5f85\u6a5f', cls:'bg-cr-idle', icon:'\u25cb' },
+  'blocked': { label:'blocked', cls:'bg-cr-alert dot-blocked', icon:'\u25c9' },
+};
+const DEF_STATE = { label:'\u505c\u6b62', cls:'bg-gray-600', icon:'\u25cb' };
+
+const api = (u) => fetch(u).then(r => {
+  if(!r.ok) { console.warn(`[ControlRoom] ${u} returned ${r.status}`); return null; }
+  return r.json();
+}).catch(ex => { console.warn(`[ControlRoom] ${u} failed:`, ex.message); return null; });
+
+// ─── SSE with exponential backoff ───
+function useSSE(onEvent, onDashboard, onRoster) {
+  const [connected, setConnected] = useState(false);
+  const retryRef = useRef(1000);
+  const esRef = useRef(null);
+  const onEventRef = useRef(onEvent);
+  const onDashboardRef = useRef(onDashboard);
+  const onRosterRef = useRef(onRoster);
+  onEventRef.current = onEvent;
+  onDashboardRef.current = onDashboard;
+  onRosterRef.current = onRoster;
+
+  useEffect(() => {
+    let destroyed = false;
+    let timer = null;
+
+    function connect() {
+      if(destroyed) return;
+      const es = new EventSource('/api/events');
+      esRef.current = es;
+
+      es.addEventListener('activity', e => {
+        try {
+          retryRef.current = 1000;
+          setConnected(true);
+          const entry = JSON.parse(e.data);
+          onEventRef.current(entry);
+        } catch(ex) { console.warn('[ControlRoom] SSE parse error:', ex.message); }
+      });
+
+      es.addEventListener('dashboard', e => {
+        try {
+          const data = JSON.parse(e.data);
+          if(onDashboardRef.current) onDashboardRef.current(data);
+        } catch(ex) { console.warn('[ControlRoom] dashboard parse error:', ex.message); }
+      });
+
+      es.addEventListener('roster', e => {
+        try {
+          const data = JSON.parse(e.data);
+          if(onRosterRef.current) onRosterRef.current(data);
+        } catch(ex) { console.warn('[ControlRoom] roster parse error:', ex.message); }
+      });
+
+      es.onopen = () => {
+        retryRef.current = 1000;
+        setConnected(true);
+      };
+
+      es.onerror = () => {
+        es.close();
+        setConnected(false);
+        if(destroyed) return;
+        const delay = retryRef.current;
+        console.warn(`[ControlRoom] SSE disconnected, retry in ${delay}ms`);
+        timer = setTimeout(connect, delay);
+        retryRef.current = Math.min(retryRef.current * 2, 30000);
+      };
+    }
+
+    connect();
+    return () => {
+      destroyed = true;
+      if(timer) clearTimeout(timer);
+      if(esRef.current) esRef.current.close();
+    };
+  }, []);
+
+  return connected;
+}
+
+// ─── App ───
+function App() {
+  const [cast, setCast] = useState([]);
+  const [phases, setPhases] = useState({ current_phase: 0, phases: [] });
+  const [tasks, setTasks] = useState([]);
+  const [production, setProd] = useState({});
+  const [feed, setFeed] = useState([]);
+  const [branches, setBranches] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  // Initial fetch
+  useEffect(() => {
+    Promise.all([
+      api('/api/cast'), api('/api/phases'), api('/api/tasks'),
+      api('/api/production'), api('/api/activity?limit=50'), api('/api/branches'),
+    ]).then(([c, ph, tk, pr, act, br]) => {
+      if(c) setCast(c.cast || []);
+      if(ph) setPhases(ph);
+      if(tk) setTasks(tk.tasks || []);
+      if(pr) setProd(pr);
+      if(act) setFeed((act.entries || []).filter(e => FEED_EVENTS.has(e.event)).slice(-50));
+      if(br) setBranches(br.branches || []);
+      setLoading(false);
+    });
+  }, []);
+
+  // SSE handlers
+  const handleSSE = useCallback((entry) => {
+    if(FEED_EVENTS.has(entry.event)) {
+      setFeed(prev => [...prev, entry].slice(-100));
+    }
+  }, []);
+
+  const handleDashboard = useCallback((data) => {
+    if(data) setPhases(data);
+  }, []);
+
+  const handleRoster = useCallback((data) => {
+    if(data && data.cast) setCast(data.cast);
+  }, []);
+
+  const sseConnected = useSSE(handleSSE, handleDashboard, handleRoster);
+
+  // Periodic refresh (every 5s)
+  useEffect(() => {
+    const iv = setInterval(() => {
+      Promise.all([
+        api('/api/cast'), api('/api/phases'), api('/api/tasks'), api('/api/branches'),
+      ]).then(([c, ph, tk, br]) => {
+        if(c) setCast(c.cast || []);
+        if(ph) setPhases(ph);
+        if(tk) setTasks(tk.tasks || []);
+        if(br) setBranches(br.branches || []);
+      });
+    }, 5000);
+    return () => clearInterval(iv);
+  }, []);
+
+  if(loading) return html`
+    <div class="flex flex-col items-center justify-center min-h-screen gap-4">
+      <div class="loading-title text-3xl font-light tracking-[.3em] text-cr-accent font-mono">
+        CONTROL ROOM</div>
+      <div class="text-sm text-cr-idle tracking-wider font-mono">Initializing systems...</div>
+    </div>`;
+
+  const curPhase = phases.phases.find(p => p.number === phases.current_phase);
+  const totalDone = phases.phases.reduce((s, p) => s + p.tasks_done, 0);
+  const totalAll = phases.phases.reduce((s, p) => s + p.tasks_total, 0);
+
+  return html`
+    <div class="max-w-7xl mx-auto px-4 py-4 relative z-10">
+      <!-- Top bar -->
+      <${TopBar} production=${production} phase=${phases.current_phase}
+                 sseConnected=${sseConnected} />
+
+      <!-- Main grid: Left sidebar + Right content -->
+      <div class="grid grid-cols-1 lg:grid-cols-[340px_1fr] gap-4 mt-4">
+
+        <!-- Left column -->
+        <div class="flex flex-col gap-4">
+          <${MissionPanel} phases=${phases} tasks=${tasks} cast=${cast}
+                           curPhase=${curPhase} totalDone=${totalDone} totalAll=${totalAll} />
+          <${CastStatusPanel} cast=${cast} />
+          <${BranchesPanel} branches=${branches} currentPhase=${phases.current_phase} />
+        </div>
+
+        <!-- Right column -->
+        <div class="flex flex-col gap-4">
+          <${LiveFeedPanel} feed=${feed} cast=${cast} />
+          <${CommandConsole} />
+        </div>
+      </div>
+
+      <div class="text-center text-cr-idle/40 text-xs mt-6 pb-6 font-mono">
+        ENSEMBLE CAST Control Room v2.0</div>
+    </div>`;
+}
+
+// ─── Top Bar ───
+function TopBar({ production, phase, sseConnected }) {
+  return html`
+    <div class="flex items-center justify-between px-4 py-3 cr-panel">
+      <div class="flex items-center gap-3">
+        <span class="text-cr-accent font-mono text-xs font-medium tracking-wider">ENSEMBLE CAST</span>
+        <span class="text-cr-text/30 font-mono text-xs">\u2014</span>
+        <span class="text-cr-accent/60 font-mono text-xs tracking-widest uppercase">Control Room</span>
+      </div>
+      <div class="flex items-center gap-4">
+        <span class="text-cr-text/50 text-xs font-mono">
+          ${production.movie_title || ''}</span>
+        ${phase > 0 ? html`
+          <span class="text-cr-accent/80 font-mono text-xs font-medium px-2 py-0.5
+                        border border-cr-accent/20 rounded">
+            Phase ${phase}</span>
+        ` : null}
+        <span class="${sseConnected ? 'sse-connected' : 'sse-disconnected'} text-xs font-mono"
+              title="${sseConnected ? 'SSE Connected' : 'SSE Disconnected'}">
+          \u25cf ${sseConnected ? 'LIVE' : 'OFFLINE'}</span>
+      </div>
+    </div>`;
+}
+
+// ─── MISSION Panel ───
+function MissionPanel({ phases, tasks, cast, curPhase, totalDone, totalAll }) {
+  const phasePct = curPhase
+    ? (curPhase.tasks_total > 0 ? Math.round(curPhase.tasks_done / curPhase.tasks_total * 100) : 0)
+    : 0;
+
+  // Build cast lookup for emoji + name
+  const castMap = useMemo(() => {
+    const m = {};
+    (cast || []).forEach(c => { m[c.slug] = c; });
+    return m;
+  }, [cast]);
+
+  // Filter tasks for current phase
+  const phaseTasks = useMemo(() => {
+    if(!curPhase) return tasks || [];
+    return (tasks || []).filter(t =>
+      t.phase === curPhase.number || t.phase === phases.current_phase
+    );
+  }, [tasks, curPhase, phases.current_phase]);
+
+  // If no phase filter works, show all tasks
+  const displayTasks = phaseTasks.length > 0 ? phaseTasks : (tasks || []);
+
+  return html`
+    <div class="cr-panel">
+      <div class="panel-header flex items-center justify-between">
+        <span>Mission</span>
+        ${curPhase ? html`
+          <span class="text-cr-text/40 normal-case tracking-normal text-[10px]">
+            ${curPhase.tasks_done}/${curPhase.tasks_total} tasks</span>
+        ` : null}
+      </div>
+      <div class="p-4">
+        <!-- Phase info -->
+        ${curPhase ? html`
+          <div class="mb-3">
+            <div class="text-sm font-medium text-cr-text/90">
+              Phase ${curPhase.number}</div>
+            <div class="text-xs text-cr-text/40 mt-0.5">${curPhase.name || ''}</div>
+          </div>
+          <!-- Progress -->
+          <div class="mb-4">
+            <div class="flex items-center justify-between text-[10px] mb-1.5 font-mono">
+              <span class="text-cr-text/40">\u9032\u6357</span>
+              <span class="text-cr-accent/80">${phasePct}%</span>
+            </div>
+            <div class="h-1.5 bg-white/5 rounded-full overflow-hidden">
+              <div class="progress-fill-cr h-full transition-all duration-700"
+                   style="width:${phasePct}%"></div>
+            </div>
+          </div>
+        ` : html`
+          <div class="text-xs text-cr-text/30 mb-4 italic">No active phase</div>
+        `}
+
+        <!-- Task list -->
+        <div class="space-y-1.5 max-h-[200px] overflow-y-auto pr-1">
+          ${displayTasks.map(t => {
+            const assignee = castMap[t.assignee];
+            const emoji = assignee ? (assignee.emoji || '') : '';
+            const statusCls = t.status === 'done' || t.status === 'approved'
+              ? 'text-cr-active' : t.status === 'blocked'
+              ? 'text-cr-alert' : t.status === 'in_progress' || t.status === 'assigned'
+              ? 'text-cr-accent' : 'text-cr-idle';
+            const dotChar = t.status === 'done' || t.status === 'approved'
+              ? '\u2713' : t.status === 'blocked'
+              ? '\u25c9' : t.status === 'in_progress' || t.status === 'assigned'
+              ? '\u25cf' : '\u25cb';
+            return html`
+              <div class="flex items-center gap-2 text-xs py-1 px-2 rounded
+                          hover:bg-white/[.02] transition-colors">
+                <span class="font-mono text-cr-text/30 w-8 text-right">#${t.task_id || t.id || '?'}</span>
+                <span class="truncate flex-1 text-cr-text/60" title=${t.title || ''}>
+                  ${t.assignee ? html`<span>${emoji || ''} ${t.assignee}</span>` : html`<span class="text-cr-idle italic">(\u4f9d\u5b58\u5f85\u3061)</span>`}
+                </span>
+                <span class="${statusCls} font-mono text-[11px]">${dotChar}</span>
+              </div>`;
+          })}
+          ${displayTasks.length === 0 ? html`
+            <div class="text-xs text-cr-text/20 italic text-center py-4">No tasks</div>
+          ` : null}
+        </div>
+      </div>
+    </div>`;
+}
+
+// ─── CAST STATUS Panel ───
+function CastStatusPanel({ cast }) {
+  if(!cast || !cast.length) return null;
+
+  return html`
+    <div class="cr-panel">
+      <div class="panel-header">Cast Status</div>
+      <div class="p-3 space-y-1">
+        ${cast.map(c => {
+          const s = STATE_MAP[c.state] || DEF_STATE;
+          const clr = c.color || '#888';
+          return html`
+            <div class="flex items-center gap-2.5 py-1.5 px-2 rounded
+                        hover:bg-white/[.02] transition-colors">
+              <span class="text-sm w-6 text-center">${c.emoji || '\ud83d\udc64'}</span>
+              <span class="text-xs font-medium flex-1 truncate" style="color:${clr}">
+                ${c.character_name || c.slug}</span>
+              <div class="flex items-center gap-1.5">
+                <div class="w-2 h-2 rounded-full ${s.cls}" style="color:${
+                  s === DEF_STATE ? '#6b7280' : s.cls.includes('active') ? '#22c55e'
+                  : s.cls.includes('alert') ? '#ef4444' : '#6b7280'
+                }"></div>
+                <span class="text-[10px] text-cr-text/40 font-mono w-10">${s.label}</span>
+              </div>
+            </div>`;
+        })}
+      </div>
+    </div>`;
+}
+
+// ─── BRANCHES Panel (Phase-collapsible text list) ───
+function BranchesPanel({ branches, currentPhase }) {
+  const [expanded, setExpanded] = useState({});
+
+  // Group branches by phase
+  const grouped = useMemo(() => {
+    const byPhase = {};
+    (branches || []).forEach(b => {
+      const p = b.phase || 0;
+      if(!byPhase[p]) byPhase[p] = [];
+      byPhase[p].push(b);
+    });
+    return byPhase;
+  }, [branches]);
+
+  const phaseNums = useMemo(() =>
+    Object.keys(grouped).map(Number).sort((a, b) => b - a),
+  [grouped]);
+
+  // Auto-expand current phase on mount/change
+  useEffect(() => {
+    if(currentPhase > 0) {
+      setExpanded(prev => ({ ...prev, [currentPhase]: true }));
+    }
+  }, [currentPhase]);
+
+  if(!branches || branches.length === 0) return null;
+
+  // Determine which phases to consolidate (4+ before current)
+  const consolidateThreshold = currentPhase - 4;
+
+  // Separate: recent phases vs old phases to consolidate
+  const recentPhases = phaseNums.filter(p => p > consolidateThreshold);
+  const oldPhases = phaseNums.filter(p => p <= consolidateThreshold && p > 0);
+  const oldCount = oldPhases.reduce((sum, p) => sum + (grouped[p] || []).length, 0);
+
+  const togglePhase = (p) => {
+    setExpanded(prev => ({ ...prev, [p]: !prev[p] }));
+  };
+
+  const toggleOld = () => {
+    setExpanded(prev => ({ ...prev, '_old': !prev['_old'] }));
+  };
+
+  return html`
+    <div class="cr-panel">
+      <div class="panel-header">Branches</div>
+      <div class="p-2 max-h-[300px] overflow-y-auto">
+        ${recentPhases.map(pn => {
+          const items = grouped[pn] || [];
+          const isCurrent = pn === currentPhase;
+          const allMerged = items.every(b => b.status === 'merged');
+          const isOpen = expanded[pn] || false;
+          const activeCount = items.filter(b => b.status !== 'merged').length;
+          const label = isCurrent
+            ? `Phase ${pn} (${activeCount} active)`
+            : `Phase ${pn} (${items.length} ${allMerged ? 'merged' : 'branches'})`;
+
+          return html`
+            <div class="mb-1">
+              <div class="branch-folder flex items-center gap-1.5 py-1.5 px-2 rounded text-xs"
+                   onClick=${() => togglePhase(pn)}>
+                <span class="font-mono text-cr-accent/50 w-4">${isOpen ? '\u25be' : '\u25b8'}</span>
+                <span class="${isCurrent ? 'text-cr-accent/80' : 'text-cr-text/30'} font-mono">
+                  ${label}</span>
+              </div>
+              ${isOpen ? html`
+                <div class="ml-6 space-y-0.5">
+                  ${items.map(b => {
+                    const merged = b.status === 'merged';
+                    const active = b.status === 'in_progress' || b.status === 'assigned';
+                    const shortName = formatBranchName(b);
+                    return html`
+                      <div class="flex items-center gap-2 text-[11px] py-0.5 px-1 rounded
+                                  hover:bg-white/[.02]">
+                        <span class="${active ? 'text-cr-active' : merged ? 'text-cr-text/20' : 'text-cr-accent/50'}
+                                     font-mono">${active ? '\u25cf' : merged ? '\u2713' : '\u25cb'}</span>
+                        <span class="${merged ? 'text-cr-text/20' : 'text-cr-text/50'} font-mono truncate"
+                              title=${b.name || ''}>
+                          ${shortName}</span>
+                      </div>`;
+                  })}
+                </div>
+              ` : null}
+            </div>`;
+        })}
+
+        ${oldPhases.length > 0 ? html`
+          <div class="mb-1">
+            <div class="branch-folder flex items-center gap-1.5 py-1.5 px-2 rounded text-xs"
+                 onClick=${toggleOld}>
+              <span class="font-mono text-cr-text/30 w-4">${expanded['_old'] ? '\u25be' : '\u25b8'}</span>
+              <span class="text-cr-text/20 font-mono">
+                Phase ${oldPhases[oldPhases.length-1]}-${oldPhases[0]} (${oldCount} merged)</span>
+            </div>
+            ${expanded['_old'] ? html`
+              <div class="ml-6 space-y-0.5">
+                ${oldPhases.map(pn => (grouped[pn] || []).map(b => html`
+                  <div class="flex items-center gap-2 text-[11px] py-0.5 px-1">
+                    <span class="text-cr-text/15 font-mono">\u2713</span>
+                    <span class="text-cr-text/15 font-mono truncate">${formatBranchName(b)}</span>
+                  </div>
+                `))}
+              </div>
+            ` : null}
+          </div>
+        ` : null}
+
+        ${phaseNums.length === 0 ? html`
+          <div class="text-xs text-cr-text/20 italic text-center py-4">No branches</div>
+        ` : null}
+      </div>
+    </div>`;
+}
+
+function formatBranchName(b) {
+  // Shorten branch name to cast/slug/id format
+  const name = b.name || '';
+  // Try to parse "cast/<slug>/<id>-description"
+  const m = name.match(/^cast\/([^/]+)\/(\d+)/);
+  if(m) return `cast/${m[1]}/${m[2]}`;
+  // Fallback: truncate long names
+  return name.length > 30 ? name.slice(0, 30) + '...' : name;
+}
+
+// ─── LIVE FEED Panel ───
+function LiveFeedPanel({ feed, cast }) {
+  const feedRef = useRef(null);
+  const [autoScroll, setAutoScroll] = useState(true);
+
+  // Build cast lookup
+  const castMap = useMemo(() => {
+    const m = {};
+    (cast || []).forEach(c => {
+      m[c.slug] = { emoji: c.emoji || '', name: c.character_name || c.slug, color: c.color || '#888' };
+    });
+    return m;
+  }, [cast]);
+
+  // Auto-scroll to bottom
+  useEffect(() => {
+    if(autoScroll && feedRef.current) {
+      feedRef.current.scrollTop = feedRef.current.scrollHeight;
+    }
+  }, [feed, autoScroll]);
+
+  const onScroll = useCallback((e) => {
+    const el = e.target;
+    const atBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 40;
+    setAutoScroll(atBottom);
+  }, []);
+
+  return html`
+    <div class="cr-panel flex flex-col" style="min-height:400px">
+      <div class="panel-header flex items-center justify-between">
+        <span>Live Feed</span>
+        <span class="text-cr-text/20 normal-case tracking-normal text-[9px]">
+          ${feed.length} events</span>
+      </div>
+      <div ref=${feedRef} onScroll=${onScroll}
+           class="flex-1 overflow-y-auto p-3 space-y-1" style="max-height:500px">
+        ${feed.length === 0 ? html`
+          <div class="flex items-center justify-center h-full">
+            <div class="text-cr-text/20 text-xs italic font-mono">Waiting for events...</div>
+          </div>
+        ` : feed.map((e, i) => {
+          const c = castMap[e.actor] || { emoji: '', name: e.actor || 'SYSTEM', color: '#6b7280' };
+          const isDir = e.actor === 'DIRECTOR';
+          const time = fmtTime(e.timestamp);
+          return html`
+            <div key=${(e.timestamp||'') + i} class="feed-entry flex gap-2 py-1.5 px-2 rounded
+                        hover:bg-white/[.02] transition-colors"
+                 style="animation-delay:${Math.max(0, i - feed.length + 5) * 0.05}s">
+              <span class="text-[10px] text-cr-text/25 font-mono w-10 flex-shrink-0 pt-0.5">${time}</span>
+              <span class="text-sm flex-shrink-0 w-5 text-center">${isDir ? '\ud83c\udfac' : c.emoji || '\ud83d\udc64'}</span>
+              <div class="min-w-0 flex-1">
+                <span class="text-[11px] font-medium mr-1.5"
+                      style="color:${isDir ? '#6b7280' : c.color}">
+                  ${isDir ? 'Director' : c.name}</span>
+                <span class="text-[11px] ${isDir ? 'text-cr-text/30 italic' : 'text-cr-text/60'}">
+                  ${e.message || ''}</span>
+              </div>
+            </div>`;
+        })}
+      </div>
+      ${!autoScroll ? html`
+        <div class="px-3 pb-2">
+          <button onClick=${() => { setAutoScroll(true); if(feedRef.current) feedRef.current.scrollTop = feedRef.current.scrollHeight; }}
+                  class="w-full text-[10px] text-cr-accent/50 hover:text-cr-accent/80 font-mono
+                         py-1 border border-cr-accent/10 rounded transition-colors">
+            \u2193 Scroll to latest</button>
+        </div>
+      ` : null}
+    </div>`;
+}
+
+function fmtTime(ts) {
+  if(!ts) return '';
+  const m = ts.match(/(\d{2}):(\d{2})/);
+  return m ? m[1] + ':' + m[2] : '';
+}
+
+// ─── COMMAND CONSOLE ───
+const CMD_LABELS = { sending: '...', ok: '\u2713', err: '\u00d7' };
+
+function CommandConsole() {
+  const [msg, setMsg] = useState('');
+  const [status, setStatus] = useState(null);
+  const [errMsg, setErrMsg] = useState('');
+  const [history, setHistory] = useState([]);
+
+  const send = useCallback(async () => {
+    if(!msg.trim()) return;
+    setStatus('sending');
+    setErrMsg('');
+    const sent = msg.trim();
+    try {
+      const r = await fetch('/api/message', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: sent }),
+      });
+      const d = await r.json();
+      if(d.success) {
+        setHistory(prev => [...prev, { text: sent, ok: true, time: new Date().toLocaleTimeString('ja-JP', { hour:'2-digit', minute:'2-digit' }) }].slice(-10));
+        setMsg('');
+        setStatus('ok');
+      } else {
+        setStatus('err');
+        setErrMsg(d.error || '\u9001\u4fe1\u5931\u6557');
+      }
+    } catch(ex) {
+      console.warn('[ControlRoom] message send failed:', ex.message);
+      setStatus('err');
+      setErrMsg('\u30b5\u30fc\u30d0\u30fc\u63a5\u7d9a\u30a8\u30e9\u30fc');
+    }
+    setTimeout(() => setStatus(null), 2000);
+  }, [msg]);
+
+  const onKey = useCallback(e => {
+    if(e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); }
+  }, [send]);
+
+  return html`
+    <div class="cr-panel">
+      <div class="panel-header">Command Console</div>
+      <div class="p-3">
+        <!-- History -->
+        ${history.length > 0 ? html`
+          <div class="mb-3 space-y-1 max-h-[120px] overflow-y-auto">
+            ${history.map((h, i) => html`
+              <div key=${i} class="flex items-center gap-2 text-[10px]">
+                <span class="text-cr-text/20 font-mono">${h.time}</span>
+                <span class="text-cr-accent/30 font-mono">&gt;</span>
+                <span class="text-cr-text/30 truncate">${h.text}</span>
+                <span class="${h.ok ? 'text-cr-active/50' : 'text-cr-alert/50'}">${h.ok ? '\u2713' : '\u00d7'}</span>
+              </div>
+            `)}
+          </div>
+        ` : null}
+        <!-- Input -->
+        <div class="flex gap-2 items-center">
+          <span class="text-cr-accent/40 font-mono text-sm">&gt;</span>
+          <input type="text" value=${msg}
+            onInput=${e => setMsg(e.target.value)} onKeyDown=${onKey}
+            placeholder="Producer\u306b\u6307\u793a..."
+            class="console-input flex-1 rounded px-3 py-2 text-sm text-cr-text/80
+                   placeholder-cr-text/20 font-mono transition" />
+          <button onClick=${send}
+            disabled=${!msg.trim() || status === 'sending'}
+            class="px-4 py-2 rounded text-xs font-mono font-medium transition
+                   ${msg.trim()
+                     ? 'bg-cr-accent/10 text-cr-accent/80 hover:bg-cr-accent/20 border border-cr-accent/20'
+                     : 'bg-white/[.02] text-cr-text/20 cursor-not-allowed border border-white/5'}">
+            ${CMD_LABELS[status] || '\u9001\u4fe1'}
+          </button>
+        </div>
+        ${status === 'err' && errMsg ? html`
+          <div class="text-[10px] text-cr-alert/60 mt-1.5 font-mono">\u26a0 ${errMsg}</div>
+        ` : null}
+      </div>
+    </div>`;
+}
+
+render(html`<${App} />`, document.getElementById('app'));
+</script>
+</body>
+</html>

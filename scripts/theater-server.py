@@ -53,6 +53,109 @@ def yaml_blocks(text, marker='- slug:'):
         blocks.append('\n'.join(cur))
     return blocks
 
+
+def parse_episode_yaml(text):
+    """Parse an episode YAML file into a dict.
+
+    Handles the specific subset format used by ENSEMBLE-CAST episodes:
+      episode: N
+      title: "..."
+      synopsis: "..."
+      scenes:
+        - scene: N
+          title: "..."
+          narration: "..."
+          beats:
+            - character: slug
+              action: "..."
+              dialogue: "..."
+            - narration: "..."
+    """
+    result = {}
+
+    # Top-level scalars
+    ep_num = yaml_val(text, 'episode')
+    result['episode'] = int(ep_num) if ep_num and ep_num.isdigit() else 0
+    result['title'] = yaml_val(text, 'title')
+    result['synopsis'] = yaml_val(text, 'synopsis')
+
+    # Parse scenes
+    scenes = []
+    scene_blocks = yaml_blocks(text, '- scene:')
+    for sb in scene_blocks:
+        scene = {}
+        sn = yaml_val(sb, 'scene')
+        scene['scene'] = int(sn) if sn and sn.isdigit() else 0
+        scene['title'] = yaml_val(sb, 'title')
+        scene['narration'] = yaml_val(sb, 'narration')
+
+        # Parse beats within this scene (preserving order of appearance)
+        beats = _parse_beats(sb)
+        scene['beats'] = beats
+        scenes.append(scene)
+
+    result['scenes'] = scenes
+    return result
+
+
+def _parse_beats(scene_text):
+    """Parse beat entries from a scene block, preserving order."""
+    beats = []
+    lines = scene_text.split('\n')
+    in_beats = False
+    current_beat = None
+    beat_indent = 0
+
+    for line in lines:
+        stripped = line.strip()
+
+        # Detect the beats: section
+        if stripped == 'beats:':
+            in_beats = True
+            continue
+
+        if not in_beats:
+            continue
+
+        # Detect a new beat (list item under beats:)
+        # Beats start with "- character:" or "- narration:"
+        m_char = re.match(r'^(\s+)-\s+character:\s*(.+)$', line)
+        m_narr = re.match(r'^(\s+)-\s+narration:\s*(.+)$', line)
+
+        if m_char:
+            if current_beat is not None:
+                beats.append(current_beat)
+            beat_indent = len(m_char.group(1))
+            val = m_char.group(2).strip().strip('"').strip("'")
+            current_beat = {'character': val}
+        elif m_narr:
+            if current_beat is not None:
+                beats.append(current_beat)
+            beat_indent = len(m_narr.group(1))
+            val = m_narr.group(2).strip().strip('"').strip("'")
+            current_beat = {'narration': val}
+        elif current_beat is not None:
+            # Continuation keys within current beat (action, dialogue, narration)
+            indent = len(line) - len(line.lstrip())
+            if indent <= beat_indent and stripped and not stripped.startswith('-'):
+                # Exited beats section (back to scene level)
+                in_beats = False
+                continue
+            m_kv = re.match(r'^\s+(\w+):\s*(.+)$', line)
+            if m_kv:
+                key = m_kv.group(1)
+                val = m_kv.group(2).strip()
+                if (val.startswith('"') and val.endswith('"')) or \
+                   (val.startswith("'") and val.endswith("'")):
+                    val = val[1:-1]
+                if val not in ('null', '~', ''):
+                    current_beat[key] = val
+
+    if current_beat is not None:
+        beats.append(current_beat)
+
+    return beats
+
 # ---------------------------------------------------------------------------
 # Data loaders
 # ---------------------------------------------------------------------------
@@ -128,7 +231,10 @@ def load_cast():
             for tb in reversed(yaml_blocks(tc, '- id:')):
                 tid = yaml_val(tb, 'id')
                 if tid:
-                    member['task_id'] = int(tid)
+                    try:
+                        member['task_id'] = int(tid)
+                    except (ValueError, TypeError):
+                        continue
                     member['task_title'] = yaml_val(tb, 'title') or ''
                     member['task_status'] = yaml_val(tb, 'status') or ''
                     break
@@ -154,8 +260,12 @@ def load_tasks():
             if not tid:
                 continue
             st = yaml_val(block, 'status') or 'pending'
+            try:
+                task_id = int(tid)
+            except (ValueError, TypeError):
+                continue
             tasks.append(dict(
-                id=int(tid), title=yaml_val(block, 'title') or '',
+                id=task_id, title=yaml_val(block, 'title') or '',
                 status=st, branch=yaml_val(block, 'branch'),
                 progress=PROGRESS.get(st, 0),
             ))
@@ -284,6 +394,71 @@ def load_branches():
     return dict(branches=branches)
 
 
+def load_episodes():
+    """Load episode list from episodes/*.yaml and determine status."""
+    episodes_dir = BASE / 'episodes'
+    production = load_production()
+    prod_title = production.get('movie_title', 'Unknown Production')
+
+    # Determine current phase from dashboard for "recording" status
+    phase_data = load_phases()
+    current_phase = phase_data.get('current_phase', 0)
+
+    episodes = []
+    if episodes_dir.exists():
+        for f in sorted(episodes_dir.glob('ep*.yaml')):
+            m = re.match(r'ep(\d+)\.yaml$', f.name)
+            if not m:
+                continue
+            ep_num = int(m.group(1))
+            try:
+                content = f.read_text(encoding='utf-8').strip()
+            except (OSError, UnicodeDecodeError):
+                content = ''
+
+            if content:
+                parsed = parse_episode_yaml(content)
+                episodes.append(dict(
+                    number=ep_num,
+                    title=parsed.get('title'),
+                    synopsis=parsed.get('synopsis'),
+                    scene_count=len(parsed.get('scenes', [])),
+                    status='available',
+                ))
+            else:
+                episodes.append(dict(
+                    number=ep_num,
+                    title=None,
+                    synopsis=None,
+                    scene_count=0,
+                    status='recording',
+                ))
+
+    # Episodes for phases beyond current are "recording" even if file exists
+    # (current_phase is the highest active/completed phase number)
+    for ep in episodes:
+        if ep['number'] > current_phase and ep['status'] == 'available':
+            # Only mark as recording if it has no real content
+            pass  # file has content, keep available
+
+    episodes.sort(key=lambda e: e['number'])
+    return dict(production=prod_title, episodes=episodes)
+
+
+def load_episode(n):
+    """Load a single episode by number. Returns dict or None if not found."""
+    ep_path = BASE / 'episodes' / f'ep{n}.yaml'
+    if not ep_path.exists():
+        return None
+    try:
+        content = ep_path.read_text(encoding='utf-8').strip()
+    except (OSError, UnicodeDecodeError):
+        return None
+    if not content:
+        return None
+    return parse_episode_yaml(content)
+
+
 def send_to_producer(msg):
     """Send a message to the Producer pane via wake-agent.sh."""
     panes = BASE / 'config' / 'panes.yaml'
@@ -337,20 +512,23 @@ class Handler(http.server.BaseHTTPRequestHandler):
         q = parse_qs(p.query)
 
         if path == '/':
-            self._serve_html()
+            self._serve_file('control-room.html')
+        elif path == '/theater':
+            self._serve_file('theater.html')
         elif path == '/api/activity':
-            lim = int(q.get('limit', ['50'])[0])
+            lim = min(int(q.get('limit', ['50'])[0]), 500)
             self._json(dict(entries=load_activity(lim)))
-        elif path == '/api/cast':
+        elif path == '/api/cast' or path == '/api/roster':
             try:
                 result = load_cast()
             except Exception as ex:
-                self._json(dict(error=str(ex), cast=[]), 500)
+                print(f'[ERROR] load_cast: {ex}', file=sys.stderr)
+                self._json(dict(error='internal error', cast=[]), 500)
                 return
             self._json(dict(cast=result))
         elif path == '/api/tasks':
             self._json(dict(tasks=load_tasks()))
-        elif path == '/api/phases':
+        elif path == '/api/phases' or path == '/api/dashboard':
             self._json(load_phases())
         elif path == '/api/production':
             self._json(load_production())
@@ -359,9 +537,29 @@ class Handler(http.server.BaseHTTPRequestHandler):
                 result = load_branches()
             except Exception as ex:
                 print(f'[ERROR] load_branches: {ex}', file=sys.stderr)
-                self._json(dict(error=str(ex), branches=[]), 500)
+                self._json(dict(error='internal error', branches=[]), 500)
                 return
             self._json(result)
+        elif path == '/api/episodes':
+            try:
+                result = load_episodes()
+            except Exception as ex:
+                print(f'[ERROR] load_episodes: {ex}', file=sys.stderr)
+                self._json(dict(error='internal error', production='', episodes=[]), 500)
+                return
+            self._json(result)
+        elif (ep_match := re.match(r'^/api/episodes/(\d{1,4})$', path)):
+            ep_num = int(ep_match.group(1))
+            try:
+                result = load_episode(ep_num)
+            except Exception as ex:
+                print(f'[ERROR] load_episode({ep_num}): {ex}', file=sys.stderr)
+                self._json(dict(error='internal error'), 500)
+                return
+            if result is None:
+                self._json(dict(error=f'Episode {ep_num} not found'), 404)
+            else:
+                self._json(result)
         elif path == '/api/events':
             self._sse()
         elif path == '/api/health':
@@ -401,10 +599,14 @@ class Handler(http.server.BaseHTTPRequestHandler):
         else:
             self.send_error(404)
 
-    def _serve_html(self):
-        hp = BASE / 'ui' / 'theater.html'
+    def _serve_file(self, filename):
+        hp = (BASE / 'ui' / filename).resolve()
+        ui_dir = (BASE / 'ui').resolve()
+        if not str(hp).startswith(str(ui_dir)):
+            self.send_error(403)
+            return
         if not hp.exists():
-            self.send_error(404, 'theater.html not found')
+            self.send_error(404, f'{filename} not found')
             return
         self.send_response(200)
         self.send_header('Content-Type', 'text/html; charset=utf-8')
@@ -421,10 +623,16 @@ class Handler(http.server.BaseHTTPRequestHandler):
         self.end_headers()
 
         log_path = BASE / 'logs' / 'activity.log'
+        dashboard_path = BASE / 'dashboard.md'
+        roster_path = BASE / 'cast' / 'roster.yaml'
+
         last_size = log_path.stat().st_size if log_path.exists() else 0
+        dashboard_mtime = dashboard_path.stat().st_mtime if dashboard_path.exists() else 0
+        roster_mtime = roster_path.stat().st_mtime if roster_path.exists() else 0
         tick = 0
         try:
             while True:
+                # Activity log changes (existing)
                 if log_path.exists():
                     sz = log_path.stat().st_size
                     if sz > last_size:
@@ -441,6 +649,40 @@ class Handler(http.server.BaseHTTPRequestHandler):
                         last_size = sz
                     elif sz < last_size:
                         last_size = sz  # file truncated
+
+                # Dashboard changes (new)
+                if dashboard_path.exists():
+                    mt = dashboard_path.stat().st_mtime
+                    if mt > dashboard_mtime:
+                        dashboard_mtime = mt
+                        try:
+                            phases = load_phases()
+                            d = json.dumps(phases, ensure_ascii=False)
+                            self.wfile.write(
+                                f'event: dashboard\ndata: {d}\n\n'
+                                .encode('utf-8'))
+                            self.wfile.flush()
+                        except Exception as ex:
+                            print(f'[WARN] SSE dashboard: {ex}',
+                                  file=sys.stderr)
+
+                # Roster changes (new)
+                if roster_path.exists():
+                    mt = roster_path.stat().st_mtime
+                    if mt > roster_mtime:
+                        roster_mtime = mt
+                        try:
+                            cast = load_cast()
+                            d = json.dumps(dict(cast=cast),
+                                           ensure_ascii=False)
+                            self.wfile.write(
+                                f'event: roster\ndata: {d}\n\n'
+                                .encode('utf-8'))
+                            self.wfile.flush()
+                        except Exception as ex:
+                            print(f'[WARN] SSE roster: {ex}',
+                                  file=sys.stderr)
+
                 tick += 1
                 if tick >= 15:
                     self.wfile.write(b': heartbeat\n\n')
@@ -469,7 +711,7 @@ if __name__ == '__main__':
         if a == '--base' and i + 1 < len(args):
             BASE = Path(args[i + 1])
 
-    server = http.server.ThreadingHTTPServer(('', PORT), Handler)
+    server = http.server.ThreadingHTTPServer(('127.0.0.1', PORT), Handler)
     print(f'ENSEMBLE CAST -- Theater Server')
     print(f'  http://localhost:{PORT}')
     print(f'  Base: {BASE}')
