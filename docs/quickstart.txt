@@ -22,6 +22,27 @@ ENSEMBLE CAST 起動コマンド
   ens-couch 起動時に自動でサーバー起動 + ブラウザオープン（http://localhost:3939）
   python3 scripts/theater-server.py  … サーバーのみ手動起動したい場合
 
+■ Chrome DevTools（Cast によるブラウザ自動テスト用）
+  WSL 上の Cast が Chrome を操作してブラウザテストを行うためのプロセス。
+  DevTools Protocol (port 9222) 経由で WSL → Windows Chrome に接続する。
+
+  起動（Windows の PowerShell / cmd / Git Bash から）:
+    start chrome --remote-debugging-port=9222 --user-data-dir="%TEMP%\chrome-debug"
+
+  確認:
+    curl -s http://localhost:9222/json/version
+
+  前提条件:
+    - .wslconfig に networkingMode=mirrored が必要（WSL↔Windows localhost疎通）
+    - WSL 側に chrome-devtools-mcp がグローバルインストール済み（/usr/bin/chrome-devtools-mcp）
+    - ~/.claude.json に MCP サーバー設定済み（env.PATH で Windows PATH 除外）
+
+  注意:
+    - 通常の Chrome とは別プロファイルで起動される（--user-data-dir 指定）
+    - 拡張機能・ブックマーク等は空の状態
+    - ensemble 終了後も Chrome は手動で閉じる必要あり
+
 ■ 起動順序（初回 or ターミナル完全再起動時）
+  0. Chrome DevTools ← Windows 側で先に起動（Cast のブラウザテストに必要）
   1. ensemble       ← まずこれ
   2. ens-couch      ← 次にこれ（別ターミナルタブ推奨。Web UIも自動起動）
