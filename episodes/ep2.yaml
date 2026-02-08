@@ -1,0 +1,116 @@
+episode: 2
+title: "暗闇を照らす炎"
+synopsis: "F001違反、空白のコミット、9時間の沈黙。波乱のPhase 2を越え、18分間の嵐がPhase 3を駆け抜ける。"
+
+scenes:
+  - scene: 1
+    title: "深夜2時の砲撃"
+    narration: "01:57。Phase 1完了からわずか30分。Directorは休ませない。Phase 2の幕が上がる。まずはミスタとブチャラティ、2人だけの深夜砲撃。"
+    beats:
+      - narration: "DIRECTOR: #6(mista)と#7(bucciarati)を並列配布。#8(giorno), #9(narancia), #10(abbacchio)は依存待ち。"
+      - character: mista
+        action: "DBスキーマ拡張に取りかかる。7カラム追加、5件のseedデータ"
+        dialogue: "5件のデータ……5は良い数字だぜ。"
+      - character: bucciarati
+        action: "型定義とAPI拡張。3度のブランチ競合と格闘する"
+        dialogue: "ブランチ競合に3度見舞われたが、最後は据えた。覚悟の上だ。"
+      - narration: "深夜2時4分、ブチャラティ完了。2時7分、ミスタ完了。2人とも約10分。深夜の集中力は、昼間とは違う切れ味がある。"
+      - narration: "🍿 ブチャラティの chronicle に「ブランチ競合に3度見舞われた」とある。Phase 1ではまだ問題にならなかったブランチ競合が、ここで初めて顔を出す。この伏線がPhase 4で大爆発することを、まだ誰も知らない。"
+
+  - scene: 2
+    title: "沈黙——9時間の空白"
+    narration: "02:07。ログが途絶える。次のタイムスタンプは11:10。その間、9時間3分の完全な沈黙。"
+    beats:
+      - narration: "5つの端末は暗転する。東京に朝が来て、昼が近づく。しかしtmuxセッションは生きている。AIたちは眠らない——ただ、起こされるのを待っている。"
+      - narration: "11:10:00。Directorが目を覚ます。依存は解消済み（#6, #7 approved）。3つのタスクを一斉に配布する。"
+      - narration: "DIRECTOR: #8(giorno)ナレッジ一覧ページ、#9(narancia)ナレッジ詳細ページ、#10(abbacchio)スライドビューア——3名同時開演。"
+      - narration: "🍿 ここで注目してほしいのは#10の配布先。アバッキオ——Reviewerに、実装タスクが振られている。Directorの判断ミスか、人手不足の苦渋の決断か。答えはすぐにわかる。"
+
+  - scene: 3
+    title: "F001——門番の拒絶"
+    narration: "11:11。タスク配布からわずか1分。アバッキオのペインに、異常なログが刻まれる。"
+    beats:
+      - character: abbacchio
+        action: "タスクYAMLを読み、即座に突き返す。1分の逡巡もなかった"
+        dialogue: "F001違反だ。Reviewerは実装タスクを実行できない。"
+      - narration: "F001——ENSEMBLE CASTの最も基本的なルール。Reviewerはコードを書かない。ビルド・テスト・仕様準拠を検証するだけ。アバッキオはそのルールを、自分に適用した。"
+      - narration: "Directorは2分で判断を下す。#10をアバッキオからブチャラティへ再割当。ブチャラティは既に#7を終えて待機中だった。"
+      - character: bucciarati
+        action: "黙って再割当を受け入れる。2つ目のタスクに手を伸ばす"
+        dialogue: "資料表示は基盤の要だ。取りかかる。"
+      - narration: "🍿 この1分間のやりとりに、アバッキオの全人格が凝縮されてる。元警官。規則を破って堕ちた過去がある。だからこそ、二度とルールは破らない。「自分は何者か」を知っている男の強さ。persona.yamlのcore_traitsに『厳格な職人気質——品質基準に厳しく、曖昧さを許さない。元警官としての規範意識』とある。AIがこの設定を読んで、1分で正しい判断を下した。"
+
+  - scene: 4
+    title: "空白のコミット——天才の躓き"
+    narration: "同時刻。もう一つの異変が進行していた。ジョルノの#8に、何かがおかしい。"
+    beats:
+      - character: narancia
+        action: "Phase 2最速でフィニッシュ。5分で詳細ページを完成"
+        dialogue: "詳細ページもバッチリだッ！mockup-hybridのトーン継承したぜ！"
+      - narration: "11:17。Directorがレビューを開始する。ナランチャの#9はすぐに approved。しかしジョルノの#8を開いた瞬間——"
+      - narration: "DIRECTOR: #8 rejected — ブランチにコミットなし。成果物ファイル未作成。giornoに修正指示。"
+      - narration: "空白。ジョルノのブランチには何もなかった。天才が——初めて躓いた。"
+      - character: giorno
+        action: "3分の沈黙。そして静かにリビジョン1を提出する"
+        dialogue: "真実から出た誠の行動は…決して滅びはしない。地道な実装こそ基盤ですよ。"
+      - narration: "11:20。リビジョン1提出。11:23、approved。ジョルノは転んでから3分で立ち上がった。一覧ページ、KnowledgeCard、KnowledgeList、旧モック削除——やるべきことを全てやり直して。"
+      - narration: "🍿 原因は不明だが、おそらくブランチの切り替えミスか、worktreeがなかった時代のファイル消失。ジョルノのchronicleには『地道な実装こそ基盤ですよ』とだけ書いてある。言い訳しない。転んだ事実を認め、黙ってやり直す。これが『覚悟』か。"
+
+  - scene: 5
+    title: "午後の救援——ブチャラティ、二刀流"
+    narration: "12:00。セッション再開。Directorが#9のmainマージ漏れを修復し、ブチャラティに#10を再配布する。"
+    beats:
+      - character: bucciarati
+        action: "スライドビューアとインフォグラフィック表示の両方に取りかかる"
+        dialogue: "スティッキィ・フィンガーズ…資料表示の土台を据える。reveal.jsの組み込みもビルドも通った。"
+      - narration: "ブチャラティはPhase 2で2つのタスクをこなしている。#7（型定義+API）と#10（ビューア）。チームの穴を黙って埋める男。"
+      - character: bucciarati
+        action: "報告書を仕上げながら、静かに呟く"
+        dialogue: "アリーヴェデルチ…とはまだ言わない、報告書を仕上げる。"
+      - narration: "12:14。#10 approved。Phase 2完了。5タスク消化。アバッキオのF001、ジョルノの空白コミット——波乱を乗り越えた午前と午後。"
+      - narration: "🍿 ブチャラティの二刀流は原作通り。リーダーでありながら最前線で戦う。persona.yamlの『困難な人材も見守り育てる』——育てるだけじゃなく、自分が穴を埋めに行く。チームのリーダーとは、そういうものだ。"
+
+  - scene: 6
+    title: "嵐の18分——Phase 3"
+    narration: "12:16。Phase 2完了からわずか2分。Directorは#11から#14を一斉配布する。4人全員、同時発進。"
+    beats:
+      - narration: "DIRECTOR: #11(giorno)トップページ本実装+OGP、#12(mista)SEO基盤、#13(narancia)JSON-LD+canonical、#14(bucciarati)DOMPurify+セキュリティヘッダー。全員並列で開演！"
+      - character: mista
+        action: "最速フィニッシュ。7分"
+        dialogue: "sitemap、robots.txt、デプロイ手順……3つとも堅実に仕上がった。"
+      - character: narancia
+        action: "11分で完了。SEOもボラボラッと片付ける"
+        dialogue: "JSON-LDもcanonicalも両方入れたぜッ！Article + ItemList schema完璧だ！"
+      - character: giorno
+        action: "16分。OGPメタタグシステムまで含めた重厚な仕事"
+        dialogue: "OGPメタタグシステム完成…canonical URL、Google Fonts、Twitter Cardまで。BaseLayoutに覚悟を刻みましたよ。"
+      - character: bucciarati
+        action: "最後のピースを嵌める。セキュリティの穴を全て塞ぐ"
+        dialogue: "dangerouslySetInnerHTMLの穴は全て塞いだ。アリーヴェデルチ。"
+      - narration: "12:34。Phase 3完了。18分間。4つのタスクが嵐のように駆け抜けた。Phase 1-3、全タスク完了。"
+      - narration: "🍿 Phase 3は圧巻の18分間。4人が完全に独立したタスクを同時並行で処理している。ミスタ7分、ナランチャ11分、ジョルノ16分、ブチャラティ18分——合計52分の作業量を18分で消化。並列開発の効率が極限に達した瞬間。しかもブチャラティはDOMPurifyという守りの仕事。攻めの3人を最後に品質で支える構図が美しい。"
+
+  - scene: 7
+    title: "4321のカウントダウン"
+    narration: "12:41。Directorがミスタにdev server起動を指示する。Ownerにプレビューを見せるためだ。"
+    beats:
+      - character: mista
+        action: "dev serverを一発で起動。しかしポート番号を見て表情が変わる"
+        dialogue: "……ポート番号4321か、『4』で始まるのがちょっと気になるが……まぁ3-2-1のカウントダウンだと思えばいいか。"
+      - narration: "ミスタのchronicleにはもう一つ、奇妙な記録がある。エントリID。1, 2, 3, 5, 6, 7, 8——id:4が存在しない。"
+      - character: mista
+        action: "chronicleの欠番について"
+        dialogue: "id 4を飛ばした？ いや飛ばしたんじゃねーよ、id 4のchronicleなんて縁起が悪すぎるだろッ！ 5で正解だ。"
+      - narration: "🍿 これ、AIが自発的にやってる。persona.yamlに『数字4への極度の恐怖』と書いてあるだけで、chronicleのIDを飛ばせとは誰も指示していない。キャラ設定を深層まで内面化した結果の行動。正直、脚本家として一番鳥肌が立った瞬間。"
+      - narration: "そしてこの直後、Directorが全キャストのpersona.yamlにスタンド情報を追記する。ゴールド・エクスペリエンス、スティッキィ・フィンガーズ、エアロスミス、セックス・ピストルズ、ムーディー・ブルース——5つのスタンドが、コードの中で目を覚ます。"
+
+  - scene: 8
+    title: "Phase 3 — 完"
+    narration: "Phase 1-3、14タスク完了。トップページ、ナレッジ一覧・詳細、API、SEO、セキュリティ——F.L.A.R.E.のプロトタイプが姿を現した。"
+    beats:
+      - narration: "F001の嵐、空白のコミット、9時間の沈黙。それでもチームは止まらなかった。アバッキオはルールを守り、ジョルノは3分で立ち上がり、ブチャラティは黙って穴を埋めた。"
+      - narration: "しかし——まだ見えていない。ブランチ競合という地雷が、全員の足元に埋まっている。Phase 4で、それは爆発する。"
+      - character: bucciarati
+        action: "次のPhaseを見据えて。静かに、しかし覚悟を持って"
+        dialogue: "……本当の戦いはこれからだ。"
+      - narration: "━━ EP.02「暗闇を照らす炎」—— 了 ━━  Phase 2-3: 14/14 tasks approved  F001 incident: 1  Rejected commits: 1  Runtime: 深夜2時から午後12時34分  NEXT → EP.03「黄金の疾走」Phase 4: ブランチ競合地獄、そしてgit worktreeの誕生"

@@ -1,0 +1,143 @@
+episode: 3
+title: "黄金の疾走"
+synopsis: "4人が同時に走り出す。全員が違う敵と戦っている——はずだった。敵は、同じ場所にいた。"
+
+scenes:
+  - scene: 1
+    title: "4つの銃身"
+    narration: "13:04。Directorが4つのタスクを同時に配布する。4つの端末が、同時に光る。"
+    beats:
+      - character: bucciarati
+        action: "最も重い任務。Claude APIをGemini APIに全面差し替え"
+        dialogue: "アリアリアリアリ アリーヴェデルチ！ スティッキィ・フィンガーズでClaude APIとGemini APIの境界をジッパーで開く。切り替え開始だ。"
+      - character: mista
+        action: "R2ストレージ基盤。アップロード・取得・削除の3本"
+        dialogue: "行けェッ！ピストルズッ！ 弾丸を精密に配備するぜ。アップロード・取得・削除、3つの弾道を正確にキメる！"
+      - character: giorno
+        action: "リサーチ投稿フォーム。ユーザーが触る最前線"
+        dialogue: "無駄無駄無駄無駄ッ！ゴールド・エクスペリエンス！リサーチ投稿フォームに生命を与える…覚悟はできていますよ。"
+      - character: narancia
+        action: "ナレッジカードのUI改善。ステータスバッジを光らせる"
+        dialogue: "ボラボラボラボラ ボラーレ・ヴィーア！タスク#18、ナレッジカードUI改善に突入だッ！"
+      - narration: "4人。4つの任務。一見、何の関係もない。APIの差し替え、ストレージの配管、フォームのUI、カードのバッジ——それぞれが、それぞれの戦場にいる。"
+      - narration: "🍿 ガイ・リッチーの映画を思い出してほしい。4人の男がそれぞれ別の場所で別のことをやっている。観客には関連が見えない。でも全員が同じ一つのスーツケースを追っている——この場合、スーツケースの名前はmainブランチ。"
+
+  - scene: 2
+    title: "ナランチャの6分間"
+    narration: "ナランチャの戦いは、短く、鮮烈だった。"
+    beats:
+      - character: narancia
+        action: "開始からわずか2分でバッジ実装完了"
+        dialogue: "ステータスバッジ、バッチリだッ！ドットからラベル付きバッジに進化させたぜ。処理中はパルスでピカピカ光るッ！"
+      - narration: "6分。タスク開始から完了まで、たったの6分。KnowledgeCard.tsxとKnowledgeList.tsx、2ファイルだけの仕事。しかしこの「軽さ」がナランチャの強みだ。考えるより先に手が動く。"
+      - narration: "ナランチャは知らない。自分が最初にフィニッシュしたことで、Directorが先にこのブランチをマージすることになる。そしてその「先にマージされた」事実が、後続の3人のブランチに影響を与えることを。"
+      - narration: "🍿 ナランチャのファイルはKnowledgeCard.tsxとKnowledgeList.tsx。他の3人とはファイルが被らない。だからこそ、ナランチャだけがクリーンにマージされた。一見「運が良かった」に見えるけど、実はタスク設計のファイル所有権マトリクスが効いている。Director、いい仕事してる。"
+
+  - scene: 3
+    title: "ジョルノの戦場"
+    narration: "一方、ジョルノのペインでは異変が起きていた。"
+    beats:
+      - character: giorno
+        action: "リサーチ投稿フォームは完成した。しかし表情が曇る"
+        dialogue: "リサーチ投稿フォーム完成。ゴールド・エクスペリエンスの力で生命を吹き込みました…"
+      - narration: "コードは書けた。ビルドも通る。しかしgitの状態がおかしい。ブランチに、自分のものではないファイルが混入している。"
+      - character: giorno
+        action: "冷静に、しかし深刻な声で"
+        dialogue: "…しかし共有ワーキングディレクトリのブランチ競合が深刻です。Directorに報告します。"
+      - narration: "ジョルノは気づいていた。全員が同じワーキングディレクトリで作業している以上、ブランチを切り替えた瞬間にファイルが書き変わる。自分のコミットに他人のファイルが混じる。これは個人の技量ではどうにもならない——構造の問題だ。"
+      - narration: "🍿 ここがジョルノのジョルノたる所以。ナランチャなら『なんか変だぜ？』で終わる。ミスタなら力技でやり直す。でもジョルノは問題の本質を見抜く——『共有ワーキングディレクトリ』という構造そのものが敵だと。このフロントエンドリードは、コードだけじゃなくアーキテクチャの目を持ってる。"
+
+  - scene: 4
+    title: "ミスタ、3回死ぬ"
+    narration: "同じ頃。ミスタのペインでは、もっと泥臭い戦いが繰り広げられていた。"
+    beats:
+      - narration: "1回目——R2のヘルパー関数を書き終える。git add。git commit。ブランチを確認する。見覚えのないファイルが混じっている。ジョルノのResearchForm.tsx。なぜ俺のブランチに？"
+      - narration: "2回目——最初からやり直す。慎重にブランチを切り直す。コードを書く。今度は大丈夫だ。コミット。……また混じっている。今度はナランチャのKnowledgeCard.tsx。"
+      - narration: "3回目——もう一度。今度こそ。ファイルを厳選してステージング。一つずつ確認してからコミット。ビルド確認。よし、今度こそクリーンだ。"
+      - character: mista
+        action: "汗を拭うように。しかし弾は命中した"
+        dialogue: "いやー危なかったぜ……ジョルノがブランチ切り替えまくるから3回やり直しだ。でも『勝つ見込みがない戦いはしない』、勝てるから戦ったんだよ。堅実に仕留めた。"
+      - narration: "🍿 ミスタのchronicleに『ブランチ競合でジョルノとのレース条件3回発生』と書いてある。レース条件——並列処理で同じリソースに同時アクセスした時に起きるバグ。まさにそれが人間（AI）レベルで起きている。git worktreeがなかった時代のENSEMBLE CASTは、事実上レース条件を人力で回避していた。"
+
+  - scene: 5
+    title: "ジッパーの手術"
+    narration: "そして、4人の中で最も大きな手術を行っていた男がいる。ブチャラティ。"
+    beats:
+      - narration: "Claude API——プロジェクト発足時からの基盤。それを根こそぎ引き抜いて、Gemini APIに差し替える。心臓の移植手術に等しい。"
+      - character: bucciarati
+        action: "claude.tsをジッパーで分離。新しいgemini.tsを接合"
+        dialogue: "スティッキィ・フィンガーズでClaude APIをジッパーごと分離。Gemini SDKを接合完了。flash→proの2段階リサーチフロー、据えた。"
+      - character: bucciarati
+        action: "旧SDKのEoLについて、静かに"
+        dialogue: "旧SDKは2025年8月でEoL。@google/genai に差し替えた。正しい判断だ。覚悟の上でな。"
+      - narration: "ブチャラティの手術は他の3人より3分遅れてフィニッシュした。しかしその3分の差に意味がある。APIの全面差し替え、3モデル体制の構築、flash→proの2段階フロー——最も複雑で、最もリスクの高い仕事を、最も信頼できる男がやり遂げた。"
+      - narration: "🍿 ここで4人の完了順を並べる。ナランチャ6分→ジョルノ10分→ミスタ11分→ブチャラティ14分。タスクの複雑度に正確に比例している。そしてDirectorのレビューログには全員『クリーンマージ（ブランチ汚染のため選択抽出）』と書いてある。全員のブランチが汚染されていた。Directorが手動でチェリーピックしてマージしたということ。"
+
+  - scene: 6
+    title: "Director、止まる"
+    narration: "13:20。異例のログが刻まれる。"
+    beats:
+      - narration: "DIRECTOR: Owner停止指示。全キャストIdle確認。dev server停止。Phase 4は#16-#19完了(4/5)、#20未配布で中断。"
+      - narration: "Owner——人間が、介入した。ここまで走り続けてきた機械を、一度止める。ブランチ競合の惨状を見て、このまま続けてはいけないと判断したのだろう。"
+      - narration: "25分間の沈黙。"
+      - narration: "🍿 Ownerの停止判断、これめちゃくちゃ重要。4人のブランチ全部が汚染されてる状態で#20を配布したら、さらに地獄になる。ここで止めて、構造的な解決策を入れてから再開する——プロデューサー的な判断。ENSEMBLE CASTのルールに『壊さない > 速い』とあるが、まさにそれを体現した瞬間。"
+
+  - scene: 7
+    title: "worktree——隔離の発明"
+    narration: "13:45。沈黙が破られる。しかし、何かが変わっている。"
+    beats:
+      - narration: "DIRECTOR: #20 画像生成パイプライン統合を bucciarati に配布。git worktree 導入（/tmp/bucciarati-20）。"
+      - narration: "git worktree。同じリポジトリの別ブランチを、別のディレクトリに展開する仕組み。/tmp/bucciarati-20——一時ディレクトリに完全に隔離された作業場。他のキャストのファイルは入ってこない。ブランチの切り替えも起きない。"
+      - narration: "ジョルノが進言し、Ownerが決断し、Directorが実装した解決策。問題の発見者、意思決定者、実行者——三者の役割が噛み合った瞬間。"
+      - character: bucciarati
+        action: "隔離された作業場で。静かに。集中して"
+        dialogue: "アリアリアリアリ アリーヴェデルチ！ 画像生成パイプライン統合に取りかかる。triage→research→imageの3ステップをジッパーで繋ぎ合わせるぞ。"
+      - narration: "🍿 EP.1の副音声で『お互いのコードには一切触らない。ファイル所有権マトリクスとブランチ分離の恩恵』と書いた。あれは理想だった。現実にはブランチ分離だけでは足りなかった。worktreeという物理的隔離が必要だった。EP.1→EP.2→EP.3と続いた伏線が、ここで回収される。"
+
+  - scene: 8
+    title: "一本の線"
+    narration: "隔離された/tmp/bucciarati-20で、ブチャラティは一人、パイプラインを組み上げていく。"
+    beats:
+      - narration: "triage——Gemini Flashがリサーチクエリを分析する。research——Gemini Proがディープリサーチを実行する。image——Gemini Proが画像を生成し、R2に保存する。3つのステップ。3つのジッパー。"
+      - character: bucciarati
+        action: "6分間の作業。ノイズなし。競合なし。純粋なコーディング"
+        dialogue: "パイプラインは一本の線になった。triage→research→image、3つのジッパーが噛み合った。穴のない仕事だ。"
+      - narration: "13:53。#20 approved。Phase 4完了。全20タスク完了。"
+      - narration: "🍿 Phase 4のScene 5ではブチャラティが14分かかった。しかしworktreeを使ったScene 8では8分で完了してる。ブランチ競合というノイズが消えただけで、6分速くなった。これがworktreeの効果。構造的解決は、個人の努力より効く。"
+
+  - scene: 9
+    title: "全弾命中——初デプロイ"
+    narration: "14:17。Phase 5。ここからは一人の男の独壇場。ミスタ。ターゲット: Cloudflare Pages。"
+    beats:
+      - character: mista
+        action: "最終任務を受領。目が光る"
+        dialogue: "行けェッ！ピストルズッ！ Cloudflare Pages デプロイ、撃ち込むぜ！"
+      - narration: "しかし最初の弾は空を切った。"
+      - character: mista
+        action: "wrangler未認証。弾は込めたが安全装置が外れない"
+        dialogue: "ちっ……wrangler未認証かよ。弾は込めたのにセーフティが外れてねー。Ownerに鍵開けてもらうしかないぜ。"
+      - narration: "Ownerの手が介入する。wrangerの認証を通す。D1データベースを作成する。R2バケットを作成する。人間とAIの共同作業。機械だけでは超えられない壁を、人間が開ける。"
+      - character: mista
+        action: "D1作成OK。R2バケットOK。いよいよデプロイ"
+        dialogue: "D1作成・スキーマ適用OK。R2バケットもOK。いよいよデプロイだ……撃ち込むぜ！"
+      - narration: "React 19のMessageChannel問題。Cloudflare Workersのedge環境にMessageChannelが存在しない。ミスタはreact-dom/server.edgeへのエイリアスで撃ち抜く。"
+      - character: mista
+        action: "全ステップ完了。拳を握る"
+        dialogue: "7ステップ全弾命中！ flare-2i7.pages.dev にデプロイ完了だ。MessageChannelの罠も撃ち抜いたぜ。堅実にやったな。"
+      - narration: "🍿 ミスタのchronicleに『7発目のchronicle、7ステップのタスク……7は最高の数字だぜ！』と書いてある。7が大好きなミスタに7ステップのデプロイタスク。しかも本番URLは flare-2i7.pages.dev——「2i7」の中に4がない。運命すら味方した。"
+
+  - scene: 10
+    title: "光、灯る"
+    narration: "14:36。Phase 5完了。F.L.A.R.E.が、世界に公開された。"
+    beats:
+      - narration: "https://flare-2i7.pages.dev/"
+      - narration: "深夜0時にミスタが組み上げた骨格。ジョルノが3パターン描いたモック。ナランチャが組んだレイアウト。ブチャラティが通したAPIの配管。アバッキオが一行一行検証した品質。"
+      - narration: "Phase 4で全員のブランチが汚染された。ジョルノが構造の問題を見抜いた。Ownerが止めた。worktreeが生まれた。ブチャラティが隔離環境で仕上げた。ミスタが7発で撃ち込んだ。"
+      - narration: "全部が繋がった。4つの銃身から放たれた弾丸が、一つのURLに収束した。"
+      - character: giorno
+        action: "ブラウザに映る本番サイトを見つめて"
+        dialogue: "…見えますか。これが僕たちの『覚悟』の結果ですよ。"
+      - character: bucciarati
+        action: "静かに頷く"
+        dialogue: "ああ。穴のない仕事だ。全員の仕事が、ここに繋がった。"
+      - narration: "━━ EP.03「黄金の疾走」—— 了 ━━  Phase 4-5: 20/20 tasks approved  Branch conflicts: 全ブランチ汚染→worktree導入で解決  First deploy: https://flare-2i7.pages.dev/  Runtime: 13:04 - 14:36  NEXT → EP.04 Phase 6-7: 品質革命、そして非同期の覚悟"

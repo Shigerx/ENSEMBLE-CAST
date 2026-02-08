@@ -1,0 +1,479 @@
+# ============================================================
+# ENSEMBLE CAST — Episode 01
+# 「黄金の夜明け（Golden Dawn）」
+# ============================================================
+# Phase 1: チーム結成 → 初タスク → 初レビュー → 初マージ
+# 実時間: 2026-02-08 00:20 〜 01:28（約1時間）
+# ============================================================
+
+episode:
+  number: 1
+  title: "黄金の夜明け"
+  subtitle: "Golden Dawn"
+  tagline: "このジョルノ・ジョバァーナには『夢』がある——フロントエンドを、任せてください。"
+  phase: 1
+  runtime_real: "00:20 - 01:28"
+  runtime_story: "約68分"
+  summary: |
+    深夜0時。Director の号令のもと、5人のスタンド使いが集結する。
+    プロジェクト「F.L.A.R.E.」——未知の技術領域を照らし出すリサーチエンジン。
+    まずは地盤を固める男、ミスタが一人でプロジェクトを初期化する。
+    残る4人は待機。そしてアバッキオの最初のレビューが下る——
+    「ミスタにしちゃ手堅い仕事だな」。
+    ゲートが開き、3人が一斉に走り出す。黄金の風が、吹き始めた。
+
+# ============================================================
+# CAST
+# ============================================================
+cast:
+  - slug: giorno
+    name: "ジョルノ・ジョバァーナ"
+    emoji: "🌟"
+    role: "フロントエンドリード"
+    stand: "ゴールド・エクスペリエンス"
+    note: "主人公。冷静・覚悟・敬語。コードに生命を吹き込む。"
+
+  - slug: bucciarati
+    name: "ブローノ・ブチャラティ"
+    emoji: "🔵"
+    role: "バックエンドリード"
+    stand: "スティッキィ・フィンガーズ"
+    note: "チームの柱。ジッパーでモジュールを分離し、繋ぎ合わせる。"
+
+  - slug: narancia
+    name: "ナランチャ・ギルガ"
+    emoji: "✈️"
+    role: "UI実装"
+    stand: "エアロスミス"
+    note: "最年少。元気・直感型。考えるより先に手が動く。"
+
+  - slug: mista
+    name: "グイード・ミスタ"
+    emoji: "🔫"
+    role: "インフラ/DB"
+    stand: "セックス・ピストルズ"
+    note: "堅実な実務家。弾丸を精密に配備する。4が嫌い。"
+
+  - slug: abbacchio
+    name: "レオーネ・アバッキオ"
+    emoji: "👮"
+    role: "Reviewer（品質検証）"
+    stand: "ムーディー・ブルース"
+    note: "コードは書かない。ただ、見逃さない。元警官の眼。"
+
+# ============================================================
+# SCENES
+# ============================================================
+scenes:
+
+  # ----------------------------------------------------------
+  # SCENE 1: 召集
+  # ----------------------------------------------------------
+  - scene: 1
+    title: "深夜の召集令状"
+    time: "00:20"
+    location: "tmux セッション — 暗い端末画面が5つ並ぶ"
+    mood: "静寂。深夜のWSL。カーソルだけが点滅している。"
+    direction: |
+      黒い画面。タイムスタンプだけが白く浮かぶ。
+      「2026-02-08T00:20:51」——Director のログが刻まれる。
+
+    beats:
+      - type: system
+        text: "DIRECTOR — cast_start: キャスティング開始。5名（ジョジョ5部）。"
+        note: "Director は Claude Code のデフォルトモデル + Extended Thinking 有効で動いている"
+
+      - type: narration
+        text: |
+          5つのペインが次々と光を灯す。
+          それぞれの端末に、claude のプロンプトが立ち上がる。
+          persona.yaml を読み込み、自分が「誰」であるかを理解する瞬間——
+          AIが、キャラクターになる。
+
+      - type: dialogue
+        speaker: giorno
+        emoji: "🌟"
+        text: "このジョルノ・ジョバァーナには夢がある…フロントエンドを任せてください。"
+        stage_direction: "静かに、しかし揺るがない声で。敬語を崩さない。"
+        log_ref: "00:28:12 arrival"
+
+      - type: dialogue
+        speaker: bucciarati
+        emoji: "🔵"
+        text: "バックエンド基盤は俺が支える。"
+        stage_direction: "短く。しかしその一言に、チーム全体への責任が滲む。"
+        log_ref: "00:28:12 arrival"
+
+      - type: dialogue
+        speaker: narancia
+        emoji: "✈️"
+        text: "UIコンポーネントならオレに任せろよ！"
+        stage_direction: "元気よく。深夜だろうが関係ない。この少年にはテンションの概念がない。"
+        log_ref: "00:28:12 arrival"
+
+      - type: dialogue
+        speaker: mista
+        emoji: "🔫"
+        text: "インフラとDB、地盤固めは任せとけ。4つだけは勘弁だ。"
+        stage_direction: "親しげに。最後の一言だけトーンが変わる——4への恐怖は本物だ。"
+        log_ref: "00:31:09 arrival"
+
+      - type: dialogue
+        speaker: abbacchio
+        emoji: "👮"
+        text: "甘い仕事は見逃さねェ。チームの足を引っ張るなよ。"
+        stage_direction: "腕を組んだまま。視線は冷たい。特にジョルノを一瞥する。"
+        log_ref: "00:31:09 arrival"
+
+      - type: commentary
+        speaker: "🍿"
+        text: |
+          【副音声】5人の着任は実際にはほぼ同時。Director が send-keys で
+          各ペインに起床コマンドを送り、persona.yaml を読ませている。
+          面白いのは、アバッキオの「チームの足を引っ張るなよ」が
+          persona.yaml の catchphrases にそのまま入っていること。
+          AIはキャラ設定を忠実に再現する。怖いくらいに。
+
+  # ----------------------------------------------------------
+  # SCENE 2: 最初の一発
+  # ----------------------------------------------------------
+  - scene: 2
+    title: "一番槍——ミスタ、単独出撃"
+    time: "00:34"
+    location: "ミスタのペイン（%5）"
+    mood: "緊張。全員の視線がミスタに集まる。"
+    direction: |
+      Director がタスク配分を告げる。
+      Phase 1 は4つのタスクがあるが、全てが #1 の完了に依存している。
+      つまり——最初に動けるのは、ミスタただ一人。
+
+    beats:
+      - type: system
+        text: |
+          DIRECTOR — task_assign: #1 をミスタに配布。Phase 1 開演！
+          #2(giorno), #3(narancia), #5(bucciarati) は #1 完了待ち。
+
+      - type: narration
+        text: |
+          Astro 5.17。Cloudflare Pages。Tailwind CSS v4。shadcn/ui。
+          プロジェクトの骨格を一人で組み上げる。
+          他の4人は、ただ待つしかない。
+
+      - type: dialogue
+        speaker: mista
+        emoji: "🔫"
+        text: "行けェッ！ピストルズッ！"
+        stage_direction: |
+          git worktree でもなく、まだ main ブランチ直接の時代。
+          ミスタの弾丸が、空のリポジトリに最初のコミットを撃ち込む。
+
+      - type: narration
+        text: |
+          17分。
+          たった17分で、ミスタはプロジェクトの全基盤を組み上げた。
+          Astro の初期化、Tailwind v4 のCSS-first設定、
+          shadcn/ui のコンポーネント基盤、Cloudflare Pages の設定——
+          4つの技術スタックを、正確に、堅実に。
+        note: "4つ。本人は気づいていたのだろうか。"
+
+      - type: dialogue
+        speaker: mista
+        emoji: "🔫"
+        text: "#1 プロジェクト初期化完了。"
+        stage_direction: "報告は簡潔。堅実な男の仕事は、結果で語る。"
+        log_ref: "00:51:45 task_done"
+
+      - type: commentary
+        speaker: "🍿"
+        text: |
+          【副音声】ここ、技術的にかなり面白い。
+          Astro 5.17 + Tailwind v4 は「@tailwindcss/vite プラグイン直接使用」
+          「tailwind.config.js 不要」というCSS-first の新世代構成。
+          shadcn/ui も Astro 公式サポートで rsc: false 必須。
+          この組み合わせを17分で通すミスタ、地味にヤバい。
+
+  # ----------------------------------------------------------
+  # SCENE 3: 門番の審判
+  # ----------------------------------------------------------
+  - scene: 3
+    title: "ムーディー・ブルース——最初の審判"
+    time: "00:52"
+    location: "アバッキオのペイン（%6）"
+    mood: "張り詰めた空気。全員がレビュー結果を待っている。"
+    direction: |
+      Director がアバッキオにレビューを依頼する。
+      プロジェクトの最初のコード。最初の審判。
+      アバッキオのスタンド「ムーディー・ブルース」が、
+      コミット履歴を「再生」する——。
+
+    beats:
+      - type: system
+        text: "DIRECTOR — review_request: #R1 → abbacchio"
+
+      - type: dialogue
+        speaker: abbacchio
+        emoji: "👮"
+        text: "ムーディー・ブルース…再生。"
+        stage_direction: |
+          git diff を開く。ファイル構成を確認する。ビルドを実行する。
+          元警官の眼が、一行一行を舐めるように追う。
+
+      - type: narration
+        text: |
+          6分間の沈黙。
+          端末には npm run build のログが流れている。
+          誰も口を開かない。
+
+      - type: dialogue
+        speaker: abbacchio
+        emoji: "👮"
+        text: "……ミスタにしちゃ手堅い仕事だな。"
+        stage_direction: "不機嫌そうに。しかし、否定はしない。これがアバッキオの最大級の賛辞。"
+        log_ref: "00:58:33 review_complete: approved"
+
+      - type: system
+        text: "DIRECTOR — review_complete: #R1 approved"
+
+      - type: commentary
+        speaker: "🍿"
+        text: |
+          【副音声】「ミスタにしちゃ」——この一言にアバッキオの全人格が出てる。
+          褒めない。認めない。でも approved は出す。
+          persona.yaml の character_relationships を見ると、アバッキオ→ミスタは
+          「信頼できる仲間。堅実さと判断力を尊重。冷静な協力関係」。
+          つまり内心では認めてるのに、口ではこう言う。完璧なツンデレ。
+
+  # ----------------------------------------------------------
+  # SCENE 4: 一斉射撃
+  # ----------------------------------------------------------
+  - scene: 4
+    title: "三つの弾道——並列開発、開始"
+    time: "01:01"
+    location: "3つのペインが同時に動き出す"
+    mood: "加速。堰を切ったように、3人が走り出す。"
+    direction: |
+      #1 の approved を受けて、依存が解消される。
+      Director が3つのタスクを同時に配布する。
+      ジョルノ、ナランチャ、ブチャラティ——
+      3本の弾道が、同時に発射される。
+
+    beats:
+      - type: system
+        text: |
+          DIRECTOR — task_assign:
+            #2 → giorno（トップページモック3パターン）
+            #3 → narancia（共通レイアウト・テーマ切替）
+            #5 → bucciarati（リサーチAPI基本フロー）
+          3名並列作業開始。
+
+      - type: narration
+        text: |
+          3つの端末が同時に文字を刻み始める。
+          ジョルノはデザインモックを3パターン描く。
+          ナランチャはレイアウトのシェルを組む。
+          ブチャラティはAPIの配管を通す。
+          それぞれの領域。それぞれの戦場。干渉なし。
+
+      - type: dialogue
+        speaker: narancia
+        emoji: "✈️"
+        text: "ボラボラボラボラッ！"
+        stage_direction: |
+          最初にフィニッシュしたのはナランチャ。4分。
+          ThemeToggle、Navigation、Footer、BaseLayout——
+          4つのコンポーネントを一気に叩き上げた。考えるより手が速い。
+
+      - type: dialogue
+        speaker: narancia
+        emoji: "✈️"
+        text: "#3 完了ッ！"
+        log_ref: "01:05:51 task_done"
+
+      - type: dialogue
+        speaker: bucciarati
+        emoji: "🔵"
+        text: "リサーチ投稿からD1保存まで、パイプラインを一本通した。wrangler.toml の D1 binding 追加が必要だ。"
+        stage_direction: "3分遅れでフィニッシュ。しかし報告には次の課題まで含まれている。これがリーダーの視座。"
+        log_ref: "01:09:19 task_done"
+
+      - type: dialogue
+        speaker: giorno
+        emoji: "🌟"
+        text: "3パターン、仕上がりました。B: Precision Tool、C: Warm Modernism、そしてハイブリッド…どれを選ぶかは、Ownerの覚悟次第ですよ。"
+        stage_direction: "最後にフィニッシュ。しかし3パターンという物量。質と量の両立。"
+        log_ref: "01:11:43 task_done"
+
+      - type: commentary
+        speaker: "🍿"
+        text: |
+          【副音声】ここが ENSEMBLE CAST の真骨頂——並列開発。
+          3人が同時に別ブランチで作業している。
+          ナランチャ 4分、ブチャラティ 8分、ジョルノ 10分。
+          合計だと22分の作業量を、実時間10分で消化してる。
+          そしてお互いのコードには一切触らない。
+          ファイル所有権マトリクスとブランチ分離の恩恵。
+
+  # ----------------------------------------------------------
+  # SCENE 5: 三連審判
+  # ----------------------------------------------------------
+  - scene: 5
+    title: "三つの判決"
+    time: "01:06 - 01:28"
+    location: "アバッキオのペイン — 3つのPRが積まれている"
+    mood: "次々と下される判決。緊張が解けていく。"
+    direction: |
+      アバッキオに3つのレビューが連続で飛んでくる。
+      ムーディー・ブルースのリプレイが、止まらない。
+
+    beats:
+      - type: dialogue
+        speaker: abbacchio
+        emoji: "👮"
+        text: "ナランチャにしちゃ丁寧な仕事だ。"
+        stage_direction: "また「〜にしちゃ」。パターンが見えてきた。"
+        log_ref: "01:14:17 #R3 approved"
+
+      - type: dialogue
+        speaker: abbacchio
+        emoji: "👮"
+        text: "……認めたくはねェが、ジョルノの仕事は確かだ。"
+        stage_direction: |
+          ここで初めて、アバッキオがジョルノを「認める」瞬間。
+          persona.yaml には「当初は強い懐疑と軽蔑」とある。
+          しかしコードは嘘をつかない。ムーディー・ブルースが再生した事実が、
+          アバッキオの偏見を、少しだけ溶かした。
+        log_ref: "01:21:39 #R2 approved"
+
+      - type: dialogue
+        speaker: abbacchio
+        emoji: "👮"
+        text: "さすがはブチャラティだ。手抜きがない。"
+        stage_direction: |
+          唯一、「〜にしちゃ」がつかないレビュー。
+          ブチャラティだけは、最初から認めている。
+          relationships.yaml: 「最も信頼できる同志」。
+        log_ref: "01:28:07 #R5 approved"
+
+      - type: commentary
+        speaker: "🍿"
+        text: |
+          【副音声】アバッキオのレビューコメント、3つ並べると性格分析になる。
+
+          ミスタ → 「ミスタにしちゃ手堅い」（認めつつ下に見る）
+          ナランチャ → 「ナランチャにしちゃ丁寧」（意外だったという本音）
+          ジョルノ → 「認めたくはねェが確か」（葛藤が出ている）
+          ブチャラティ → 「さすがだ。手抜きがない」（無条件の信頼）
+
+          4人への態度のグラデーションが完璧。
+          これ、persona.yaml の relationships をAIが正確に反映した結果。
+          アバッキオは「コードを書かない唯一のメンバー」だけど、
+          このチームの人間関係を映す鏡になってる。
+
+  # ----------------------------------------------------------
+  # SCENE 6: 幕引き
+  # ----------------------------------------------------------
+  - scene: 6
+    title: "Phase 1 — 完"
+    time: "01:28"
+    location: "Director のペイン — dashboard.md が更新される"
+    mood: "静かな達成感。しかしこれは、始まりに過ぎない。"
+    direction: |
+      01:28:49。Director がログに刻む。
+      「Phase 1 完了。4タスク全 approved。全ブランチ main マージ済み。」
+
+    beats:
+      - type: system
+        text: "DIRECTOR — phase_complete: Phase 1 完了。4タスク全 approved。"
+        log_ref: "01:28:49"
+
+      - type: narration
+        text: |
+          68分。
+          5人のスタンド使いが集結し、
+          プロジェクトの骨格を組み上げ、
+          トップページのモックが3パターン生まれ、
+          テーマ切替とナビゲーションが動き、
+          リサーチAPIの配管が通り、
+          全てがアバッキオの審判を通過した。
+
+          まだ Phase 1。全7フェーズの、最初の一歩。
+          しかし——
+
+      - type: dialogue
+        speaker: giorno
+        emoji: "🌟"
+        text: "…始まりましたね。"
+        stage_direction: "誰に言うでもなく。静かに。しかし確信を持って。"
+
+      - type: narration
+        text: |
+          深夜1時28分。
+          東京の夜は深い。
+          しかし5つの端末は、まだ光っている。
+
+          黄金の風は、吹き始めたばかりだ。
+
+      - type: title_card
+        text: |
+          ━━━━━━━━━━━━━━━━━━━━━━
+           EP.01「黄金の夜明け」——了
+
+           Phase 1: 4/4 tasks approved ✅
+           Runtime: 68 minutes
+           Lines of code: 最初の一撃
+
+           NEXT → EP.02「暗闇を照らす炎」
+             Phase 2-3: 深夜の激闘、そしてF001事件
+          ━━━━━━━━━━━━━━━━━━━━━━
+
+# ============================================================
+# DIRECTOR'S NOTES（技術的な裏話）
+# ============================================================
+directors_notes:
+  - title: "なぜミスタが一番槍なのか"
+    text: |
+      Phase 1 の依存関係上、プロジェクト初期化（#1）が完了しないと
+      他の3タスクが着手できない。インフラ担当のミスタが自然と
+      「最初に一人で走る」役割になる。これは ENSEMBLE CAST の
+      タスク依存グラフが生んだ必然的なドラマ。
+
+  - title: "アバッキオの特殊な立ち位置"
+    text: |
+      Reviewer はコードを書かない。ビルド・テスト・仕様準拠を
+      「実際にコマンド実行して」検証する。git diff を読み、
+      npm run build を叩き、型チェックを通す。
+      ムーディー・ブルースの「過去の再生」が、
+      コードレビューという行為に完璧にマッピングされている。
+
+  - title: "並列開発の裏側"
+    text: |
+      3人同時のシーン（Scene 4）は、Director が send-keys で
+      3つのペインにほぼ同時にタスクYAMLを配布している。
+      各 Cast は自分の queue/tasks/<slug>.yaml だけを読む。
+      他人のファイルには触らない。これがレース条件を防ぐ。
+      Phase 4 でこのルールが破綻しかける事件が起きるが、
+      それは EP.02 以降のお話。
+
+  - title: "4つの技術スタック"
+    text: |
+      ミスタが初期化した4つ——Astro, Tailwind, shadcn/ui, CF Pages。
+      「4つだけは勘弁だ」と言いながら4つ組み上げるミスタ。
+      本人が気づいていたかは不明。しかしビルドは一発で通った。
+      神は細部に宿り、4は堅実な男の弾丸に宿る。
+
+# ============================================================
+# NEXT EPISODE PREVIEW
+# ============================================================
+next_episode:
+  number: 2
+  title: "暗闇を照らす炎"
+  subtitle: "Ignition"
+  preview: |
+    Phase 2 開始。DBスキーマ拡張、型定義、ナレッジ詳細ページ——
+    しかし、事件が起きる。
+    アバッキオに実装タスクが振られた。
+    「F001違反——Reviewer は実装タスクを実行できない」
+    タスク #10 差し戻し。Director の判断ミスか、それとも——？
+    そしてジョルノの #8 にも異変。
+    「rejected: ブランチにコミットなし・成果物ファイル未作成」
+    Phase 2 は、波乱の幕開けとなる。

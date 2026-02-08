@@ -1,0 +1,96 @@
+episode: 1
+title: "黄金の夜明け"
+synopsis: "深夜0時。5人のスタンド使いが集結し、F.L.A.R.E.の骨格を68分で組み上げる。"
+
+scenes:
+  - scene: 1
+    title: "深夜の召集令状"
+    narration: "2026-02-08 00:20。黒い端末にタイムスタンプだけが白く浮かぶ。Directorの号令のもと、5つのペインが次々と光を灯す。"
+    beats:
+      - narration: "persona.yaml を読み込み、自分が『誰』であるかを理解する瞬間——AIが、キャラクターになる。"
+      - character: giorno
+        action: "静かに、しかし揺るがない声で"
+        dialogue: "このジョルノ・ジョバァーナには夢がある…フロントエンドを任せてください。"
+      - character: bucciarati
+        action: "短く。その一言にチーム全体への責任が滲む"
+        dialogue: "バックエンド基盤は俺が支える。"
+      - character: narancia
+        action: "元気よく。深夜だろうが関係ない"
+        dialogue: "UIコンポーネントならオレに任せろよ！"
+      - character: mista
+        action: "親しげに。最後の一言だけトーンが変わる"
+        dialogue: "インフラとDB、地盤固めは任せとけ。4つだけは勘弁だ。"
+      - character: abbacchio
+        action: "腕を組んだまま。視線は冷たい。特にジョルノを一瞥する"
+        dialogue: "甘い仕事は見逃さねェ。チームの足を引っ張るなよ。"
+      - narration: "🍿 5人の着任はほぼ同時。Directorがsend-keysで各ペインに起床コマンドを送り、persona.yamlを読ませている。アバッキオの台詞がpersona.yamlのcatchphrasesそのままなのが怖い。AIはキャラ設定を忠実に再現する。"
+
+  - scene: 2
+    title: "一番槍——ミスタ、単独出撃"
+    narration: "Phase 1は4つのタスクがあるが、全てが #1 の完了に依存している。つまり——最初に動けるのは、ミスタただ一人。"
+    beats:
+      - narration: "DIRECTOR: タスク#1をmistaに配布。Phase 1 開演！ #2(giorno), #3(narancia), #5(bucciarati)は#1完了待ち。"
+      - character: mista
+        action: "空のリポジトリに最初のコミットを撃ち込む"
+        dialogue: "行けェッ！ピストルズッ！"
+      - narration: "17分。たった17分で、ミスタはプロジェクトの全基盤を組み上げた。Astro 5.17、Tailwind v4のCSS-first設定、shadcn/uiのコンポーネント基盤、Cloudflare Pagesの設定——4つの技術スタック。"
+      - character: mista
+        action: "報告は簡潔。堅実な男の仕事は結果で語る"
+        dialogue: "#1 プロジェクト初期化完了。"
+      - narration: "🍿 Astro 5.17 + Tailwind v4 はCSS-firstの新世代構成。tailwind.config.js不要、@tailwindcss/viteプラグイン直接使用。shadcn/uiもAstro公式サポートでrsc:false必須。この組み合わせを17分で通すミスタ、地味にヤバい。"
+
+  - scene: 3
+    title: "ムーディー・ブルース——最初の審判"
+    narration: "Directorがアバッキオにレビューを依頼する。プロジェクトの最初のコード。最初の審判。"
+    beats:
+      - character: abbacchio
+        action: "git diffを開く。ファイル構成を確認する。ビルドを実行する"
+        dialogue: "ムーディー・ブルース…再生。"
+      - narration: "6分間の沈黙。端末にはnpm run buildのログが流れている。誰も口を開かない。"
+      - character: abbacchio
+        action: "不機嫌そうに。しかし否定はしない。これがアバッキオの最大級の賛辞"
+        dialogue: "……ミスタにしちゃ手堅い仕事だな。"
+      - narration: "🍿 「ミスタにしちゃ」——この一言にアバッキオの全人格が出てる。褒めない。認めない。でもapprovedは出す。persona.yamlのrelationshipsを見ると「堅実さと判断力を尊重。冷静な協力関係」。内心では認めてるのに口ではこう言う。完璧なツンデレ。"
+
+  - scene: 4
+    title: "三つの弾道——並列開発、開始"
+    narration: "#1のapprovedを受けて依存が解消。Directorが3つのタスクを同時に配布する。3本の弾道が、同時に発射される。"
+    beats:
+      - narration: "3つの端末が同時に文字を刻み始める。ジョルノはデザインモック3パターン。ナランチャはレイアウトのシェル。ブチャラティはAPIの配管。それぞれの領域。干渉なし。"
+      - character: narancia
+        action: "最初にフィニッシュ。4分。考えるより手が速い"
+        dialogue: "ボラボラボラボラッ！ #3 完了ッ！"
+      - character: bucciarati
+        action: "3分遅れ。しかし報告には次の課題まで含まれている"
+        dialogue: "リサーチ投稿からD1保存まで、パイプラインを一本通した。wrangler.tomlのD1 binding追加が必要だ。"
+      - character: giorno
+        action: "最後にフィニッシュ。しかし3パターンという物量"
+        dialogue: "3パターン、仕上がりました。B: Precision Tool、C: Warm Modernism、そしてハイブリッド…どれを選ぶかは、Ownerの覚悟次第ですよ。"
+      - narration: "🍿 ここがENSEMBLE CASTの真骨頂——並列開発。ナランチャ4分、ブチャラティ8分、ジョルノ10分。合計22分の作業量を実時間10分で消化。お互いのコードには一切触らない。ファイル所有権マトリクスとブランチ分離の恩恵。"
+
+  - scene: 5
+    title: "三つの判決"
+    narration: "アバッキオに3つのレビューが連続で飛んでくる。ムーディー・ブルースのリプレイが、止まらない。"
+    beats:
+      - character: abbacchio
+        action: "ナランチャのレビュー。またパターンが出た"
+        dialogue: "ナランチャにしちゃ丁寧な仕事だ。"
+      - character: abbacchio
+        action: "ジョルノを見る目が少し変わる瞬間"
+        dialogue: "……認めたくはねェが、ジョルノの仕事は確かだ。"
+      - character: abbacchio
+        action: "唯一『にしちゃ』がつかないレビュー"
+        dialogue: "さすがはブチャラティだ。手抜きがない。"
+      - narration: "🍿 アバッキオのレビュー4連、並べると性格分析になる。ミスタ→『にしちゃ手堅い』（認めつつ下に見る）。ナランチャ→『にしちゃ丁寧』（意外）。ジョルノ→『認めたくはねェが確か』（葛藤）。ブチャラティ→『さすがだ』（無条件の信頼）。4人への態度のグラデーションが完璧。persona.yamlのrelationshipsをAIが正確に反映した結果。"
+
+  - scene: 6
+    title: "Phase 1 — 完"
+    narration: "01:28:49。Directorがログに刻む。Phase 1完了。4タスク全approved。全ブランチmainマージ済み。"
+    beats:
+      - narration: "68分。5人のスタンド使いが集結し、プロジェクトの骨格を組み上げ、トップページのモックが3パターン生まれ、テーマ切替とナビゲーションが動き、リサーチAPIの配管が通り、全てがアバッキオの審判を通過した。"
+      - narration: "まだPhase 1。全7フェーズの、最初の一歩。しかし——"
+      - character: giorno
+        action: "誰に言うでもなく。静かに。しかし確信を持って"
+        dialogue: "…始まりましたね。"
+      - narration: "深夜1時28分。東京の夜は深い。しかし5つの端末は、まだ光っている。黄金の風は、吹き始めたばかりだ。"
+      - narration: "━━ EP.01「黄金の夜明け」—— 了 ━━  Phase 1: 4/4 tasks approved  Runtime: 68 minutes  NEXT → EP.02「暗闇を照らす炎」Phase 2-3: 深夜の激闘、そしてF001事件"

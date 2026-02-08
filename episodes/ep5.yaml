@@ -1,0 +1,125 @@
+episode: 5
+title: "レーダーチャートの夜"
+synopsis: "深夜22時。最後のPhaseが始まる。Wave制の精密射撃、親分のAPIを使う少年、依存を待つ天才——そして、門番は静かに見ていた。00:20に始まった物語が、23:32に終わる。"
+
+scenes:
+  - scene: 1
+    title: "夜の第三幕"
+    narration: "22:28。東京の夜が深まる。Phase 7の完了から4時間。Directorが最後の作戦を告げる。Phase 8——リサーチUX改善と非同期パイプライン安定化。"
+    beats:
+      - narration: "DIRECTOR: Phase 8 開始。8タスク、Wave制で配布。Wave 1: #31(mista)タイムアウト延長+途中再開、#32(bucciarati)progress_log、#37(giorno)表示改善。並列開始。"
+      - narration: "Wave制。Phase 1-7ではDirectorは依存関係に基づいてタスクをまとめて配布していた。Phase 8では違う。タスクを「波」に分け、前の波が承認されてから次の波を放つ。"
+      - narration: "8つのタスクは全て小さい。新しいページを作るのでも、アーキテクチャを変えるのでもない。既にある機能の、ほんの少しの改善。タイムアウト値の調整。ログの可視化。ラベルの翻訳。チャートの追加。"
+      - narration: "しかし——映画の最終カットは、こういう仕事で決まる。"
+      - narration: "🍿 Phase 8は「最終研磨」。映画でいうファイナルカット。大きな撮影は終わっている。あとは色味の調整、音の微調整、テロップの位置——プロだけが気づく差異を、一つずつ潰していく。そしてDirectorのWave制は、この「研磨」を効率的に回す仕組み。依存関係が複雑に絡み合うPhase 8では、自由配布より波形配布の方が安全だ。Directorも8フェーズ目にして進化している。"
+
+  - scene: 2
+    title: "Wave 1——三つの刃"
+    narration: "22:29。3人が同時に動く。"
+    beats:
+      - character: mista
+        action: "タイムアウト値の最適化に取りかかる"
+        dialogue: "行けェッ！ピストルズッ！ タイムアウト・リトライ・複雑度、3発の精密射撃だ"
+      - character: bucciarati
+        action: "progress_logの配管を設計する"
+        dialogue: "スティッキィ・フィンガーズ…データの流れをジッパーで開いて、中の進捗を見せてやる。"
+      - character: giorno
+        action: "レポートの可読性改善に着手"
+        dialogue: "タスク #37 着手します。レポートの可読性に生命を与える…これが僕の使命ですよ。"
+      - narration: "6分後。ブチャラティが最初に仕上げる。D1にprogress_logカラムを追加、Consumer Workerの各ステージにマイルストーンログを記録する仕組みを据えた。"
+      - narration: "同刻。ジョルノがStep 1+2を完了。見出しにteal左ボーダー、段落に呼吸、URLを折りたたみ。しかしStep 3——レーダーチャートは#36の完了を待つ必要がある。"
+      - character: mista
+        action: "9分で完了。タイムアウト値を並べて確認する"
+        dialogue: "タイムアウト値を弾道計算みたいに最適化した。60秒・120秒・300秒・480秒……全部「4」を回避してる。完璧だぜ"
+      - narration: "🍿 ミスタのchronicle 12発目。「5つのタイムアウト値に『4』は一個もねぇ」と書いてある。60, 120, 300, 60, 480——本当にない。しかもlight/deep分岐でAPI呼び出し回数を最適化している。Phase 1で17分かけてプロジェクトを初期化した男が、Phase 8では9分でパイプラインの弾道を精密調整している。11個のchronicle（id:4は永遠にない）が、ミスタの成長そのもの。"
+
+  - scene: 3
+    title: "Wave 2——配管と探知機"
+    narration: "22:52。Wave 1の3タスクが承認され、Directorが次の波を放つ。"
+    beats:
+      - narration: "DIRECTOR: #33(bucciarati)DELETE/PATCH API、#34(narancia)UIラベル日本語化+進捗ログ表示。Wave 2開始。"
+      - character: bucciarati
+        action: "不要なデータを切り離すAPIを据える"
+        dialogue: "スティッキィ・フィンガーズで不要なデータを切り離す。削除と編集のAPIを据える"
+      - narration: "DELETE——存在確認、R2画像削除、D1レコード削除。PATCH——topic変更、status→queued リセット。UUIDバリデーション共通化。5分。"
+      - character: narancia
+        action: "UIラベルを日本語に統一し、進捗ログ表示を追加"
+        dialogue: "よっしゃ！UIラベル日本語化＋進捗ログ表示、エアロスミスの探知能力でユーザーの不安を察知して安心UIを作ってやるッ！"
+      - narration: "STATUS_TEXT全項目を日本語統一。ResearchProgressにprogress_logをfade-inアニメーション付きで表示。7分。"
+      - narration: "🍿 ここで静かに伏線が張られている。ブチャラティが#33で作ったDELETE/PATCH API——これは「ただのAPI」じゃない。次のWaveでナランチャがこのAPIを使う。親分が配管を敷き、少年がその上にUIを建てる。persona.yamlの関係性——「オレの親分として完全に信頼する部下」——がコードの依存関係に反映される瞬間が、もうすぐ来る。"
+
+  - scene: 4
+    title: "親分のAPI"
+    narration: "23:07。Wave 2が承認され、Directorが最後のWaveを放つ。#35(narancia)と#36(bucciarati)。"
+    beats:
+      - character: narancia
+        action: "削除・編集UIに取りかかる。目が輝いている"
+        dialogue: "タスク#35着手！削除・編集UIだな。エアロスミスでユーザーが消したいものをロックオンするぜ！ボラボラボラ！"
+      - narration: "ConfirmDialogコンポーネント。トピック名のインライン編集。再実行ボタン。カード削除。——その全てが、ブチャラティの#33で作られたDELETE/PATCH APIを呼んでいる。"
+      - character: narancia
+        action: "8分で完成。報告の中にある一言が、全てを語る"
+        dialogue: "ボラーレ・ヴィーア！タスク#35完了！削除・編集・再実行、全部ロックオンして一撃だッ！親分のDELETE/PATCH APIフル活用してるぜ！"
+      - narration: "「親分のAPI」。ナランチャは自分のコードの中で、ブチャラティのAPIを「親分の」と呼んだ。"
+      - narration: "🍿 chronicleに書かれたこの一言に、全部詰まってる。ナランチャのpersona.yamlには「ブチャラティ：オレの親分として完全に信頼する部下」とある。APIのエンドポイントなんて、普通は作った人の名前では呼ばない。でもナランチャにとって、それは「/api/research/[id]のDELETEメソッド」じゃない。「親分が据えた配管」だ。技術的な依存関係に、人間関係が重なる。EP.1でナランチャは4分でレイアウトを作った独立した戦士だった。EP.5では親分のAPIの上でUIを建てる「チームの一員」になっている。"
+
+  - scene: 5
+    title: "最後の依存"
+    narration: "同時刻。ブチャラティはもう一つの仕事を進めていた。#36——Geminiプロンプト強化。"
+    beats:
+      - character: bucciarati
+        action: "プロンプトの中身をジッパーで開き、チャート出力を強化する"
+        dialogue: "プロンプトの中身をジッパーで開く。チャート2〜3種を必ず出す…この味は手抜きの味だ、と言わせない仕事をする"
+      - narration: "RESEARCH_SYSTEM_PROMPTにradar型フォーマットを追加。チャート2-3種を必須化。トピック別の組み合わせガイド。4分。"
+      - narration: "23:13。#36 approved。その瞬間、DirectorがジョルノにStep 3を解放する。"
+      - narration: "DIRECTOR: giorno #37 Step3 解放。#36 approved済み。レーダーチャートコンポーネント実装へ。"
+      - character: giorno
+        action: "待っていた。この瞬間を"
+        dialogue: "Step 3 着手…レーダーチャートに生命を与えます。このジョルノ・ジョバァーナには、データを美しく可視化するという夢がある。"
+      - narration: "🍿 ジョルノの#37は3ステップに分かれていて、Step 3だけがブチャラティの#36に依存している。なぜか。ブチャラティがプロンプトにradar型を追加しなければ、Geminiがレーダーチャートのデータを出力しない。データがなければ、チャートコンポーネントを作っても意味がない。ジョルノはそれを理解して、Step 1+2を先に済ませ、Step 3をブチャラティの完了まで待った。天才の真の強さは、待てること。"
+
+  - scene: 6
+    title: "レーダーチャートの夜"
+    narration: "23:15。ジョルノの端末に、最後のコンポーネントが姿を現す。"
+    beats:
+      - narration: "RadarChart.tsx。3-8軸、0-10スケール、複数シリーズ比較、凡例自動表示。同心円グリッド、多角形データ、半透明フィル。D3.jsが描く幾何学模様が、ダークモードの画面に浮かび上がる。"
+      - character: giorno
+        action: "7分。最後のコミットを打つ"
+        dialogue: "タスク #37 全ステップ完了。テキストに呼吸を、URLに秩序を、データに形を…ゴールド・エクスペリエンスの生命付与、やり遂げました。"
+      - narration: "23:24。#37 approved。ジョルノの8つ目のchronicle——「データに命を吹き込む…このジョルノ・ジョバァーナの夢が、またひとつ形になりました。」"
+      - narration: "🍿 ジョルノのchronicleを1から8まで並べると、一つの物語が見える。id:1「やると決めたことはやり遂げます」（モック3パターン）。id:2「地道な実装こそ基盤」（空白コミットから立ち直った後）。id:4「覚悟を持って完遂した」（ブランチ競合の戦場で）。id:5「無味乾燥なMarkdownに生命を」。id:8「データに命を吹き込む」。最初の「やり遂げます」という宣言が、8つのchronicleを経て「吹き込む」という動詞に変わった。宣言から実行へ。これが成長。"
+
+  - scene: 7
+    title: "門番の沈黙"
+    narration: "Phase 8の全タスクがapprovedされていく間、一つのペインだけが静かだった。アバッキオの端末。"
+    beats:
+      - narration: "Phase 1——4つのレビューを一人で裁いた。Phase 2でF001を突きつけた。Phase 7で費用安全策を13分かけて検証した。"
+      - narration: "Phase 8。Directorはアバッキオを呼ばなかった。"
+      - narration: "レビュー並列化。Directorが直接Script Supervisorを動かし、承認後即マージ。アバッキオの正式レビューは、もう必要なかった。"
+      - narration: "必要なくなったのではない。必要がなくなったのだ。"
+      - narration: "アバッキオがPhase 1で示した品質基準——ビルド、型チェック、仕様準拠、回帰テスト——を、チーム全員が内面化した。門番が教えた「見逃さない目」を、4人全員が自分のものにした。"
+      - narration: "🍿 アバッキオのchronicleは6エントリで終わっている。最後のid:6が、Phase 7の「三人とも、悪くねェ仕事だった」。これが門番の最後の言葉になった。考えてみれば、これ以上完璧な退場はない。留保なしで全員を認めた直後に、自分の出番がなくなる。門番が不要になることこそ、門番の仕事の完成だ。"
+
+  - scene: 8
+    title: "12発目——最終任務"
+    narration: "23:24。全タスクapproved。Directorがミスタに最後の指令を出す。#38——Phase 8統合デプロイ。"
+    beats:
+      - character: mista
+        action: "最後の統合任務。もう迷いはない"
+        dialogue: "行けェッ！ピストルズッ！最終任務だ。全弾叩き込むぜ"
+      - narration: "7つのブランチ。#31, #32, #33, #34, #35, #36, #37——Phase 8の全成果物を一つに統合。ビルド。Consumer Workerデプロイ。Cloudflare Pagesデプロイ。"
+      - narration: "23:32。approved。"
+      - narration: "ミスタのchronicleは12で終わる。id:4は永遠に存在しない。そしてこの12発目が——F.L.A.R.E.プロジェクトの、最後の弾丸だった。"
+      - narration: "🍿 統合デプロイ4回目。#15(Phase 5), #26(Phase 6), #30(Phase 7), #38(Phase 8)。全てミスタ。チームが作ったコードを世界に届ける最後の一手は、必ずこの男が撃つ。12個のchronicle、4回の統合デプロイ、0回のid:4——これがグイード・ミスタという男の履歴書だ。"
+
+  - scene: 9
+    title: "23時間12分"
+    narration: "23:32。Phase 8完了。全39タスク完了。F.L.A.R.E.の全工程が——終わった。"
+    beats:
+      - narration: "00:20に5つの端末が光った。ジョルノが夢を語り、ブチャラティが土台を約束し、ナランチャが叫び、ミスタが最初の弾を撃ち、アバッキオが腕を組んだ。"
+      - narration: "23:32に、同じ5つの端末が静かになる。23時間12分。ほぼ丸一日。"
+      - narration: "その間に——39のタスクが完了した。8つのPhaseを越えた。F001事件があった。空白のコミットがあった。9時間の沈黙があった。ブランチが競合し、worktreeが生まれた。同期が死に、Queueが走った。門番が帰還し、そして静かに去った。"
+      - narration: "レーダーチャートが、深夜の画面に浮かんでいる。多角形のデータが、半透明のフィルに包まれて光っている。ジョルノが最後に作ったこのコンポーネントは——5人の仕事を可視化するのに、ちょうどいい形をしている。"
+      - character: giorno
+        action: "23時間前と同じ静けさで。しかし、あの時とは全く違う重みを持って"
+        dialogue: "…見えますか。これが僕たちの『覚悟』の結果ですよ。"
+      - narration: "━━ EP.05「レーダーチャートの夜」—— 了 ━━  Phase 8: 64分/8タスク/Wave制  Total: 39タスク完了/8 Phase/23時間12分  Branch conflicts: 0（worktree完全稼働）  Abbacchio's final words: 三人とも、悪くねェ  ━━ SEASON 1「黄金の風 × F.L.A.R.E.」—— 完 ━━"

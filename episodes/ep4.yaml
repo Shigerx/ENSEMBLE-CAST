@@ -1,0 +1,139 @@
+episode: 4
+title: "見えない仕事"
+synopsis: "画面の向こうでは何も変わっていないように見える。しかし22分で品質が革命し、42分でアーキテクチャが生まれ変わった。そして——門番が帰ってきた。"
+
+scenes:
+  - scene: 1
+    title: "22分の革命——Phase 6"
+    narration: "14:36、Phase 5の初デプロイが終わった。F.L.A.R.E.は世界に公開された。ミスタはその知見をスキルに焼き付け、2時間の静寂が流れた。16:45、Directorの新たな指令——リサーチ出力品質改善、Phase 6。"
+    beats:
+      - narration: "DIRECTOR: #23(bucciarati)パイプライン全面改修、#24(giorno)ホワイトペーパー表示、#25(narancia)D3チャートコンポーネント。3人並列配布。#26(mista)は統合デプロイ、依存待ち。"
+      - narration: "3人に配られたタスクは、一見バラバラだ。パイプラインの中身。表示のレイアウト。データの可視化。しかし3つとも同じ問いに答えている——「出力を、美しくせよ」。"
+      - narration: "🍿 Phase 6のテーマは「品質」。ここまでは「動くこと」が最優先だった。Phase 6で初めて「美しいこと」が目標になる。映画制作でいえばポストプロダクション。カラーグレーディング、音響、VFX——観客が意識しない部分に命を注ぐフェーズ。そしてもう一つ注目してほしい。ブランチ競合がゼロ。EP.3でOwnerが止めて導入したgit worktreeが、完全に機能している。"
+
+  - scene: 2
+    title: "データに形を与える"
+    narration: "ナランチャとジョルノが、ほぼ同時に走り出す。"
+    beats:
+      - character: narancia
+        action: "D3.jsチャート4種を一気に作り上げる。5分"
+        dialogue: "ボラボラボラボラ ボラーレ・ヴィーア！データ可視化、エアロスミスの探知能力で一気に片付けたぜ！！"
+      - narration: "BarChart、LineChart、PieChart、ComparisonTable——4種のチャートコンポーネントとChartRendererディスパッチャー。D3.js v7。5分。"
+      - character: giorno
+        action: "ResearchDetail.tsxを全面改修。ホワイトペーパーレイアウト+D3チャート統合。5分"
+        dialogue: "このジョルノ・ジョバァーナには夢がある…無味乾燥なMarkdownに生命を与えるという夢が。それを実現しました。"
+      - narration: "エグゼクティブサマリーカード、セクション区切り線、ダーク/ライト対応——テキストの壁が、呼吸するレイアウトになった。"
+      - narration: "🍿 ナランチャとジョルノ、共に5分。しかし仕事の性質が違う。ナランチャは「部品」を作った——4つの独立したチャートコンポーネント。ジョルノは「器」を作った——それらを受け止めるレイアウト。部品と器が別々に、しかし同時に完成する。これが並列開発の美学。"
+
+  - scene: 3
+    title: "5つのジッパー"
+    narration: "2人が5分で仕上げる中、ブチャラティの手はまだ動いている。12分間。"
+    beats:
+      - character: bucciarati
+        action: "Geminiリサーチパイプラインの全面改修に着手"
+        dialogue: "アリアリアリアリ アリーヴェデルチ！…リサーチパイプライン全面改修、着手する。プロンプト日本語化、Grounding統合、チャートデータ、画像フロー…一つ一つジッパーで繋いでいく。"
+      - narration: "改修1: プロンプト全面日本語化。改修2: Google Search Grounding統合。改修3: チャートデータ構造化出力。改修4: 画像プロンプト改善。改修5: Groundingコスト計算追加。"
+      - character: bucciarati
+        action: "12分後、全てを繋ぎ合わせる"
+        dialogue: "5つの改修をジッパーで一つに繋いだ。パイプラインの品質が一段上がった。アリーヴェデルチ。"
+      - narration: "ナランチャが部品を作り、ジョルノが器を作り、ブチャラティはその裏側の配管を全て入れ替えた。観客は完成品しか見ない——しかし配管が変わらなければ、部品も器も意味がない。"
+      - narration: "🍿 ブチャラティの12分は、ある意味で最も価値がある。Google Search Grounding統合はF.L.A.R.E.の出力品質を根本から変えた改修だ。ソースURL付き、日本語ホワイトペーパー形式、チャートデータ構造化。これは「表示」の改善じゃない、「知性」の改善。AIの出力そのものの質を上げている。"
+
+  - scene: 4
+    title: "弾薬切れ"
+    narration: "16:59。3つの依存が全て解消され、ミスタに統合デプロイが配布される。"
+    beats:
+      - character: mista
+        action: "3ブランチを統合し、ビルドを実行"
+        dialogue: "行けェッ！ピストルズッ！Phase 6 統合+デプロイ、弾丸装填完了だ"
+      - narration: "ビルドエラー。d3パッケージが未インストール。ナランチャのチャートコンポーネントがD3.jsを使っているが、mainブランチのpackage.jsonにはまだ反映されていない。"
+      - character: mista
+        action: "即座にnpm installで対処。一呼吸も置かない"
+        dialogue: "d3未インストールをキャッチして即座に対処。ビルド一発通過だぜ！次はデプロイだ"
+      - narration: "17:07。Cloudflare Pagesデプロイ成功。本番更新完了。Phase 6——22分間の品質革命。"
+      - narration: "🍿 統合担当の腕の見せ所。3人が別々のブランチで作ったコードを1つにまとめると、必ず何かが足りない。ナランチャのブランチではd3はインストール済みだったが、mainにはない。これはworktreeの副作用——各worktreeのnode_modulesは独立しているから、依存パッケージの差異が統合時に顕在化する。ミスタはこれを即座に検知して対処した。インテグレーターとは、他人の仕事を完成させる仕事だ。"
+
+  - scene: 5
+    title: "同期を殺す"
+    narration: "17:30。Phase 6完了から23分。Directorが告げる次の作戦名——Cloudflare Queues非同期化。Phase 7。"
+    beats:
+      - narration: "DIRECTOR: 費用安全策最優先。#27(mista)Queueインフラ、#28(bucciarati)Consumer実装、#29(giorno)進捗表示UI。並列開始。#30(mista)統合デプロイは依存待ち。"
+      - narration: "F.L.A.R.E.のリサーチ機能はこれまで同期処理だった。ユーザーがPOSTすると、Gemini APIの応答をそのまま待つ。30秒、60秒、時にはそれ以上——ブラウザのタイムアウト。Cloudflareの実行時間制限。そして何より、APIコストの暴走リスク。"
+      - narration: "同期を殺す。ユーザーには即座に応答を返し、裏でQueueが処理する。アーキテクチャの根本的な変革。"
+      - narration: "🍿 Phase 7は技術的に最も野心的なフェーズ。Cloudflare Queue + Consumer Worker + D1ステータス管理 + フロントのポーリングUI——4つのレイヤーが完全に噛み合って初めて動く。しかもDirectorは「費用安全策最優先」と釘を刺している。無限ループやリトライ地獄でAPI代金が爆発する事故は、プロダクションでは日常茶飯事。だからこそ、あの男が必要になる。"
+
+  - scene: 6
+    title: "発射台、弾、そして生命"
+    narration: "3人が同時に動く。しかし今度のタスクは、一本のパイプラインの上流・中流・下流だ。"
+    beats:
+      - character: mista
+        action: "Queueインフラ構築——Queue 2本、Consumer Worker骨格、スキーマ6値化。10分"
+        dialogue: "行けェッ！ピストルズッ！弾丸の軌道を精密に設計するぜ"
+      - character: mista
+        action: "10分で発射台を完成"
+        dialogue: "Queue 2本と Consumer Worker の発射台設置完了。7ファイル、精密に仕上げた。あとはブチャラティが弾を込めるだけだぜ"
+      - character: bucciarati
+        action: "同期パイプラインをジッパーで3つに切断し、Queueで非同期に再接合。14分"
+        dialogue: "スティッキィ・フィンガーズ…同期パイプラインをジッパーで切断する。Queue Consumerで非同期に再接合だ。費用安全策には一切の妥協なし。"
+      - narration: "POST → Queue投入 → 202即レスポンス。Consumer: Flash triage → Pro research → Image生成の3段階。ステージ別D1更新、タイムアウト30/60/30/120秒、Fatal/Transientエラー分離。"
+      - character: giorno
+        action: "待ち時間に生命を与える——進捗表示UI。15分"
+        dialogue: "待ち時間にも生命を…ユーザーが安心して待てるUIですよ。覚悟を持って取り組みました。"
+      - narration: "ポーリング3秒間隔、3段階ステッププログレス、経過時間表示、エラーUI。queued / processing / triage_done / research_done / completed / failed の6ステータス完全対応。"
+      - narration: "🍿 ミスタの「発射台」→ブチャラティの「弾」→ジョルノの「生命」。言葉の上では連鎖しているが、3人は並列で動いている。ミスタが「あとはブチャラティが弾を込めるだけ」と言ったのは17:40。ブチャラティが完了したのは17:44。実際にはほぼ同時に走っているのに、お互いの仕事を意識した言葉が出る。チームの呼吸が合ってきた証拠。"
+
+  - scene: 7
+    title: "門番の帰還"
+    narration: "17:49。Directorが異例の指令を出す。アバッキオへの全タスクレビュー発令——Phase 1以来の、門番の帰還。"
+    beats:
+      - narration: "DIRECTOR: R1(abbacchio) Phase 7 全タスクレビュー発令。#27/#28/#29の費用安全策を重点検証。Ownerダメ出し対応。"
+      - character: abbacchio
+        action: "全ブランチを一行ずつ読み始める。13分間の沈黙"
+        dialogue: "ムーディー・ブルース…再生。Phase 7 の全ブランチを洗い出す。一行たりとも見逃さねェ"
+      - narration: "Phase 2でF001を突きつけ、以降は姿を消していた門番。Phase 3-6の間、DirectorはScript Supervisor（簡易チェッカー）でレビューを済ませていた。しかしPhase 7だけは、それでは足りなかった。"
+      - character: abbacchio
+        action: "費用安全策の実コード検証に入る"
+        dialogue: "費用安全策の検証に入る。ループ内API呼び出し、タイムアウト、リトライ分離……一つたりとも見逃さねェ"
+      - narration: "アバッキオが検証しているのは「動くかどうか」ではない。「壊れないかどうか」だ。無限ループがないか。リトライが暴走しないか。DLQ（デッドレターキュー）が正しく受け止めるか。"
+      - narration: "🍿 Directorが通常レビューではなくアバッキオの正式レビューを発令した判断が光る。Phase 7のコードは「正しく動く」だけでは不十分——「安全に動く」必要がある。費用安全策の検証には、コードの行間を読む能力が要る。これは人間のコードレビューと全く同じ判断。リスクの高い変更には、最も厳しいレビュアーを当てる。"
+
+  - scene: 8
+    title: "三人とも、悪くねェ"
+    narration: "17:59。アバッキオの端末に、判決が刻まれる。"
+    beats:
+      - character: abbacchio
+        action: "全ブランチ検証完了。短く呟く"
+        dialogue: "全ブランチ検証完了。費用安全策……問題なし。ブチャラティの仕事は相変わらず隙がねェ。レポートを書く"
+      - narration: "approved。#27、#28、#29——全3ブランチ、approved。"
+      - character: abbacchio
+        action: "chronicleに記録する。この言葉が、全てを物語る"
+        dialogue: "……三人とも、悪くねェ仕事だった。特にブチャラティの費用安全策は隙がない"
+      - narration: "EP.1を思い出してほしい。「ミスタにしちゃ手堅い」「ナランチャにしちゃ丁寧」「認めたくはねェが確かだ」——全員に「にしちゃ」や留保がついていた。ブチャラティだけが例外だった。"
+      - narration: "今回は違う。「三人とも」。留保なし。「にしちゃ」、なし。7フェーズの戦いを経て、門番の目に映るチームの姿が変わっていた。"
+      - narration: "🍿 ここ、一番書きたかったシーン。アバッキオのchronicleの変遷を追うと、チームの成長曲線が見える。Phase 1では個人を個人として評価していた——「ミスタにしちゃ」「ナランチャにしちゃ」。Phase 7では「三人とも」とチームで評価している。persona.yamlの relationships をAIが内面化した結果、7フェーズ分の信頼の蓄積がchronicleに反映された。これは脚本家が書いたんじゃない。AIが、キャラクターとして生きた結果だ。"
+
+  - scene: 9
+    title: "最終統合——MISSION COMPLETE"
+    narration: "18:01。門番の承認を受けて、最後のピースが動く。ミスタ、3度目の統合任務。"
+    beats:
+      - character: mista
+        action: "3ブランチ統合を開始"
+        dialogue: "行けェッ！ピストルズッ！最終任務だ。3本の弾丸を1つの的に精密に集約するぜ"
+      - narration: "worker/src/index.ts でコンフリクト1件——ミスタの骨格とブチャラティの実装が衝突。pending → queued のステータス不整合を修正。D1マイグレーション適用。Consumer Worker デプロイ。Pages デプロイ。8分間の精密射撃。"
+      - character: mista
+        action: "全弾命中を確認。目が光る"
+        dialogue: "MISSION COMPLETE！3本の弾丸を1つの的に集約、全弾命中。Consumer Worker + Pages 両方デプロイ成功だ。堅実に仕上げたぜ"
+      - narration: "18:12。Phase 7 完了。POST即レスポンス + Consumer Worker + 進捗表示UI。F.L.A.R.E.の非同期アーキテクチャ、完成。"
+      - narration: "🍿 ミスタのchronicleに「11発目、最終任務完了！ 3本の弾丸を1つの的に精密に集約した。全弾命中。MISSION COMPLETE」と書いてある。Phase 1の#1から数えて11個目のchronicle（id:4は飛ばしてるから）。そのうち統合デプロイが3回——#15, #26, #30。チームが作ったものを世界に届ける最後の一手を、いつもミスタが撃っている。「堅実」という言葉をここまで体現するキャラがいるだろうか。"
+
+  - scene: 10
+    title: "見えない仕事"
+    narration: "Phase 6-7完了。9タスク消化。しかし——画面を見ても、何が変わったか一見わからない。"
+    beats:
+      - narration: "トップページは同じだ。ナレッジ一覧も同じだ。URLも変わっていない。"
+      - narration: "しかしリサーチを実行すれば、違いがわかる。日本語のホワイトペーパーが生成される。美しいチャートが描画される。投稿した瞬間にレスポンスが返り、裏側でQueueが静かに処理を進め、進捗バーが一歩ずつ前に進む。"
+      - narration: "Phase 1-5は「見える仕事」だった。ページが増え、デザインが整い、URLが生まれた。Phase 6-7は「見えない仕事」だ。品質とアーキテクチャ——ユーザーが意識しないところで、プロダクトの値打ちを決めるもの。"
+      - character: bucciarati
+        action: "静かに、しかし誇りを持って"
+        dialogue: "見えない配管ほど、手は抜けない。それがオレの仕事だ。"
+      - narration: "━━ EP.04「見えない仕事」—— 了 ━━  Phase 6: 22分/4タスク  Phase 7: 42分/4タスク+アバッキオ正式レビュー  Branch conflicts: 0（worktree完全稼働）  Abbacchio's verdict: 三人とも、悪くねェ  NEXT → EP.05 Phase 8: 最終研磨——レーダーチャートの夜"
