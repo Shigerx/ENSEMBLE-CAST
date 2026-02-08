@@ -206,7 +206,7 @@ show_task_progress() {
     return
   fi
 
-  local total=0 done_count=0 in_progress=0
+  local total=0 done_count=0 in_progress=0 pct_sum=0
   local task_lines=""
 
   for task_file in "$PROJECT_PATH/queue/tasks"/*.yaml; do
@@ -235,6 +235,7 @@ show_task_progress() {
             "blocked")                  pct=25; pct_icon="🚫" ;;
             *)                          pct=0; pct_icon="⏳" ;;
           esac
+          pct_sum=$((pct_sum + pct))
           get_char_info "$slug"
           local bar
           bar=$(progress_bar "$pct" 15)
@@ -267,6 +268,7 @@ show_task_progress() {
         "blocked")                  pct=25; pct_icon="🚫" ;;
         *)                          pct=0; pct_icon="⏳" ;;
       esac
+      pct_sum=$((pct_sum + pct))
       get_char_info "$slug"
       local bar
       bar=$(progress_bar "$pct" 15)
@@ -277,10 +279,10 @@ show_task_progress() {
   done
 
   if [ "$total" -gt 0 ]; then
-    # 全体進捗バー
+    # 全体進捗バー（各タスクの進捗合計 / タスク数）
     local overall_pct=0
     if [ "$total" -gt 0 ]; then
-      overall_pct=$(( (done_count * 100) / total ))
+      overall_pct=$(( pct_sum / total ))
     fi
     local overall_bar
     overall_bar=$(progress_bar "$overall_pct" 30)
