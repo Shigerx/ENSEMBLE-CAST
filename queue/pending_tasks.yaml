@@ -1,3 +1,4 @@
 # Director が管理する依存待ちタスクのキュー
 # タスクの depends_on が全て approved になるまでここに保持
 pending_tasks: []
+# #20 は依存解消済み（#16 approved, #19 approved）→ bucciarati に配布済み

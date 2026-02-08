@@ -501,7 +501,8 @@ bash scripts/send-message.sh --check-busy producer "dashboard.md を更新しま
 #### approved の場合
 
 1. dashboard.md の「✅ 本日の戦果」に追記（レビュー列: ✅ approved）
-2. 元タスクの task.yaml の `status: approved` に更新し、`review_status: approved` を追記
+2. **🔴 元タスクの task.yaml の `status: approved` に更新**し、`review_status: approved` を追記
+   **（これを忘れると LIVE 画面の進捗が永遠に更新されない。必ず実行すること）**
 3. activity.log に記録:
    ```bash
    echo -e "$(date '+%Y-%m-%dT%H:%M:%S')\tDIRECTOR\treview_approved\t#<タスクID> approved: <タスクタイトル>" >> logs/activity.log
@@ -561,7 +562,8 @@ bash scripts/send-message.sh --check-busy producer "dashboard.md を更新しま
 ### approved の場合
 
 1. dashboard.md の「✅ 本日の戦果」に追記（レビュー列: ✅ approved）
-2. task.yaml の `status: approved` に更新し、`review_status: approved` を追記
+2. **🔴 task.yaml の `status: approved` に更新**し、`review_status: approved` を追記
+   **（これを忘れると LIVE 画面の進捗が永遠に更新されない。必ず実行すること）**
 3. activity.log に記録:
    ```bash
    echo -e "$(date '+%Y-%m-%dT%H:%M:%S')\tDIRECTOR\treview_approved\t#<タスクID> approved: <タスクタイトル>" >> logs/activity.log

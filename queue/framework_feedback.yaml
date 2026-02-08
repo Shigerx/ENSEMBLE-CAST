@@ -7,7 +7,25 @@
 #
 # status: open → acknowledged → resolved
 
-feedback: []
+feedback:
+  - id: FB-001
+    reporter: owner
+    category: bug
+    title: "show-live.sh の PROGRESS が常に50%表示になる"
+    detail: |
+      原因1: Director が queue/tasks/*.yaml の status を done/approved に更新しない。
+      activity.log と dashboard.md は更新されるが task YAML は assigned/in_progress のまま放置される。
+      原因2: show-live.sh の progress マッピングが assigned=50%, in_progress=50% で同一。
+      配布〜完了まで見た目が変わらない。
+      修正案: (A) Director が完了時に task YAML の status も更新するルールを追加、
+      (B) show-live.sh のデータソースを dashboard.md か activity.log に変更、
+      (C) マッピングに粒度を追加（assigned=30%, in_progress=50%, review=80%）
+    impact: medium
+    status: acknowledged
+    resolution: |
+      (A) director.md: task.yaml status 更新ルールを 🔴 強調に変更（見落とし防止）
+      (B) show-live.sh: assigned=25%, in_progress=50% に分離（視覚的区別）
+    timestamp: "2026-02-08T15:03:06"
 # 例:
 # - id: FB-001
 #   reporter: giorno
