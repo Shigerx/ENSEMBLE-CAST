@@ -21,11 +21,11 @@ DIM='\033[2m'
 NC='\033[0m'
 WHITE='\033[1;37m'
 
-# 既存セッションチェック
+# 既存セッションチェック — 古いセッションは破棄して再作成
 if tmux has-session -t "$SESSION" 2>/dev/null; then
-  echo -e "${YELLOW}【報】${NC} シアターセッションが既にあります。アタッチします..."
-  tmux attach-session -t "$SESSION"
-  exit 0
+  echo -e "${YELLOW}【報】${NC} 古いシアターセッションを破棄して再作成します..."
+  tmux kill-session -t "$SESSION" 2>/dev/null || true
+  sleep 0.5
 fi
 
 # ensembleセッションが動いているか確認
