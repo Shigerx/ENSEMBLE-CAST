@@ -72,6 +72,17 @@ tmux set-option -t "$SESSION" pane-border-style "fg=colour240"
 tmux set-option -t "$SESSION" pane-active-border-style "fg=colour214,bold"
 tmux set-option -t "$SESSION" mouse on
 
+# --- 管理メニュー: Ctrl+b → M ---
+CTL="${PROJECT_PATH}/scripts/ensemble-ctl.sh"
+tmux bind-key M display-menu -T "#[align=centre] ENSEMBLE Control " \
+  "Restart All   (全体再起動)" r "display-popup -E -h 80% -w 80% -d '${PROJECT_PATH}' 'bash ${CTL} restart --wait'" \
+  "Restart LIVE  (LIVE再起動)" l "run-shell -b 'bash ${CTL} restart-live'" \
+  "" "" "" \
+  "Status        (状態確認)"   s "display-popup -E -h 70% -w 80% 'bash ${CTL} status --wait'" \
+  "Checkpoint    (状態保存)"   c "display-popup -E -h 50% -w 70% 'bash ${CTL} checkpoint --wait'" \
+  "" "" "" \
+  "Cancel" q ""
+
 # 右ペイン背景色（ちょっと暗め）
 tmux select-pane -t "$RIGHT_PANE" -P 'bg=#1a1a2e'
 
@@ -120,4 +131,7 @@ echo -e "    ${CYAN}tmux attach-session -t theater${NC}"
 echo ""
 echo -e "${DIM}  左画面で進捗を見ながら、右画面でClaudeと雑談できます。${NC}"
 echo -e "${DIM}  左画面の 🍿 Owner ▶ でProducerに指示も出せます。${NC}"
+echo ""
+echo -e "${YELLOW}  管理メニュー: Ctrl+b → M${NC}"
+echo -e "${DIM}    再起動・LIVE再起動・状態確認・チェックポイント保存${NC}"
 echo ""
