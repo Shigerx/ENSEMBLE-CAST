@@ -255,22 +255,28 @@ init_directories() {
 # STEP 3: Queue YAML リセット
 # ========================================
 reset_queues() {
-  log_action "[3/7] キューファイルをリセット..."
+  if [ "$FRESH_START" = true ]; then
+    log_action "[3/7] キューファイルをリセット..."
 
-  cat > "$PROJECT_PATH/queue/producer_to_director.yaml" << 'EOF'
+    cat > "$PROJECT_PATH/queue/producer_to_director.yaml" << 'EOF'
 # Producer → Director 指示キュー
 orders: []
 EOF
 
-  cat > "$PROJECT_PATH/queue/producer_to_lp.yaml" << 'EOF'
+    cat > "$PROJECT_PATH/queue/producer_to_lp.yaml" << 'EOF'
 # EP → Line Producer 指示キュー
 messages: []
 EOF
 
-  rm -f "$PROJECT_PATH/queue/tasks/"*.yaml 2>/dev/null || true
-  rm -f "$PROJECT_PATH/queue/reports/"*.yaml 2>/dev/null || true
-  rm -f "$PROJECT_PATH/queue/inter_unit/"*.yaml 2>/dev/null || true
-  rm -f "$PROJECT_PATH/queue/lp_to_units/"*.yaml 2>/dev/null || true
+    rm -f "$PROJECT_PATH/queue/tasks/"*.yaml 2>/dev/null || true
+    rm -f "$PROJECT_PATH/queue/reports/"*.yaml 2>/dev/null || true
+    rm -f "$PROJECT_PATH/queue/inter_unit/"*.yaml 2>/dev/null || true
+    rm -f "$PROJECT_PATH/queue/lp_to_units/"*.yaml 2>/dev/null || true
+  else
+    log_action "[3/7] キューファイルを保持（継続モード）..."
+    # レポートだけクリア（再起動後に再送されるため二重処理を防ぐ）
+    rm -f "$PROJECT_PATH/queue/reports/"*.yaml 2>/dev/null || true
+  fi
 }
 
 # ========================================

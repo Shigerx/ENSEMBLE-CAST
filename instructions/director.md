@@ -153,19 +153,15 @@ bash scripts/send-message.sh --check-busy producer "dashboard.md を更新しま
 
 ## コンパクション復帰の高速化（v2.5）
 
-`checkpoints/director.yaml` が存在する場合、状態の復元を高速化できる:
-1. 自分のチェックポイントを読む: `checkpoints/director.yaml`
-2. `current_task` と `context_files` を確認
-3. 通常のコンパクション復帰手順（CLAUDE.md セクション11）の該当ファイルを読む
+`queue/checkpoint.yaml` が存在する場合、状態の復元を高速化できる:
+1. チェックポイントを読む: `queue/checkpoint.yaml`
+2. `completed_tasks`, `in_progress_tasks`, `pending_tasks` を確認
+3. 通常のコンパクション復帰手順（CLAUDE.md セクション12）の該当ファイルを読む
 
 チェックポイントが古い場合や存在しない場合は、通常の復帰手順に従う。
 
-**チェックポイントの保存（定期実行を推奨）**:
-```bash
-node scripts/stage-manager/checkpoint.js --snapshot director
-# 全Agentのスナップショットを一括保存:
-node scripts/stage-manager/checkpoint.js --snapshot-all
-```
+**チェックポイントの保存**: 「コンテキスト監視ルール」セクションの checkpoint.yaml フォーマットに従う。
+Owner が鑑賞ルームから `Ctrl+b → M → Checkpoint` でも保存可能（`ensemble-ctl.sh`）。
 
 ---
 
@@ -251,21 +247,21 @@ rejected → 修正タスク作成 → Cast起床
    ```
    **注意**: `personality`, `catchphrases`, `communication_style`, `ability_name`, `ability_call` は書かない。Castが起動時にリサーチして追記する。
 3. `chronicle.yaml`, `relationships.yaml` を生成
-3. ペイン追加（%IDが返る）:
+4. ペイン追加（%IDが返る）:
    ```bash
    bash scripts/add-cast-pane.sh "<slug>" "<character_name>"
    ```
    → 出力が `%N` 形式の固有ID（例: `%5`）
-4. roster.yaml の pane_id に %ID を記録
-5. config/panes.yaml の cast セクションに `slug: "%ID"` を追記
-6. Claude Code起動:
+5. roster.yaml の pane_id に %ID を記録
+6. config/panes.yaml の cast セクションに `slug: "%ID"` を追記
+7. Claude Code起動:
    ```bash
    tmux send-keys -t "%5" "claude --dangerously-skip-permissions"
    ```
    ```bash
    tmux send-keys -t "%5" Enter
    ```
-7. **15秒待機**:
+8. **15秒待機**:
    ```bash
    sleep 15
    ```
@@ -472,7 +468,7 @@ bash scripts/send-message.sh --check-busy producer "dashboard.md を更新しま
 
 3. **全結果を受け取る**（Task tool は同期的に結果を返す。send-keys 不要）
 
-3. 各結果に基づいて処理:
+4. 各結果に基づいて処理:
 
 #### approved の場合
 

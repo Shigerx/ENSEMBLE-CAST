@@ -61,6 +61,14 @@ cmd_restart() {
   echo -e "  ${CYAN}launch-ensemble.sh を起動します...${NC}"
   echo ""
   bash "$PROJECT_PATH/launch-ensemble.sh"
+
+  # theater セッションが存在すれば LIVE 画面も再起動
+  if tmux has-session -t theater 2>/dev/null; then
+    echo ""
+    echo -e "  ${CYAN}LIVE 画面を再起動します...${NC}"
+    sleep 2
+    cmd_restart_live
+  fi
 }
 
 # ========================================

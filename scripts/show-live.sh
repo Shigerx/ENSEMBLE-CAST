@@ -7,7 +7,7 @@
 
 set -euo pipefail
 
-PROJECT_PATH="/mnt/c/Users/shige/antigravity/ENSEMBLE-CAST"
+PROJECT_PATH="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 # ========================================
 # ANSIカラー定数
