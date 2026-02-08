@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ENSEMBLE CAST — Theater</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      fontFamily: { sans: ['"Noto Sans JP"', 'system-ui', 'sans-serif'] },
+    }
+  }
+};
+</script>
+<script src="https://cdn.jsdelivr.net/npm/preact@10/dist/preact.umd.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/preact@10/hooks/dist/hooks.umd.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/htm@3/dist/htm.umd.js"></script>
+<style>
+/* ── Cinema Foundation ── */
+body {
+  margin: 0;
+  background: linear-gradient(180deg, #07070c 0%, #0c0c14 40%, #0f0f18 100%);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Vignette overlay */
+#app::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: radial-gradient(ellipse at 50% 40%, transparent 50%, rgba(0,0,0,0.5) 100%);
+  pointer-events: none;
+  z-index: 50;
+}
+
+/* ── Screen ── */
+.screen {
+  position: relative;
+  background: linear-gradient(180deg, #111122 0%, #161630 40%, #1a1a32 100%);
+  border: 1px solid rgba(240,192,64,0.12);
+  border-radius: 6px;
+  box-shadow:
+    0 0 40px rgba(240,192,64,0.04),
+    0 0 80px rgba(240,192,64,0.02),
+    0 4px 60px rgba(0,0,0,0.6),
+    inset 0 1px 0 rgba(255,255,255,0.04);
+}
+.screen::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: 7px;
+  background: linear-gradient(180deg, rgba(240,192,64,0.08) 0%, transparent 30%, transparent 70%, rgba(240,192,64,0.04) 100%);
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* ── Light Leak ── */
+.light-leak {
+  height: 40px;
+  background: radial-gradient(ellipse at 50% 0%, rgba(240,192,64,0.07) 0%, transparent 70%);
+  filter: blur(16px);
+}
+
+/* ── Subtitle animations ── */
+@keyframes sub-enter {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.sub-line {
+  animation: sub-enter 0.5s ease-out both;
+  text-shadow: 0 2px 12px rgba(0,0,0,0.9), 0 0 4px rgba(0,0,0,0.6);
+}
+
+/* ── Film strip ── */
+.film-strip {
+  position: relative;
+  background: #14141e;
+  border-radius: 4px;
+  border: 1px solid rgba(255,255,255,0.04);
+}
+.sprocket-row {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+  padding: 0 24px;
+}
+.sprocket {
+  width: 10px;
+  height: 6px;
+  background: #07070c;
+  border-radius: 1px;
+  flex-shrink: 0;
+}
+
+/* ── Seat cards ── */
+.seat-card {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+.seat-card:hover {
+  background: rgba(255,255,255,0.06);
+  border-color: rgba(255,255,255,0.1);
+}
+
+/* ── Status dot pulse ── */
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+.dot-active {
+  animation: pulse-dot 2s ease-in-out infinite;
+}
+
+/* ── Progress bar shine ── */
+@keyframes bar-shine {
+  0%   { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.progress-fill {
+  background: linear-gradient(90deg, #f0c040, #f5d060, #f0c040);
+  background-size: 200% 100%;
+  animation: bar-shine 3s ease-in-out infinite;
+  border-radius: 2px;
+}
+
+/* ── Loading ── */
+@keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes title-glow {
+  0%, 100% { text-shadow: 0 0 20px rgba(240,192,64,0.3); }
+  50%      { text-shadow: 0 0 40px rgba(240,192,64,0.6); }
+}
+.loading-title {
+  animation: fade-in 1s ease-out, title-glow 2s ease-in-out infinite;
+}
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
+</style>
+</head>
+
+<body class="text-white font-sans">
+<div id="app"></div>
+
+<script>
+const { h, render } = preact;
+const { useState, useEffect, useRef } = preactHooks;
+const html = htm.bind(h);
+
+// ─── Constants ───
+const COLORS = {
+  giorno: '#f0c040', bucciarati: '#4a9eff', narancia: '#ff6b35',
+  mista: '#8b5cf6', abbacchio: '#6b7280',
+};
+const SUBTITLE_EVENTS = new Set([
+  'chat','progress','ability','task_done','phase_complete','arrival','task_blocked',
+]);
+const STATE_MAP = {
+  '処理中': { label: '処理中', dot: 'bg-green-400 dot-active', ring: 'ring-green-400/30' },
+  '起動中': { label: '起動中', dot: 'bg-blue-400 dot-active', ring: 'ring-blue-400/30' },
+  '完了待機': { label: '待機', dot: 'bg-yellow-400', ring: 'ring-yellow-400/20' },
+  'blocked': { label: 'blocked', dot: 'bg-red-400 dot-active', ring: 'ring-red-400/30' },
+};
+const DEFAULT_STATE = { label: '停止', dot: 'bg-gray-600', ring: '' };
+
+// ─── API helpers ───
+const api = (path) => fetch(path).then(r => r.json()).catch(() => null);
+
+// ─── App ───
+function App() {
+  const [cast, setCast] = useState([]);
+  const [phases, setPhases] = useState({ current_phase: 0, phases: [] });
+  const [production, setProd] = useState({});
+  const [subs, setSubs] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  // Initial load
+  useEffect(() => {
+    Promise.all([
+      api('/api/cast'), api('/api/phases'),
+      api('/api/production'), api('/api/activity?limit=20'),
+    ]).then(([c, ph, pr, act]) => {
+      if (c) setCast(c.cast || []);
+      if (ph) setPhases(ph);
+      if (pr) setProd(pr);
+      if (act) {
+        const recent = (act.entries || [])
+          .filter(e => SUBTITLE_EVENTS.has(e.event))
+          .slice(-4);
+        setSubs(recent);
+      }
+      setLoading(false);
+    });
+  }, []);
+
+  // SSE for real-time
+  useEffect(() => {
+    const es = new EventSource('/api/events');
+    es.addEventListener('activity', (e) => {
+      try {
+        const entry = JSON.parse(e.data);
+        if (SUBTITLE_EVENTS.has(entry.event)) {
+          setSubs(prev => [...prev, entry].slice(-4));
+        }
+      } catch(_) {}
+    });
+    return () => es.close();
+  }, []);
+
+  // Polling for cast/phases (every 5s)
+  useEffect(() => {
+    const iv = setInterval(() => {
+      Promise.all([api('/api/cast'), api('/api/phases')]).then(([c, ph]) => {
+        if (c) setCast(c.cast || []);
+        if (ph) setPhases(ph);
+      });
+    }, 5000);
+    return () => clearInterval(iv);
+  }, []);
+
+  if (loading) {
+    return html`
+      <div class="flex flex-col items-center justify-center min-h-screen gap-4">
+        <div class="loading-title text-3xl font-light tracking-[0.3em] text-[#f0c040]">
+          ENSEMBLE CAST
+        </div>
+        <div class="text-sm text-gray-500 tracking-wider">Now Loading...</div>
+      </div>`;
+  }
+
+  const totalDone = phases.phases.reduce((s, p) => s + p.tasks_done, 0);
+  const totalAll  = phases.phases.reduce((s, p) => s + p.tasks_total, 0);
+  const overallPct = totalAll > 0 ? Math.round(totalDone / totalAll * 100) : 0;
+
+  return html`
+    <div class="max-w-5xl mx-auto px-4 py-6 relative z-10">
+
+      <!-- Screen -->
+      <div class="screen p-6 md:p-8 mb-0">
+
+        <!-- Header -->
+        <div class="text-center mb-6 relative z-10">
+          <div class="text-[10px] tracking-[0.4em] uppercase text-[#f0c040]/60 mb-1">
+            Ensemble Cast presents
+          </div>
+          <h1 class="text-lg md:text-xl font-light tracking-wider text-white/90">
+            ${production.movie_title || ''}
+          </h1>
+          <div class="text-xs text-white/30 mt-1 tracking-wide">
+            ${production.project_name ? `× ${production.project_name.toUpperCase()}` : ''}
+          </div>
+        </div>
+
+        <!-- Progress -->
+        <${ProgressBar}
+          pct=${overallPct} done=${totalDone} total=${totalAll}
+          phase=${phases.current_phase} />
+
+        <!-- Divider -->
+        <div class="my-5 border-t border-white/5"></div>
+
+        <!-- Subtitles -->
+        <${Subtitles} entries=${subs} cast=${cast} />
+      </div>
+
+      <!-- Light Leak -->
+      <div class="light-leak"></div>
+
+      <!-- Film Strip -->
+      <${FilmStrip} phases=${phases.phases} />
+
+      <!-- Seat Panel -->
+      <${SeatPanel} cast=${cast} />
+
+      <!-- Footer -->
+      <div class="text-center text-gray-700 text-xs mt-6 pb-8">
+        🍿 ENSEMBLE CAST Theater
+      </div>
+    </div>`;
+}
+
+// ─── Progress Bar ───
+function ProgressBar({ pct, done, total, phase }) {
+  return html`
+    <div class="relative z-10">
+      <div class="flex items-center justify-between text-[11px] mb-2">
+        <span class="text-white/40">
+          ${phase > 0 ? `Phase ${phase}` : ''}
+          ${pct >= 100 ? ' 完了' : ' 上映中'}
+        </span>
+        <span class="text-white/40">
+          ${done}/${total} tasks
+          <span class="ml-2 text-[#f0c040]/80 font-medium">${pct}%</span>
+        </span>
+      </div>
+      <div class="h-1 bg-white/5 rounded-full overflow-hidden">
+        <div class="progress-fill h-full transition-all duration-700"
+             style="width: ${pct}%"></div>
+      </div>
+    </div>`;
+}
+
+// ─── Subtitles ───
+function Subtitles({ entries, cast }) {
+  const colorMap = {};
+  const emojiMap = {};
+  const nameMap = {};
+  (cast || []).forEach(c => {
+    colorMap[c.slug] = c.color || COLORS[c.slug] || '#fff';
+    emojiMap[c.slug] = c.emoji || '';
+    nameMap[c.slug]  = c.character_name || c.slug;
+  });
+
+  if (!entries || entries.length === 0) {
+    return html`
+      <div class="min-h-[120px] flex items-center justify-center">
+        <div class="text-white/20 text-sm italic">上映準備中...</div>
+      </div>`;
+  }
+
+  return html`
+    <div class="min-h-[120px] space-y-4">
+      ${entries.map((e, i) => {
+        const color = colorMap[e.actor] || '#888';
+        const emoji = emojiMap[e.actor] || '';
+        const name  = nameMap[e.actor]  || e.actor;
+        const isDirector = e.actor === 'DIRECTOR';
+        return html`
+          <div key=${e.timestamp + i} class="sub-line"
+               style="animation-delay: ${i * 0.08}s">
+            <div class="flex items-center gap-2 mb-0.5">
+              ${!isDirector && emoji && html`
+                <span class="text-sm">${emoji}</span>`}
+              <span class="text-[13px] font-medium"
+                    style="color: ${isDirector ? '#888' : color}">
+                ${isDirector ? '🎬 Director' : name}
+              </span>
+              <span class="text-[10px] text-white/20">${fmtTime(e.timestamp)}</span>
+            </div>
+            <div class="text-[13px] leading-relaxed pl-6
+                        ${isDirector ? 'text-white/40 italic' : 'text-white/80'}">
+              ${isDirector ? e.message : `「${e.message}」`}
+            </div>
+          </div>`;
+      })}
+    </div>`;
+}
+
+function fmtTime(ts) {
+  if (!ts) return '';
+  const m = ts.match(/(\d{2}):(\d{2})/);
+  return m ? `${m[1]}:${m[2]}` : '';
+}
+
+// ─── Film Strip ───
+function FilmStrip({ phases }) {
+  if (!phases || phases.length === 0) return null;
+
+  const sprockets = Array(Math.max(phases.length * 3, 8)).fill(0);
+
+  return html`
+    <div class="film-strip my-4 py-2">
+      <!-- Top sprockets -->
+      <div class="sprocket-row mb-2">
+        ${sprockets.map(() => html`<div class="sprocket"></div>`)}
+      </div>
+
+      <!-- Phase frames -->
+      <div class="flex gap-2 px-4 overflow-x-auto py-1">
+        ${phases.map(p => {
+          const done = p.status === 'complete';
+          return html`
+            <div class="flex-shrink-0 w-28 rounded px-3 py-2 text-center
+                        ${done
+                          ? 'bg-[#f0c040]/5 border border-[#f0c040]/10'
+                          : 'bg-white/[0.02] border border-white/5'}">
+              <div class="text-[10px] tracking-wider
+                          ${done ? 'text-[#f0c040]/60' : 'text-white/30'}">
+                ${p.name}
+              </div>
+              <div class="text-[11px] mt-1
+                          ${done ? 'text-[#f0c040]/80' : 'text-white/50'}">
+                ${done ? '✅' : '▶'} ${p.tasks_done}/${p.tasks_total}
+              </div>
+              <!-- Mini progress -->
+              <div class="h-0.5 mt-1.5 rounded-full overflow-hidden
+                          ${done ? 'bg-[#f0c040]/10' : 'bg-white/5'}">
+                <div class="h-full rounded-full
+                            ${done ? 'bg-[#f0c040]/40' : 'bg-white/20'}"
+                     style="width: ${p.progress}%"></div>
+              </div>
+            </div>`;
+        })}
+      </div>
+
+      <!-- Bottom sprockets -->
+      <div class="sprocket-row mt-2">
+        ${sprockets.map(() => html`<div class="sprocket"></div>`)}
+      </div>
+    </div>`;
+}
+
+// ─── Seat Panel ───
+function SeatPanel({ cast }) {
+  if (!cast || cast.length === 0) return null;
+
+  return html`
+    <div class="mt-4">
+      <div class="text-[10px] text-white/20 tracking-wider text-center mb-3 uppercase">
+        🍿 Cast
+      </div>
+      <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+        ${cast.map(c => html`<${SeatCard} ...${c} />`)}
+      </div>
+    </div>`;
+}
+
+function SeatCard({ slug, character_name, dev_role, emoji, color, state,
+                     ability_name, task_id, task_title, task_status }) {
+  const s = STATE_MAP[state] || DEFAULT_STATE;
+  const clr = color || COLORS[slug] || '#888';
+
+  return html`
+    <div class="seat-card p-3 group">
+      <!-- Header -->
+      <div class="flex items-center gap-2 mb-2">
+        <span class="text-lg">${emoji || '👤'}</span>
+        <div class="min-w-0">
+          <div class="text-[13px] font-medium truncate"
+               style="color: ${clr}">
+            ${character_name || slug}
+          </div>
+          <div class="text-[10px] text-white/30 truncate">${dev_role}</div>
+        </div>
+      </div>
+
+      <!-- Status -->
+      <div class="flex items-center gap-1.5 mb-1.5">
+        <div class="w-1.5 h-1.5 rounded-full ${s.dot}"></div>
+        <span class="text-[10px] text-white/40">${s.label}</span>
+      </div>
+
+      <!-- Task -->
+      ${task_id ? html`
+        <div class="text-[10px] text-white/25 truncate"
+             title=${task_title || ''}>
+          #${task_id} ${task_title || ''}
+        </div>` : null}
+
+      <!-- Ability (on hover) -->
+      ${ability_name ? html`
+        <div class="text-[10px] mt-1.5 truncate opacity-0 group-hover:opacity-100
+                    transition-opacity duration-300"
+             style="color: ${clr}40">
+          ⚡ ${ability_name}
+        </div>` : null}
+    </div>`;
+}
+
+// ─── Mount ───
+render(html`<${App} />`, document.getElementById('app'));
+</script>
+</body>
+</html>
