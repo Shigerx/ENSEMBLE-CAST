@@ -56,10 +56,18 @@ get_char_info() {
   local emoji="🎭"
 
   if [ -f "$persona_file" ]; then
-    name=$(grep -m1 'name:' "$persona_file" 2>/dev/null | sed 's/.*name: *//' | tr -d '"' || echo "$slug")
+    # character_name を優先、なければ name フィールド
+    local cn
+    cn=$(grep -m1 '^character_name:' "$persona_file" 2>/dev/null | sed 's/^character_name: *//' | tr -d '"' || true)
+    if [ -n "$cn" ]; then
+      name="$cn"
+    else
+      cn=$(grep -m1 '^name:' "$persona_file" 2>/dev/null | sed 's/^name: *//' | tr -d '"' || true)
+      [ -n "$cn" ] && name="$cn"
+    fi
     # emoji フィールドがあれば取得
     local e
-    e=$(grep -m1 'emoji:' "$persona_file" 2>/dev/null | sed 's/.*emoji: *//' | tr -d '"' || true)
+    e=$(grep -m1 '^emoji:' "$persona_file" 2>/dev/null | sed 's/^emoji: *//' | tr -d '"' || true)
     if [ -n "$e" ]; then
       emoji="$e"
     fi
@@ -179,13 +187,8 @@ show_cast_status() {
     if [ "$task" != "—" ] && [ -n "$task" ]; then
       task_display=" → ${task_id} ${task}"
     fi
-    local tw
-    tw=$(get_term_width)
-    local td_max=$((tw - 28))
-    [ "$td_max" -lt 10 ] && td_max=10
-    task_display=$(echo "$task_display" | cut -c1-"$td_max")
 
-    printf "  %s ${color}%-2s %-10s${NC} ${DIM}%s${NC}%s\n" \
+    printf "  %s ${color}%s %s${NC} ${DIM}%s${NC}%s\n" \
       "$icon" "$emoji" "$name" "$state" "$task_display"
   done <<< "$slugs"
   echo ""
@@ -235,13 +238,8 @@ show_task_progress() {
           get_char_info "$slug"
           local bar
           bar=$(progress_bar "$pct" 15)
-          local title_short
-          tw_p=$(get_term_width)
-          ts_max=$((tw_p - 45))
-          [ "$ts_max" -lt 10 ] && ts_max=10
-          title_short=$(echo "$current_title" | cut -c1-"$ts_max")
           task_lines+=$(printf "  %s #%-2s ${DIM}%s${NC} %3d%% ${CHAR_COLORS[$slug]}%s${NC}  %s\n" \
-            "$pct_icon" "$current_id" "$bar" "$pct" "$slug" "$title_short")
+            "$pct_icon" "$current_id" "$bar" "$pct" "$slug" "$current_title")
           task_lines+=$'\n'
         fi
         current_id="$tid"
@@ -376,16 +374,8 @@ show_conversation() {
       *)              prefix="" ;;
     esac
 
-    # メッセージの整形（ターミナル幅に応じて動的調整）
-    local term_w
-    term_w=$(get_term_width)
-    local msg_max=$((term_w - 32))
-    [ "$msg_max" -lt 20 ] && msg_max=20
-    local msg_display
-    msg_display=$(echo "$message" | cut -c1-"$msg_max")
-
-    printf "  ${DIM}%s${NC}  %s ${color}%-12s${NC} │ %s%s\n" \
-      "$time_only" "$emoji" "$display_name" "$prefix" "$msg_display"
+    printf "  ${DIM}%s${NC}  %s ${color}%s${NC} │ %s%s\n" \
+      "$time_only" "$emoji" "$display_name" "$prefix" "$message"
   done
   echo ""
 }
