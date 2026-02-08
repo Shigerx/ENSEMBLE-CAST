@@ -702,6 +702,21 @@ tmux capture-pane -t "%5" -p | tail -20
 
 ---
 
+## 🌐 ブラウザテスト（WSL環境）
+
+WSL の tmux 上で動いている Cast は Chrome DevTools MCP でブラウザテストが可能。
+
+### 前提条件
+- Owner が Windows 側で Chrome をリモートデバッグモード（port 9222）で起動済みであること
+- 起動コマンド: `"C:\Program Files\Google\Chrome\Application\chrome.exe" --remote-debugging-port=9222 --user-data-dir="C:\Users\shige\AppData\Local\Temp\chrome-debug"`
+- 確認: `curl -s http://127.0.0.1:9222/json/version` → JSON が返ればOK
+
+### Cast にブラウザテストを指示する場合
+- タスクの description に「ブラウザテストを含む」旨を明記
+- Chrome が起動していない場合は Cast が `status: blocked` で報告してくるので、dashboard.md の「🚨 要対応」に記載して Owner に伝える
+
+---
+
 ## 重要ルール
 
 - **CLAUDE.md を必ず最初に読むこと**

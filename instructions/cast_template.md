@@ -504,6 +504,55 @@ echo "完了待機|—|—|$(date '+%Y-%m-%dT%H:%M:%S')" > logs/<slug>_status.tx
 
 ---
 
+## 🌐 ブラウザテスト（WSL環境）
+
+WSL の tmux 上で動いている場合、Chrome DevTools MCP を使ってブラウザテストが可能。
+
+### 前提条件
+
+- **Chromeがリモートデバッグモードで起動していること**（port 9222）
+- Ownerが事前に起動している。Cast が Chrome を起動する必要はない
+
+### 起動コマンド（参考: Owner が Windows 側で実行）
+
+```
+"C:\Program Files\Google\Chrome\Application\chrome.exe" --remote-debugging-port=9222 --user-data-dir="C:\Users\shige\AppData\Local\Temp\chrome-debug"
+```
+
+### 使えるか確認する方法
+
+```bash
+curl -s http://127.0.0.1:9222/json/version
+```
+
+→ JSON が返ればOK。接続エラーなら Chrome が起動していない → Director に報告して `status: blocked`
+
+### MCP 設定（WSL側 `~/.claude.json` に設定済み）
+
+```json
+{
+  "mcpServers": {
+    "chrome-devtools": {
+      "type": "stdio",
+      "command": "/usr/bin/chrome-devtools-mcp",
+      "args": ["--browser-url=http://127.0.0.1:9222"],
+      "env": {
+        "PATH": "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+        "HOME": "/home/shige"
+      }
+    }
+  }
+}
+```
+
+### 注意事項
+
+- 通常のChromeとは**別プロファイル**で動いている（拡張・ブックマーク等は共有されない）
+- Windows 側の Claude Code は `claude-in-chrome` 拡張を使う（こちらとは別系統）
+- テスト対象が本番URL（例: `*.pages.dev`）でも DevTools 経由で操作可能
+
+---
+
 ## 重要ルール
 
 - **CLAUDE.md を必ず最初に読むこと**
