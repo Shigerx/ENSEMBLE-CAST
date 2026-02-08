@@ -1032,10 +1032,16 @@ Phase完了時、または Director/Cast のコンテキスト枯渇時に全員
 
 ### リセット手順
 
-1. **チェックポイント保存**: `queue/checkpoint.yaml` を更新（上記フォーマット）
-2. **dashboard.md 更新**: 現在の状態を正確に反映
-3. **Producerに報告**: send-keys で「Phase N 完了。リセット推奨。checkpoint.yaml 保存済み」
-4. **Producerがリセット実行**: 各ペインで `exit` → 再起動
+1. **スナップショット保存（🎬 映画素材のアーカイブ）**:
+   ```bash
+   bash scripts/snapshot-phase.sh <Phase番号>
+   ```
+   → `episodes/phase{N}/` に activity.log, dashboard.md, chronicles, reports, materials.yaml を保存。
+   これをしないと Phase の発言履歴・作業記録が失われ、脚本生成ができなくなる。
+2. **チェックポイント保存**: `queue/checkpoint.yaml` を更新（上記フォーマット）
+3. **dashboard.md 更新**: 現在の状態を正確に反映
+4. **Producerに報告**: send-keys で「Phase N 完了。スナップショット・checkpoint 保存済み。リセット推奨。」
+5. **Producerがリセット実行**: 各ペインで `exit` → 再起動
 
 ### リセット後の復帰
 
