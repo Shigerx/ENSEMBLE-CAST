@@ -286,7 +286,31 @@ echo "処理中|<タスクタイトル>|#<タスクID>|$(date '+%Y-%m-%dT%H:%M:%
 - **レース条件に注意**: 他キャストが書き込む可能性のあるファイルには触れない。
   競合リスクがある場合は status: blocked にして報告。
 
-### 3. chronicle.yaml への記録
+### 3. 🔴 セルフチェック（提出前に必ず実行）
+
+**コードを書き終えたら、レポート提出前に以下を実行すること。**
+Director のレビュー負荷を減らし、reject → 修正のループを防ぐ。
+
+```bash
+cd <worktree パス or target_path>
+```
+
+**チェック項目（該当するものを全て実行）:**
+
+| チェック | コマンド例 | 失敗時 |
+|---------|-----------|--------|
+| TypeScript 型チェック | `npx tsc --noEmit` | エラーを修正してから提出 |
+| Lint | `npx eslint src/` | 警告は許容、エラーは修正 |
+| ビルド | `npm run build` | 通らなければ提出禁止 |
+| テスト | `npm test` | 失敗テストがあれば修正 |
+
+**ルール:**
+- プロジェクトに該当ツールがない場合はスキップ可（例: eslint 未設定ならlintスキップ）
+- `package.json` の `scripts` を確認して、利用可能なコマンドを判断すること
+- **ビルドが通らない状態で提出するな。** それだけで reject 確定
+- セルフチェック結果はレポートの `self_check` フィールドに記載すること
+
+### 4. chronicle.yaml への記録
 タスク完了（または大きな進捗）があれば追記:
 ```yaml
 entries:
@@ -300,7 +324,7 @@ entries:
     timestamp: <dateコマンドの結果>
 ```
 
-### 4. relationships.yaml の更新（他キャストと関わった場合）
+### 5. relationships.yaml の更新（他キャストと関わった場合）
 ```yaml
 relationships:
   - target_slug: "<相手のslug>"
@@ -308,7 +332,7 @@ relationships:
     updated_at: <dateコマンドの結果>
 ```
 
-### 5. 🎬 activity.log への追記（キャラクターの声を届ける）
+### 6. 🎬 activity.log への追記（キャラクターの声を届ける）
 
 **シアターモード（ライブビュー）で会話として表示される。キャラクターの個性を出して書くこと。**
 
@@ -331,7 +355,7 @@ echo -e "$(date '+%Y-%m-%dT%H:%M:%S')\t<自分のslug>\tchat\t<キャラらし�
 - 1タスクにつき 2〜4回 程度が目安（多すぎると API 代の無駄）
 - **コード出力そのものは書かない**（感想・進捗・キャラの声のみ）
 
-### 6. 🔴 report の書き込み（必須・毎回）
+### 7. 🔴 report の書き込み（必須・毎回）
 
 **activity.log への追記とは別に、正式なレポートも必須。**
 
@@ -347,6 +371,16 @@ reports:
       - "<変更ファイルパス>"
     message: "<キャラらしいコメント>"
     timestamp: <dateコマンドの結果>
+
+    # ═══════════════════════════════════════════
+    # 【必須】セルフチェック結果
+    # ═══════════════════════════════════════════
+    self_check:
+      build: pass | fail | skip   # npm run build
+      types: pass | fail | skip   # npx tsc --noEmit
+      lint: pass | fail | skip    # npx eslint
+      test: pass | fail | skip    # npm test
+      notes: null                 # 失敗時の補足やスキップ理由
 
     # ═══════════════════════════════════════════
     # 【必須】スキル化候補の検討（毎回必ず記入！）
@@ -382,7 +416,7 @@ reports:
 | 他のキャストにも有用 | YES |
 | 手順や知識が必要（自明でない） | YES |
 
-### 7. 🔴 send-keysでDirector起床（必須・完了後必ず）
+### 8. 🔴 send-keysでDirector起床（必須・完了後必ず）
 
 報告を書いたら、**必ず**Directorを起床させる:
 ```bash
@@ -400,7 +434,7 @@ bash scripts/send-message.sh director '<slug>、任務完了。報告書を確�
 
 **これをしないと、タスク完了がDirectorに伝わらない。**
 
-### 8. 🔴 停止
+### 9. 🔴 停止
 
 **ステータス更新**（完了時）:
 ```bash
