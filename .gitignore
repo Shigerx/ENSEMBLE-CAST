@@ -48,3 +48,4 @@ nul
 
 # --- .gitkeep は常に追跡 ---
 !**/.gitkeep
+scripts/__pycache__/
