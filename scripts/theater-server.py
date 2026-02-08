@@ -11,6 +11,7 @@ import http.server
 import json
 import os
 import re
+import subprocess
 import sys
 import time
 from pathlib import Path
@@ -217,6 +218,83 @@ def load_production():
         project_name=project_name or 'Unknown',
     )
 
+def load_branches():
+    """Build branch tree from dashboard.md task table + phase info."""
+    path = BASE / 'dashboard.md'
+    if not path.exists():
+        return dict(branches=[])
+    content = path.read_text(encoding='utf-8')
+
+    # Parse completed tasks from "本日の戦果" table
+    branches = []
+    for m in re.finditer(
+        r'\|\s*[\d:]+\s*\|\s*(\w+)\s*\|\s*#(\d+)\s+(.+?)\s*\|\s*完了\s*\|\s*(.*?)\s*\|',
+        content
+    ):
+        slug, tid, title = m.group(1), int(m.group(2)), m.group(3).strip()
+        review = m.group(4).strip()
+        branches.append(dict(
+            task_id=tid, slug=slug, title=title,
+            status='merged' if 'approved' in review else 'complete',
+            color=CAST_COLORS.get(slug, '#888'),
+        ))
+
+    # Assign phases using cumulative task counts
+    phases = load_phases()['phases']
+    idx, phase_num = 0, 1
+    for p in phases:
+        phase_num = p['number']
+        for _ in range(p['tasks_total']):
+            if idx < len(branches):
+                branches[idx]['phase'] = phase_num
+                idx += 1
+
+    # Also add current active tasks (from YAML files, not yet in dashboard)
+    done_ids = {b['task_id'] for b in branches}
+    tasks_dir = BASE / 'queue' / 'tasks'
+    if tasks_dir.exists():
+        for f in tasks_dir.glob('*.yaml'):
+            tc = f.read_text(encoding='utf-8')
+            for block in yaml_blocks(tc, '- id:'):
+                tid = yaml_val(block, 'id')
+                if not tid:
+                    continue
+                tid = int(tid)
+                if tid in done_ids:
+                    continue
+                st = yaml_val(block, 'status') or 'pending'
+                slug = f.stem
+                branches.append(dict(
+                    task_id=tid, slug=slug,
+                    title=yaml_val(block, 'title') or '',
+                    status=st,
+                    color=CAST_COLORS.get(slug, '#888'),
+                    phase=phase_num,
+                ))
+
+    branches.sort(key=lambda b: b['task_id'])
+    return dict(branches=branches)
+
+
+def send_to_producer(msg):
+    """Send a message to the Producer pane via tmux."""
+    panes = BASE / 'config' / 'panes.yaml'
+    if not panes.exists():
+        return False
+    pane_id = yaml_val(panes.read_text(encoding='utf-8'), 'producer')
+    if not pane_id:
+        return False
+    try:
+        subprocess.run(['tmux', 'send-keys', '-t', pane_id, msg],
+                       check=True, timeout=5)
+        subprocess.run(['tmux', 'send-keys', '-t', pane_id, 'Enter'],
+                       check=True, timeout=5)
+        return True
+    except (FileNotFoundError, subprocess.CalledProcessError,
+            subprocess.TimeoutExpired):
+        return False
+
+
 # ---------------------------------------------------------------------------
 # HTTP Handler
 # ---------------------------------------------------------------------------
@@ -257,10 +335,27 @@ class Handler(http.server.BaseHTTPRequestHandler):
             self._json(load_phases())
         elif path == '/api/production':
             self._json(load_production())
+        elif path == '/api/branches':
+            self._json(load_branches())
         elif path == '/api/events':
             self._sse()
         elif path == '/api/health':
             self._json(dict(ok=True))
+        else:
+            self.send_error(404)
+
+    def do_POST(self):
+        p = urlparse(self.path).path
+        if p == '/api/message':
+            length = int(self.headers.get('Content-Length', 0))
+            body = json.loads(self.rfile.read(length)) if length else {}
+            msg = body.get('message', '').strip()
+            if not msg:
+                self._json(dict(success=False, error='empty message'), 400)
+                return
+            ok = send_to_producer(msg)
+            self._json(dict(success=ok,
+                            error=None if ok else 'tmux not available'))
         else:
             self.send_error(404)
 
