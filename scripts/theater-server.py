@@ -251,15 +251,23 @@ def load_branches():
 
     # Also add current active tasks (from YAML files, not yet in dashboard)
     done_ids = {b['task_id'] for b in branches}
+    last_phase = phase_num
     tasks_dir = BASE / 'queue' / 'tasks'
     if tasks_dir.exists():
         for f in tasks_dir.glob('*.yaml'):
-            tc = f.read_text(encoding='utf-8')
+            try:
+                tc = f.read_text(encoding='utf-8')
+            except (OSError, UnicodeDecodeError) as ex:
+                print(f'[WARN] skipping {f.name}: {ex}', file=sys.stderr)
+                continue
             for block in yaml_blocks(tc, '- id:'):
                 tid = yaml_val(block, 'id')
                 if not tid:
                     continue
-                tid = int(tid)
+                try:
+                    tid = int(tid)
+                except (ValueError, TypeError):
+                    continue
                 if tid in done_ids:
                     continue
                 st = yaml_val(block, 'status') or 'pending'
@@ -269,7 +277,7 @@ def load_branches():
                     title=yaml_val(block, 'title') or '',
                     status=st,
                     color=CAST_COLORS.get(slug, '#888'),
-                    phase=phase_num,
+                    phase=last_phase,
                 ))
 
     branches.sort(key=lambda b: b['task_id'])
@@ -277,22 +285,33 @@ def load_branches():
 
 
 def send_to_producer(msg):
-    """Send a message to the Producer pane via tmux."""
+    """Send a message to the Producer pane via wake-agent.sh."""
     panes = BASE / 'config' / 'panes.yaml'
     if not panes.exists():
-        return False
+        return dict(ok=False, error='panes.yaml not found')
     pane_id = yaml_val(panes.read_text(encoding='utf-8'), 'producer')
     if not pane_id:
-        return False
+        return dict(ok=False, error='producer pane not configured')
+    # Sanitize: strip control chars, limit length
+    msg = re.sub(r'[\x00-\x1f\x7f]', '', msg)[:500]
+    if not msg:
+        return dict(ok=False, error='empty after sanitization')
+    # Use wake-agent.sh per CLAUDE.md Section 3
+    helper = BASE / 'scripts' / 'wake-agent.sh'
+    if not helper.exists():
+        return dict(ok=False, error='wake-agent.sh not found')
     try:
-        subprocess.run(['tmux', 'send-keys', '-t', pane_id, msg],
-                       check=True, timeout=5)
-        subprocess.run(['tmux', 'send-keys', '-t', pane_id, 'Enter'],
-                       check=True, timeout=5)
-        return True
-    except (FileNotFoundError, subprocess.CalledProcessError,
-            subprocess.TimeoutExpired):
-        return False
+        subprocess.run(['bash', str(helper), pane_id, msg],
+                       check=True, timeout=10)
+        return dict(ok=True, error=None)
+    except FileNotFoundError:
+        return dict(ok=False, error='bash/tmux not available')
+    except subprocess.CalledProcessError as ex:
+        print(f'[WARN] send_to_producer failed: {ex}', file=sys.stderr)
+        return dict(ok=False, error='tmux command failed')
+    except subprocess.TimeoutExpired:
+        print('[WARN] send_to_producer timed out', file=sys.stderr)
+        return dict(ok=False, error='tmux timeout')
 
 
 # ---------------------------------------------------------------------------
@@ -336,7 +355,13 @@ class Handler(http.server.BaseHTTPRequestHandler):
         elif path == '/api/production':
             self._json(load_production())
         elif path == '/api/branches':
-            self._json(load_branches())
+            try:
+                result = load_branches()
+            except Exception as ex:
+                print(f'[ERROR] load_branches: {ex}', file=sys.stderr)
+                self._json(dict(error=str(ex), branches=[]), 500)
+                return
+            self._json(result)
         elif path == '/api/events':
             self._sse()
         elif path == '/api/health':
@@ -344,18 +369,35 @@ class Handler(http.server.BaseHTTPRequestHandler):
         else:
             self.send_error(404)
 
+    def do_OPTIONS(self):
+        self.send_response(204)
+        self.send_header('Access-Control-Allow-Origin', '*')
+        self.send_header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
+        self.send_header('Access-Control-Allow-Headers', 'Content-Type')
+        self.end_headers()
+
     def do_POST(self):
         p = urlparse(self.path).path
         if p == '/api/message':
-            length = int(self.headers.get('Content-Length', 0))
-            body = json.loads(self.rfile.read(length)) if length else {}
+            try:
+                length = int(self.headers.get('Content-Length', 0))
+                if length <= 0 or length > 10000:
+                    self._json(dict(success=False, error='invalid request'), 400)
+                    return
+                body = json.loads(self.rfile.read(length))
+                if not isinstance(body, dict):
+                    self._json(dict(success=False, error='invalid JSON'), 400)
+                    return
+            except (ValueError, json.JSONDecodeError):
+                self._json(dict(success=False, error='invalid JSON'), 400)
+                return
             msg = body.get('message', '').strip()
             if not msg:
                 self._json(dict(success=False, error='empty message'), 400)
                 return
-            ok = send_to_producer(msg)
-            self._json(dict(success=ok,
-                            error=None if ok else 'tmux not available'))
+            result = send_to_producer(msg)
+            self._json(dict(success=result['ok'], error=result['error']),
+                       200 if result['ok'] else 502)
         else:
             self.send_error(404)
 

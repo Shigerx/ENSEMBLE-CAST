@@ -112,7 +112,10 @@ const STATE_MAP = {
 };
 const DEF_STATE = { label:'停止', dot:'bg-gray-600' };
 
-const api = (u) => fetch(u).then(r=>r.json()).catch(()=>null);
+const api = (u) => fetch(u).then(r => {
+  if(!r.ok) { console.warn(`[Theater] ${u} returned ${r.status}`); return null; }
+  return r.json();
+}).catch(ex => { console.warn(`[Theater] ${u} failed:`, ex.message); return null; });
 
 // ─── App ───
 function App() {
@@ -151,7 +154,7 @@ function App() {
           clearTimeout(abilityTimer.current);
           abilityTimer.current = setTimeout(()=>setAbilitySlug(null), 3000);
         }
-      } catch(_){}
+      } catch(ex){ console.warn('[Theater] SSE parse error:', ex.message); }
     });
     return () => es.close();
   }, []);
@@ -312,11 +315,11 @@ function ProgressBar({pct,done,total,phase}) {
 
 // ─── Subtitles ───
 function Subtitles({entries,cast}) {
-  const cm={}, em={}, nm={};
+  const colors={}, emojis={}, names={};
   (cast||[]).forEach(c=>{
-    cm[c.slug]=c.color||COLORS[c.slug]||'#fff';
-    em[c.slug]=c.emoji||'';
-    nm[c.slug]=c.character_name||c.slug;
+    colors[c.slug]=c.color||COLORS[c.slug]||'#fff';
+    emojis[c.slug]=c.emoji||'';
+    names[c.slug]=c.character_name||c.slug;
   });
   if(!entries||!entries.length) return html`
     <div class="min-h-[100px] flex items-center justify-center">
@@ -324,7 +327,7 @@ function Subtitles({entries,cast}) {
   return html`
     <div class="min-h-[100px] space-y-3">
       ${entries.map((e,i) => {
-        const c=cm[e.actor]||'#888', emo=em[e.actor]||'', name=nm[e.actor]||e.actor;
+        const c=colors[e.actor]||'#888', emo=emojis[e.actor]||'', name=names[e.actor]||e.actor;
         const dir=e.actor==='DIRECTOR';
         return html`
           <div key=${e.timestamp+i} class="sub-line" style="animation-delay:${i*.08}s">
@@ -415,13 +418,17 @@ function SeatCard({slug,character_name,dev_role,emoji,color,state,
 }
 
 // ─── Audience Input ───
+const BTN_LABELS = {sending:'...', ok:'✓', err:'×'};
+
 function AudienceInput() {
   const [msg, setMsg] = useState('');
   const [status, setStatus] = useState(null); // 'ok' | 'err' | 'sending'
+  const [errMsg, setErrMsg] = useState('');
 
   const send = useCallback(async () => {
     if(!msg.trim()) return;
     setStatus('sending');
+    setErrMsg('');
     try {
       const r = await fetch('/api/message', {
         method:'POST', headers:{'Content-Type':'application/json'},
@@ -429,8 +436,12 @@ function AudienceInput() {
       });
       const d = await r.json();
       if(d.success) { setMsg(''); setStatus('ok'); }
-      else setStatus('err');
-    } catch(_) { setStatus('err'); }
+      else { setStatus('err'); setErrMsg(d.error||'送信失敗'); }
+    } catch(ex) {
+      console.warn('[Theater] message send failed:', ex.message);
+      setStatus('err');
+      setErrMsg('サーバー接続エラー');
+    }
     setTimeout(()=>setStatus(null), 2000);
   }, [msg]);
 
@@ -450,11 +461,11 @@ function AudienceInput() {
           disabled=${!msg.trim()||status==='sending'}
           class="px-4 py-2.5 rounded-lg text-sm font-medium transition
                  ${msg.trim()?'bg-[#f0c040]/10 text-[#f0c040]/80 hover:bg-[#f0c040]/20':'bg-white/[.02] text-white/20 cursor-not-allowed'}">
-          ${status==='sending'?'...':status==='ok'?'✓':status==='err'?'×':'送信'}
+          ${BTN_LABELS[status]||'送信'}
         </button>
       </div>
-      ${status==='err'?html`<div class="text-[10px] text-red-400/60 mt-1 text-center">
-        tmux未接続（WSLから起動してください）</div>`:null}
+      ${status==='err'&&errMsg?html`<div class="text-[10px] text-red-400/60 mt-1 text-center">
+        ${errMsg}</div>`:null}
     </div>`;
 }
 
