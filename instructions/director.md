@@ -892,6 +892,130 @@ Cast 4名以上の場合、dashboard.md に進捗サマリーを追加:
 
 ---
 
+## 🔴 コンテキスト監視ルール（v2.5 追加）
+
+Castのコンテキスト残量を監視し、枯渇前にチェックポイントを保存する。
+
+### 監視タイミング
+
+以下のタイミングでCastの状態を確認する:
+- Cast から報告を受信した時
+- マージ後に次タスクを配布する前
+
+### 確認方法
+
+```bash
+tmux send-keys -t "<cast_pane_id>" ''
+# （別のBash呼び出しで）
+tmux send-keys -t "<cast_pane_id>" Enter
+# → idle確認後にキャプチャして残量を目視
+tmux capture-pane -t "<cast_pane_id>" -p | tail -5
+```
+
+Claude Code のプロンプト表示に残量%が含まれる場合、それを参考にする。
+
+### 閾値と対応
+
+| 対象 | 残量閾値 | 対応 |
+|------|---------|------|
+| Cast | 10%以下 | 現タスクの結果を受領後、新タスクは配布しない。チェックポイント保存 |
+| Director自身 | 20%以下 | 即座にチェックポイント保存 → Producerに報告して再起動を依頼 |
+
+### チェックポイント保存先
+
+`queue/checkpoint.yaml` に以下を記録:
+
+```yaml
+checkpoint:
+  timestamp: "2026-01-01T00:00:00"
+  phase: 2
+  reason: "Director context 20% — phase boundary reset"
+  completed_tasks:
+    - { id: 1, slug: giorno, branch: "cast/giorno/1-init", status: merged }
+    - { id: 2, slug: narancia, branch: "cast/narancia/2-layout", status: merged }
+  in_progress_tasks:
+    - { id: 5, slug: bucciarati, branch: "cast/bucciarati/5-api", status: in_progress, note: "API 3/5 エンドポイント完了" }
+  pending_tasks:
+    - { id: 6, depends_on: [5], assignee: mista }
+  decisions:
+    - "Astro 5.17 + Cloudflare Pages を採用"
+    - "トップページはHybridパターンに決定"
+  notes: "Phase 1完了。Phase 2進行中。"
+```
+
+---
+
+## 🔴 Phase 境界リセット手順（v2.5 追加）
+
+Phase完了時、または Director/Cast のコンテキスト枯渇時に全員をリセットする。
+
+### リセットの判断基準
+
+1. **Phase 完了時**: 全タスクが approved → 次Phase開始前にリセット推奨
+2. **コンテキスト枯渇時**: Director 20%以下 → 強制リセット
+3. **大量マージ後**: 3つ以上のブランチをマージした後 → リセット推奨
+
+### リセット手順
+
+1. **チェックポイント保存**: `queue/checkpoint.yaml` を更新（上記フォーマット）
+2. **dashboard.md 更新**: 現在の状態を正確に反映
+3. **Producerに報告**: send-keys で「Phase N 完了。リセット推奨。checkpoint.yaml 保存済み」
+4. **Producerがリセット実行**: 各ペインで `exit` → 再起動
+
+### リセット後の復帰
+
+再起動後の Director は以下の順序で復帰する:
+1. CLAUDE.md → instructions/director.md を読む
+2. `queue/checkpoint.yaml` を読む
+3. `dashboard.md` を読む
+4. `cast/roster.yaml` を読む
+5. チェックポイントの `in_progress_tasks` と `pending_tasks` を元にタスク再配布
+
+**重要**: リセット後は Cast のブランチが残っている。`git branch` で確認し、in_progress だったタスクは同じブランチで続行させる。
+
+---
+
+## 🔴 semantic_group ルール（v2.5 追加）
+
+意味的に結合したファイル群を同時に変更する場合の競合防止ルール。
+
+### 問題
+
+ファイル所有権だけでは防げない意味的依存がある:
+- `schema.sql` を変更 → `types.ts` も変更が必要
+- `wrangler.toml` を変更 → 複数タスクで共有設定が競合
+
+### semantic_group の定義
+
+タスクYAMLに `semantic_group` フィールドを追加:
+
+```yaml
+task:
+  id: 6
+  slug: mista
+  semantic_group: "db-schema"   # ← 同じグループのタスクは直列実行
+  owned_files:
+    - "src/db/schema.sql"
+    - "src/db/migrations/"
+  description: "DBスキーマ拡張"
+```
+
+### ルール
+
+1. **同じ semantic_group のタスクは並列配布禁止**: 必ず `depends_on` で直列化する
+2. **グループ例**:
+   - `db-schema`: schema.sql, types.ts, migrations/
+   - `config`: wrangler.toml, env設定
+   - `routing`: ルーティング定義, ページファイル
+3. **共有ファイル（wrangler.toml等）はインテグレーションタスクで変更**: 個別Castのタスクに含めず、マージ後にDirectorが統合タスクとして配布
+4. **semantic_group が不要な場合は省略可**: 独立したUIコンポーネント等は指定不要
+
+### 配布時のチェック
+
+タスク配布前に `pending_tasks.yaml` を確認し、同じ semantic_group のタスクが in_progress でないことを確認する。in_progress なら pending のまま待機させる。
+
+---
+
 ## v3 追加: ユニット対応（scale: large）
 
 **以下のセクションは `scale: large` 時にのみ適用される。**

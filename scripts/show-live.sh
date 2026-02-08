@@ -38,7 +38,12 @@ declare -A CHAR_EMOJIS
 COLOR_INDEX=0
 
 get_char_info() {
-  local slug="$1"
+  # slugをサニタイズ（CR、スペース、タブ、不可視文字を除去）
+  local slug
+  slug=$(echo "$1" | tr -d '\r\n\t ' | sed 's/[^a-zA-Z0-9_-]//g')
+
+  # 空なら何もしない
+  [ -z "$slug" ] && return
 
   # キャッシュ済みなら返す
   if [ -n "${CHAR_NAMES[$slug]+x}" ]; then
@@ -135,11 +140,12 @@ show_cast_status() {
   fi
 
   local slugs
-  slugs=$(grep -E '^\s+-\s+slug:' "$PROJECT_PATH/cast/roster.yaml" 2>/dev/null | sed 's/.*slug: *//' | tr -d '"' | tr -d '\r' || true)
+  slugs=$(grep -E '^\s+-\s+slug:' "$PROJECT_PATH/cast/roster.yaml" 2>/dev/null | sed 's/.*slug: *//' | tr -d '"' | tr -d '\r' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//' || true)
 
   [ -z "$slugs" ] && { echo -e "  ${DIM}(キャストなし)${NC}"; return; }
 
   while IFS= read -r slug; do
+    slug=$(echo "$slug" | tr -d '\r\n\t ' | sed 's/[^a-zA-Z0-9_-]//g')
     [ -z "$slug" ] && continue
     get_char_info "$slug"
 
@@ -204,7 +210,8 @@ show_task_progress() {
     [ -f "$task_file" ] || continue
 
     local slug
-    slug=$(basename "$task_file" .yaml)
+    slug=$(basename "$task_file" .yaml | sed 's/[^a-zA-Z0-9_-]//g')
+    [ -z "$slug" ] && continue
 
     # タスク情報をパース（複数タスク対応）
     local current_id="" current_title="" current_status=""
@@ -308,8 +315,9 @@ show_conversation() {
     return
   fi
 
-  tail -"$max_lines" "$PROJECT_PATH/logs/activity.log" | while IFS=$'\t' read -r timestamp actor event message; do
+  tail -"$max_lines" "$PROJECT_PATH/logs/activity.log" | tr -d '\r' | while IFS=$'\t' read -r timestamp actor event message; do
     [ -z "$timestamp" ] && continue
+    actor=$(echo "$actor" | tr -d '\r\n\t ' )
 
     # タイムスタンプ → 時刻のみ
     local time_only
@@ -337,7 +345,9 @@ show_conversation() {
         emoji="📋"
         ;;
       *)
-        # Cast member
+        # Cast member（actorをサニタイズしてからアクセス）
+        actor=$(echo "$actor" | sed 's/[^a-zA-Z0-9_-]//g')
+        [ -z "$actor" ] && continue
         get_char_info "$actor"
         if [ -n "${CHAR_NAMES[$actor]+x}" ]; then
           display_name="${CHAR_NAMES[$actor]}"
