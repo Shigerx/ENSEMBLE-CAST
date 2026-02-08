@@ -308,9 +308,16 @@ show_worktree_status() {
     return
   fi
 
-  # git worktree list
-  local worktrees
-  worktrees=$(git -C "$target_path" worktree list 2>/dev/null || true)
+  # git worktree list（失敗時はエラー表示）
+  local worktrees git_exit=0
+  worktrees=$(git -C "$target_path" worktree list 2>&1) || git_exit=$?
+  if [ "$git_exit" -ne 0 ]; then
+    echo -e "  ${WHITE}${BOLD}🌳 WORKTREES${NC}"
+    echo ""
+    echo -e "  ${YELLOW}⚠ git worktree list failed at ${target_path}${NC}"
+    echo ""
+    return
+  fi
   [ -z "$worktrees" ] && return
 
   # worktree が main だけなら表示しない
@@ -321,11 +328,17 @@ show_worktree_status() {
   echo -e "  ${WHITE}${BOLD}🌳 WORKTREES${NC}"
   echo ""
 
-  echo "$worktrees" | while IFS= read -r line; do
-    local wt_path wt_branch wt_hash
+  # here-string で subshell 回避（キャッシュ保持 + CR サニタイズ）
+  while IFS= read -r line; do
+    line=$(echo "$line" | tr -d '\r')
+    local wt_path wt_branch
     wt_path=$(echo "$line" | awk '{print $1}')
-    wt_hash=$(echo "$line" | awk '{print $2}')
+    # [branch] or (detached HEAD) を抽出
     wt_branch=$(echo "$line" | sed -n 's/.*\[\(.*\)\].*/\1/p')
+    if [ -z "$wt_branch" ]; then
+      wt_branch=$(echo "$line" | sed -n 's/.*(\(.*\)).*/\1/p')
+      [ -z "$wt_branch" ] && wt_branch="(unknown)"
+    fi
 
     # main は薄く表示
     if [ "$wt_branch" = "main" ]; then
@@ -337,12 +350,18 @@ show_worktree_status() {
     local slug=""
     slug=$(echo "$wt_branch" | sed -n 's|cast/\([^/]*\)/.*|\1|p')
 
-    # dirty チェック
+    # dirty チェック（壊れた worktree は警告表示）
     local dirty=""
-    local changes
-    changes=$(git -C "$wt_path" status --short 2>/dev/null | wc -l)
-    if [ "$changes" -gt 0 ]; then
-      dirty=" ${YELLOW}(${changes} changes)${NC}"
+    local git_status_out git_status_exit=0
+    git_status_out=$(git -C "$wt_path" status --short 2>&1) || git_status_exit=$?
+    if [ "$git_status_exit" -ne 0 ]; then
+      dirty=" ${RED}(broken)${NC}"
+    else
+      local changes
+      changes=$(echo "$git_status_out" | grep -c '.' || echo 0)
+      if [ "$changes" -gt 0 ]; then
+        dirty=" ${YELLOW}(${changes} changes)${NC}"
+      fi
     fi
 
     # slug に対応するカラーとキャラ名
@@ -359,7 +378,7 @@ show_worktree_status() {
 
     printf "  ${color}📁 %s${NC}%b\n" "$display_name" "$dirty"
     printf "     ${DIM}%s${NC}\n" "$wt_path"
-  done
+  done <<< "$worktrees"
   echo ""
 }
 
@@ -382,7 +401,7 @@ show_framework_feedback() {
   echo -e "  ${WHITE}${BOLD}🔧 FRAMEWORK FEEDBACK${NC}  ${DIM}(${open_count} open / ${total_count} total)${NC}"
   echo ""
 
-  # open のフィードバックを最新5件表示
+  # open のフィードバックを表示
   local in_entry=false current_id="" current_reporter="" current_title="" current_cat="" current_impact="" current_status=""
 
   while IFS= read -r line; do

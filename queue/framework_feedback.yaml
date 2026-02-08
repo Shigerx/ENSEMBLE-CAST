@@ -11,9 +11,9 @@ feedback: []
 # 例:
 # - id: FB-001
 #   reporter: giorno
-#   category: bug | friction | suggestion
+#   category: friction           # allowed: bug, friction, suggestion
 #   title: "git worktree がないと Cast 間でレース条件が発生する"
 #   detail: "共有ディレクトリで git checkout を競合させると他 Cast のファイルが混入"
-#   impact: high | medium | low
+#   impact: high                 # allowed: high, medium, low
 #   status: open
 #   timestamp: "2026-02-08T12:00:00"

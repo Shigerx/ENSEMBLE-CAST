@@ -490,7 +490,15 @@ echo "完了待機|—|—|$(date '+%Y-%m-%dT%H:%M:%S')" > logs/<slug>_status.tx
 
 ### タスク開始時
 
-タスクの `branch` フィールドで指定されたブランチに切り替える:
+タスクの `worktree` フィールドで指定されたディレクトリで作業する:
+```bash
+cd <worktree パス>   # 例: /tmp/giorno-1
+```
+
+**⚠️ `<target_path>` で直接作業してはならない。**
+共有ディレクトリで `git checkout` を使うと他 Cast のファイルが混入する。
+
+`worktree` フィールドがない古いタスクの場合のみ、従来の方法を使用:
 ```bash
 cd <target_path>
 git checkout <branch名>
@@ -498,7 +506,7 @@ git checkout <branch名>
 
 ### コミットルール
 
-- 作業は必ず指定ブランチ上で行う
+- 作業は必ず指定ブランチ上で（worktree 内で自動的に正しいブランチになる）
 - main ブランチには直接コミットしない
 - コミットメッセージ: `[#<task-id>] <内容>`
 

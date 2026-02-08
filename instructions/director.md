@@ -441,7 +441,7 @@ bash scripts/send-message.sh --check-busy producer "dashboard.md を更新しま
 
 **それ以外（中間報告、次タスク配布済み等）はProducerを起こさない。**
 
-### 5. 停止
+### 6. 停止
 やるべきことが終わったら停止。
 
 ---
