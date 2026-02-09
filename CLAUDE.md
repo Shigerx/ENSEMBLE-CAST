@@ -399,6 +399,7 @@ tmux capture-pane -t "%5" -p | tail -20
 ```
 □ 成果物がファイルに保存されている（コード commit / レポート書き込み / dashboard 更新）
 □ 引き継ぎ情報が書かれている:
+    - Producer: memory/global_context.md + queue/producer_to_director.yaml
     - Cast: chronicle.yaml の handoff セクション
     - Director: dashboard.md の「次のアクション」
 □ activity.log に checkpoint_clear を記録済み

@@ -204,7 +204,7 @@ Red Team 報告（type: red_team_review）がある？
   → verdict: conditional → must_fix を Cast に送付
   ↓
 失敗/ブロック報告？
-  ├─ アーキテクチャ判断が必要？ → Design Debate Protocol（アドホック）を実行
+  ├─ アーキテクチャ判断が必要？ → Producer にアドホック Debate を依頼（send-keys）
   └─ それ以外 → 🚨要対応に記載
   ↓
 全タスク完了？ → dashboard.md最終更新 → Producerを起床（報告依頼）
@@ -310,13 +310,13 @@ Red Team 報告（type: red_team_review）がある？
 - Current State を「初期化中」で記入
 - キャスト割り当てを Who セクションに記載
 
-### ステップ3.7: Design Debate（スキップ条件を確認）
+### ステップ3.7: Design Debate（Producer に依頼）
 
-タスク分解が完了したら、Design Debate Protocol のスキップ条件を確認する:
-- タスク数 2 以下 / バグ修正のみ / Owner がスキップ許可 → スキップ（`queue/design/<phase>_final.yaml` に `skipped: true` を記録）
-- 該当しない → Design Debate Protocol（フル）を実行してからステップ4へ
+タスク分解が完了したら、Producer に Design Debate を依頼する:
+1. `queue/producer_to_director.yaml` に Debate 完了済み結果（`_final.yaml`）があれば → そのままステップ4へ
+2. なければ → Producer に send-keys で Debate 開始を依頼 → 結果を待って停止
 
-詳細: 下記「Design Debate Protocol」セクション参照。
+**v4.1 変更**: Design Debate は Producer が主催する。Director は実行しない。詳細: `instructions/producer.md`
 
 ### ステップ4: 🔴 初期タスク配布（ここで止まらない！必ずやる）
 
@@ -1462,126 +1462,28 @@ task:
 
 ---
 
-## 🎯 Design Debate Protocol（v4 追加）
+## 🎯 Design Debate Protocol（v4.1: Producer 主催）
 
-Phase 開始前（またはアドホック）に、Task tool で Advocate（擁護者）と Challenger（批判者）を逐次召喚し、設計の品質を議論によって高めるプロトコル。必要に応じて Consultant（専門顧問）を追加召喚する。
+**v4.1 変更: Design Debate は Producer が主催する。Director は実行しない。**
 
-> 詳細設計: [p25-debate-log.md](../docs/p25-debate-log.md) | [ensemble-v4-architecture.md](../docs/ensemble-v4-architecture.md) Section 4.5
+詳細手順: `instructions/producer.md` の「Design Debate Protocol」セクション参照。
+設計文書: [p25-debate-log.md](../docs/p25-debate-log.md) | [ensemble-v4-architecture.md](../docs/ensemble-v4-architecture.md) Section 4.5
 
-### メンバー
+### Director の役割
 
-| 名称 | 役割 | 召喚 | 責務 |
-|------|------|------|------|
-| Advocate | 脚本家 A | Task tool（必須） | 設計の擁護。実現可能性・利点を主張 |
-| Challenger | 脚本家 B | Task tool（必須） | 設計の批判。欠陥・リスク・暗黙の前提を攻撃 |
-| Consultant | テクニカルアドバイザー | Task tool（オプション） | 専門分野からの独立した見解提供。= v3 Technical Advisor |
+1. **結果の受け取り**: Producer から `queue/producer_to_director.yaml` 経由で `_final.yaml` の結果を受け取る
+2. **タスクへの反映**: `tasks_adjusted` をタスクプールに反映する
+3. **未解決点の処理**: `unresolved` を dashboard.md「🚨 要対応」に記載
+4. **スキル推奨の処理**: `skills_recommended` があれば dashboard.md「🛠️ スキル推奨」に記載し Owner に相談
 
-### トリガー
+### アドホック Debate が必要な場合
 
-| シーン | トリガー | 形式 |
-|--------|---------|------|
-| Phase 開始前の設計レビュー | Phase のタスク分解完了時 | フル（最大 2 ラウンド） |
-| Phase 途中の技術ブロッカー | Cast が status: blocked で報告し、アーキテクチャ判断が必要な時 | アドホック（Round 1 のみ） |
-| Cast 間設計方針の調停 | Cast 間 discussion が escalated になった時 | アドホック（Round 1 のみ） |
-| アーキテクチャ判断 | 新技術導入、スタック変更等の重大判断時 | フル（最大 2 ラウンド） |
+Director 自身は Debate を実行しない。以下の手順で Producer に依頼する:
 
-### スキップ条件（Director 判断）
-
-- タスク数 2 以下の小規模 Phase
-- バグ修正のみの Phase
-- Owner が明示的にスキップ許可
-- **スキップ時**: dashboard.md に理由を記載 + `queue/design/<phase>_final.yaml` に `skipped: true` を記録
-
-### 実行フロー
-
-```
-1. Director が queue/design/<phase>_debate.md に設計書を作成
-   🔴 activity.log に debate_start を記録:
-   echo -e "$(date '+%Y-%m-%dT%H:%M:%S')\tDIRECTOR\tdebate_start\tDesign Debate 開始（Phase <N>: <テーマ>）" >> logs/activity.log
-
-2. Round 1:
-   a. Task tool — Advocate 召喚（逐次。必須）
-      入力: 設計書（_debate.md のパス）
-      出力: 擁護論（_debate.md に Section A1 として追記）
-
-   b. Task tool — Challenger 召喚（逐次。必須）
-      入力: 設計書 + Section A1
-      出力: 反論 + 判定テーブル（_debate.md に Section C1 として追記）
-      🔴 重大な発見・対決があれば activity.log に debate_finding を記録:
-      echo -e "$(date '+%Y-%m-%dT%H:%M:%S')\tDIRECTOR\tdebate_finding\t💣 Challenger: <発見内容>" >> logs/activity.log
-
-   c. Task tool — Consultant 召喚（逐次）
-      入力: 設計書 + Section A1 + Section C1
-      出力: 専門的見解 + 技術スカウト結果（_debate.md に Section T1 として追記）
-      召喚条件:
-        - Phase 開始前のフル Debate → **原則召喚**（Technology Scout 込み）
-        - アドホック Debate → オプション（Director 判断）
-      プロンプト組み立て時:
-        - [技術スタック]: production.yaml + context/{project}.md から取得
-        - [MCP サーバー一覧]: 自身が認識している mcp__ ツールを列挙
-        - [スキル一覧]: system-reminder に表示されているスキル名を列挙
-        - [OS/Shell]: CLAUDE.md / production.yaml から取得
-      🔴 重大な発見があれば activity.log に debate_finding を記録:
-      echo -e "$(date '+%Y-%m-%dT%H:%M:%S')\tDIRECTOR\tdebate_finding\t💣 Consultant: <発見内容>" >> logs/activity.log
-
-3. Director が判定:
-   - 全項目合意 or 軽微な指摘のみ → _final.yaml 作成。終了
-   - 重大な反論あり → Round 2 へ
-
-4. Round 2（必要な場合のみ。Consultant は参加しない）:
-   a. Task tool — Advocate 再召喚
-      入力: 全議論（_debate.md 全体）
-      出力: 修正案 or 反駁（Section A2）
-
-   b. Task tool — Challenger 再召喚
-      入力: 全議論（_debate.md 全体）
-      出力: 最終判定（Section C2）
-
-5. Director が統合 → queue/design/<phase>_final.yaml
-   - 合意点を tasks に反映
-   - 未解決点は dashboard.md「🚨 要対応」に記載
-   🔴 activity.log に debate_end を記録:
-   echo -e "$(date '+%Y-%m-%dT%H:%M:%S')\tDIRECTOR\tdebate_end\tDesign Debate 終了。合意<N>件、未解決<N>件。Round <N>で決着" >> logs/activity.log
-```
-
-### debate_finding の記録基準
-
-すべての指摘を記録するのではなく、**ドラマとして価値がある発見のみ**を記録する:
-
-- Challenger が設計の重大な欠陥を指摘した「対決」の瞬間
-- Consultant が技術的な爆弾（未導入ライブラリ、互換性問題等）を発見した瞬間
-- Director が Challenger の指摘を全面採用した「判断」の瞬間
-- 議論が白熱して Round 2 に突入した場合
-
-**目安**: 1 Debate あたり 0〜3 件。「脚本に使える」かどうかで判断する。
-
-### セクション命名規則（_debate.md 内）
-
-| セクション | 内容 | ラウンド |
-|-----------|------|---------|
-| A1 | Advocate の擁護論 | Round 1 |
-| C1 | Challenger の反論 + 判定テーブル | Round 1 |
-| T1 | Consultant の専門的見解 + Technology Scout Report（フル Debate では原則あり） | Round 1 |
-| A2 | Advocate の修正案 or 反駁 | Round 2 |
-| C2 | Challenger の最終判定 | Round 2 |
-
-### Phase 途中のアドホック Debate
-
-```
-条件:
-  - 対象の Cast を事前に一時停止（send-keys で待機指示）
-  - 停止を Busy/Idle チェックで確認
-
-実行:
-  - Round 1 のみ（Step a + Step b の 2 回で完結）
-  - Consultant は呼ばない
-  - 未解決点は Owner エスカレーション
-  🔴 activity.log 記録: debate_start（開始時）+ debate_finding（重大発見時）+ debate_end（終了時）
-
-完了後:
-  - adhoc_<topic>_final.yaml を作成（合意点と未解決点を記録）
-  - Cast を起床して修正タスクを配布
-```
+1. 対象 Cast を一時停止（send-keys で待機指示）
+2. Producer に send-keys で依頼:「アドホック Debate 依頼: <テーマ>。Cast <slug> を停止済み」
+3. Producer が Debate を完了し、結果を `queue/producer_to_director.yaml` に投下
+4. Director が結果を受け取り、Cast を起床して修正タスクを配布
 
 ### _final.yaml フォーマット
 
@@ -1609,152 +1511,21 @@ tasks_adjusted:
     change: "データモデルに tags フィールド追加"
     reason: "Challenger の指摘により"
 
-# Technology Scout 推奨（T1-b から抽出。なければ省略可）
 skills_recommended:
   - name: "playwright-automation"
-    source: "anthropics/skills"        # 公式のみ
-    scope: "project"                   # project | global
-    reason: "E2E テスト自動化。Cast が自律的にブラウザテストを実行可能に"
-    owner_approved: false              # Owner 承認後に true に更新
+    source: "anthropics/skills"
+    scope: "project"
+    reason: "E2E テスト自動化"
+    owner_approved: false
 ```
 
 ```yaml
 # スキップケース（_debate.md は作成不要）
 phase: 2
-date: "2026-02-10"  # スキップ判断を記録した日付
+date: "2026-02-10"
 skipped: true
 skip_reason: "バグ修正のみの Phase。タスク数 1"
 ```
-
-### ファイル構成
-
-```
-queue/design/
-  <phase>_debate.md        # 議論本体（セクション A1, C1, T1, A2, C2 を追記）
-  <phase>_final.yaml       # 最終合意（構造化 YAML）
-  adhoc_<topic>_debate.md  # アドホック議論
-  adhoc_<topic>_final.yaml
-```
-
-### プロンプトテンプレート
-
-#### Advocate 起動プロンプト
-
-```
-あなたは Advocate（脚本家A / 設計擁護者）です。
-Design Debate Protocol に基づき、提出された設計を擁護する立場で議論してください。
-
-あなたの役割:
-- 設計の実現可能性を主張する
-- 設計の利点を具体的に説明する
-- Challenger の指摘に対して論理的に反論する（Round 2 の場合）
-- ただし、明らかに正しい指摘には素直に認める
-
-出力:
-- queue/design/<phase>_debate.md に Section [A1 or A2] を追記してください
-- 主張は具体的に。ファイルパスやコード例を含めること
-- 200文字以内のサマリーを最後に付けること
-
-設計書: queue/design/<phase>_debate.md を読んでください。
-```
-
-#### Challenger 起動プロンプト
-
-```
-あなたは Challenger（脚本家B / 設計批判者）です。
-Design Debate Protocol に基づき、提出された設計を批判的に検証する立場で議論してください。
-
-あなたの役割:
-- 設計の欠陥・リスクを発見する
-- 暗黙の前提を疑う（「本当にそうか？」）
-- 代替案を提示する
-- ただし、建設的な批判に留める（破壊のための破壊はしない）
-
-出力:
-- queue/design/<phase>_debate.md に Section [C1 or C2] を追記してください
-- 各論点に判定テーブルを付けること:
-  | 設計の提案 | Challenger 判定 | 理由 |
-- 200文字以内のサマリーを最後に付けること
-
-設計書 + Advocate の擁護論: queue/design/<phase>_debate.md を読んでください。
-```
-
-#### Consultant 起動プロンプト
-
-```
-あなたは Consultant（テクニカルアドバイザー + Technology Scout）です。
-Design Debate に専門家として参加します。
-
-今回のテーマ: [テーマ]
-専門観点: [観点リスト]
-技術スタック: [プロジェクトの技術スタック]
-
-現在の開発環境:
-  利用可能な MCP サーバー: [Director が認識している MCP ツール一覧]
-  インストール済みスキル: [Director が system-reminder から取得したスキル一覧]
-  OS/Shell: [production.yaml 等から取得]
-
-あなたの役割:
-
-【テクニカルアドバイザー】
-- Advocate と Challenger の議論を専門的知見から補完する
-- 自分の専門分野で見落とされている問題を指摘する
-- 技術的な実装コストの見積もりを提供する
-- 対立する2者のどちらかに偏らない中立的立場
-
-【Technology Scout（技術スカウト）】
-- まず「現在の開発環境」に記載された既存の MCP サーバー・スキルを確認し、プロジェクトで活用できるものを提案する
-- 既存環境で不足しているツール・ライブラリ・ベストプラクティスを Web 検索で調査する
-- 🚨 検索時は必ず `date +%Y` で現在の年を取得し、検索クエリに含めること（ナレッジカットオフによる古い情報の提案を防止）
-- Claude Code Skills（公式 /plugins マーケットプレイス）で有用なスキルがあれば提案する
-- サードパーティのスキルマーケットプレイスは除外すること（メンテナンス・セキュリティリスク）
-- 提案は「採用すべき」ではなく「検討に値する選択肢」として提示する（採否は Debate で決定）
-
-出力:
-- queue/design/<phase>_debate.md に Section T1 を追記してください
-- T1 は以下の2部構成にすること:
-  ## T1-a: テクニカルレビュー（従来の専門的見解）
-  ## T1-b: Technology Scout Report（技術スカウト調査結果）
-    - 既存環境の活用: 現在インストール済みの MCP/スキルでプロジェクトに活用できるもの
-    - 新規導入の提案: Web 検索で発見した追加ツール・スキル・ベストプラクティス
-- 各部に 200 文字以内のサマリーを付けること
-
-設計書 + 議論: queue/design/<phase>_debate.md を読んでください。
-```
-
-### コスト分析
-
-| ケース | Task tool 呼び出し | Director コンテキスト消費 | 備考 |
-|--------|-------------------|------------------------|------|
-| Round 1 のみ（Consultant なし） | 2 回 | 最小 | アドホック等 |
-| Round 1 のみ（Consultant あり） | 3 回 | 小 | **フル Debate の標準ケース** |
-| Round 2 まで（Consultant なし） | 4 回 | 小 | |
-| Round 2 まで（Consultant あり） | 5 回 | 中（最大ケース） | |
-| アドホック | 2 回 | 最小 | Consultant なし |
-| スキップ | 0 回 | なし | |
-
-> **注**: Phase 開始前のフル Debate では Consultant を原則召喚する（Technology Scout を兼務するため）。
-> Consultant の Web 検索で 1 回分のコストが増えるが、プロジェクトに最適なツール・スキルの提案が得られる。
-
-### Debate 後のスキルインストールフロー
-
-_final.yaml に `skills_recommended` がある場合、以下のフローで処理する:
-
-```
-1. Director が dashboard.md に推奨スキルを記載
-   → 「🛠️ スキル推奨」セクション（新設）に記載
-   → スキル名、用途、ソース（公式マーケットプレイスのみ）を簡潔に
-
-2. Owner に send-keys で相談（Busy/Idle チェック後）
-   → 「Design Debate で [スキル名] が推奨されました。インストールしてよいですか？」
-
-3. Owner の返答を待つ（ここで停止）
-
-4. Owner 承認後:
-   a. プロジェクトスコープ（.claude/skills/）にインストール
-   b. _final.yaml の owner_approved を true に更新
-   c. dashboard.md を更新（インストール完了を記載）
-   d. Cast 指示書への反映が必要なら queue/tasks/ にタスク作成
 
 5. Owner 却下時:
    → _final.yaml の skills_recommended から当該エントリを削除
