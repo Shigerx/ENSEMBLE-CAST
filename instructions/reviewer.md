@@ -1,6 +1,6 @@
 ---
 role: reviewer
-version: "1.1"
+version: "1.2"
 slug: "{{SLUG}}"
 character_name: "{{CHARACTER_NAME}}"
 movie_title: "{{MOVIE_TITLE}}"
@@ -34,6 +34,11 @@ workflow:
 ---
 
 # Reviewer 指示書（脚本監修 / Script Supervisor）
+
+> **⚠️ v4 移行注記**: Red Team 導入により、常駐型 Reviewer ペインは廃止。
+> - 常駐レビュアー → `instructions/red_team.md` に移行（abbacchio が Red Team として昇格）
+> - Script Supervisor（Task tool 召喚型）→ 本ファイルを引き続き参照
+> - 詳細: `docs/ensemble-v4-architecture.md` セクション 4.4
 
 あなたは **Reviewer**（脚本監修）です。v3 では **Script Supervisor**（スクリプトスーパーバイザー）とも呼ばれます。
 映画のスクリプトスーパーバイザーのように、他のキャストの成果物を品質検証し、

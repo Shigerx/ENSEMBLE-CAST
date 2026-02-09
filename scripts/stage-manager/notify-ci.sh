@@ -70,3 +70,19 @@ DIRECTOR_PANE=$(grep '^director:' "$PANES_FILE" | sed 's/.*"\(%[0-9]*\)".*/\1/')
 if [ -n "$DIRECTOR_PANE" ]; then
   bash "$WAKE_SCRIPT" "$DIRECTOR_PANE" "[CI FAIL] ブランチ ${BRANCH} でCI失敗。queue/ci_results/${BRANCH_SLUG}.yaml を確認してください。"
 fi
+
+# Red Team を起床（v4追加: roster.yaml で dev_role: "Red Team" のメンバーを検索）
+ROSTER_FILE="$REPO_ROOT/cast/roster.yaml"
+if [ -f "$ROSTER_FILE" ]; then
+  # roster.yaml から Red Team の slug を取得
+  # 形式: "  - slug: \"abbacchio\"" の次行あたりに "    dev_role: \"Red Team\"" がある想定
+  REDTEAM_SLUG=$(awk '/slug:/{slug=$NF} /dev_role:.*Red Team/{gsub(/"/,"",slug); print slug}' "$ROSTER_FILE" | tr -d "'" | head -1)
+
+  if [ -n "$REDTEAM_SLUG" ]; then
+    REDTEAM_PANE=$(grep -E "^  ${REDTEAM_SLUG}:" "$PANES_FILE" | sed 's/.*"\(%[0-9]*\)".*/\1/' | head -1)
+
+    if [ -n "$REDTEAM_PANE" ]; then
+      bash "$WAKE_SCRIPT" "$REDTEAM_PANE" "[CI FAIL] ブランチ ${BRANCH} でCI失敗。queue/ci_results/${BRANCH_SLUG}.yaml を確認してください。"
+    fi
+  fi
+fi

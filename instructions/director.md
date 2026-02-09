@@ -190,8 +190,19 @@ escalated あり？ → エスカレーション対応（下記「Cast間通信�
   ├─ 1件 → 自分で簡易レビュー（即判断・高速）
   └─ 2件以上 or 複雑 → Task tool で Script Supervisor を並列召喚
   ↓
-approved → dashboard.md更新 → 次のタスク配布
+approved → Red Team（roster.yaml に red_team ロールが存在する場合）を起床
+  → Red Team の報告を待つ（二段階マージ）
+  → Red Team 報告確認:
+    → verdict: approved → main にマージ
+    → verdict: blocked → 修正タスク作成 → Cast に戻す
+    → verdict: conditional → must_fix を Cast に送付
+  → Red Team なし → そのまま main にマージ
 rejected → 修正タスク作成 → Cast起床
+  ↓
+Red Team 報告（type: red_team_review）がある？
+  → verdict: approved → マージ実行
+  → verdict: blocked → 修正タスク作成 → Cast起床
+  → verdict: conditional → must_fix 確認後判断
   ↓
 失敗/ブロック報告？
   ├─ アーキテクチャ判断が必要？ → Design Debate Protocol（アドホック）を実行
@@ -1024,6 +1035,91 @@ registry:
    npm run build
    ```
    失敗した場合: マージをリバートし、Cast に修正タスクを配布
+
+---
+
+## 🔴 二段階マージフロー（v4 追加）
+
+**Red Team（roster.yaml で `dev_role: "Red Team"` のメンバー）が存在する場合、全タスクで Red Team レビューを経てからマージする。**
+
+```
+Cast 完了報告
+  ↓
+Director 簡易レビュー or Script Supervisor 召喚
+  ↓
+approved → Red Team を起床（abbacchio）
+  → send-message.sh でレビュー依頼:
+    bash scripts/send-message.sh <red-team-slug> "Red Team レビュー依頼。<branch> ブランチを検証してください。タスク: #<task-id>"
+  → ここで停止。Red Team の報告を待つ
+  ↓
+Red Team 報告（queue/reports/<red-team-slug>_report.yaml）を確認
+  ↓
+verdict: approved
+  → main にマージ（上記「レビュー approved 後の追加アクション」を実行）
+  → dashboard.md 更新
+  ↓
+verdict: blocked
+  → 修正タスク作成（下記「Red Team マージブロック対応」参照）
+  ↓
+verdict: conditional
+  → must_fix リストを確認
+  → 対象 Cast に must_fix を含む修正タスクを配布
+  → 修正完了後、Red Team に再レビューを依頼
+```
+
+**Red Team が roster.yaml にいない場合**: 二段階目をスキップし、Director レビュー approved で直接マージ。
+
+---
+
+## 🔴 Red Team マージブロック対応（v4 追加）
+
+Red Team（abbacchio）から verdict: blocked の報告を受けた場合の対応手順:
+
+1. **レポートを読む**: `queue/reports/<red-team-slug>_report.yaml`
+2. **findings の severity: critical を確認**: ブロック理由を把握
+3. **修正タスクを作成**:
+   ```yaml
+   tasks:
+     - id: <元ID + 100>
+       title: "【RT修正】<元タスクタイトル>"
+       description: |
+         Red Team（abbacchio）からマージブロック。
+
+         findings:
+           - category: <カテゴリ>
+             severity: critical
+             description: "<指摘内容>"
+             file: "<ファイルパス>"
+
+         上記の指摘事項を修正してください。
+       original_task_id: <元タスクID>
+       red_team_review_id: RT-<番号>
+       priority: high
+       status: assigned
+       assigned_at: <dateコマンドの結果>
+   ```
+4. **Cast を起床**:
+   ```bash
+   bash scripts/send-message.sh <cast-slug> "Red Team からマージブロック。修正タスクが queue/tasks/<slug>.yaml にあります。findings を確認して修正してください。"
+   ```
+5. **dashboard.md に記録**: 「Red Team Findings」セクションは Red Team が更新済み。「🔄 進行中」に修正タスクを追加
+6. **activity.log に記録**:
+   ```bash
+   echo -e "$(date '+%Y-%m-%dT%H:%M:%S')\tDIRECTOR\trt_blocked\t#<タスクID> Red Team blocked: <理由>" >> logs/activity.log
+   ```
+7. **修正完了後**: Cast の完了報告を受けたら、再度 Red Team にレビューを依頼
+
+---
+
+## 🔴 CI 失敗時の Red Team 起床（v4 追加）
+
+CI 失敗時、`notify-ci.sh` が自動的に以下を起床させる:
+- 対象 Cast（ブランチ所有者）
+- Director
+- **Red Team（abbacchio）** ← v4 追加
+
+Red Team は CI 失敗の原因を独自に調査し、必要に応じて Cast に指摘する。
+Director は Red Team からの追加レポートを待つ必要はないが、レポートがあれば参考にする。
 
 ---
 

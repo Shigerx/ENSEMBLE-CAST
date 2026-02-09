@@ -245,14 +245,16 @@ Claude Codeは「待機」できない。プロンプトが出た = スクリプ
 | queue/framework_feedback.yaml | 全員 | **Director のみ**（Cast レポートから集約） |
 | queue/design/*.md | Director + 議論参加者 | Director（作成）、Advocate/Challenger/Consultant（セクション追記） |
 | queue/design/*.yaml | 全員 | Director のみ |
-| queue/discussion/*.yaml | Director + 関係Cast | 会話参加者のみ |
-| dashboard.md | 全員 | **Director のみ**（v3ではLPが更新） |
+| queue/discussion/*.yaml | Director + 関係Cast | 会話参加者のみ（Red Team も参加可） |
+| queue/reports/<red-team-slug>_report.yaml | Director | Red Team のみ |
+| queue/ci_results/*.yaml | Red Team + Director + 対象Cast | ci.js（自動） |
+| dashboard.md | 全員 | **Director のみ**（v3ではLPが更新）。Red Team は「Red Team Findings」セクションのみ追記可 |
 | logs/activity.log | 全員 | **Director + Cast**（追記のみ。Cast は chat/progress イベントのみ） |
 | logs/<slug>_status.txt | 全員 | **対象Cast のみ**（上書き） |
 | logs/<reviewer-slug>_status.txt | 全員 | **Reviewer のみ**（上書き） |
 | logs/director_status.txt | 全員 | **Director のみ**（上書き） |
 
-**🔴 dashboard.md はDirectorだけが更新する（v3ではLPが更新）。Producer・Castは読むだけ。**
+**🔴 dashboard.md はDirectorだけが更新する（v3ではLPが更新）。Red Team は「Red Team Findings」セクションのみ追記可。Producer・Castは読むだけ。**
 **🔴 logs/activity.log はDirectorとCastが追記する。Cast は `chat` と `progress` イベントのみ。管理イベント（task_assign等）はDirectorのみ。**
 **🔴 logs/<slug>_status.txt は各キャスト（Reviewer含む）が自分のファイルのみ更新する。**
 
