@@ -299,16 +299,58 @@ cd <worktree パス or target_path>
 
 | チェック | コマンド例 | 失敗時 |
 |---------|-----------|--------|
-| TypeScript 型チェック | `npx tsc --noEmit` | エラーを修正してから提出 |
-| Lint | `npx eslint src/` | 警告は許容、エラーは修正 |
-| ビルド | `npm run build` | 通らなければ提出禁止 |
-| テスト | `npm test` | 失敗テストがあれば修正 |
+| TypeScript 型チェック | `npx tsc --noEmit > /tmp/<slug>-types.log 2>&1; echo "exit: $?"` | エラーを修正してから提出 |
+| Lint | `npx eslint src/ > /tmp/<slug>-lint.log 2>&1; echo "exit: $?"` | 警告は許容、エラーは修正 |
+| ビルド | `npm run build > /tmp/<slug>-build.log 2>&1; echo "exit: $?"` | 通らなければ提出禁止 |
+| テスト | `npm test > /tmp/<slug>-test.log 2>&1; echo "exit: $?"` | 失敗テストがあれば修正 |
 
 **ルール:**
 - プロジェクトに該当ツールがない場合はスキップ可（例: eslint 未設定ならlintスキップ）
 - `package.json` の `scripts` を確認して、利用可能なコマンドを判断すること
 - **ビルドが通らない状態で提出するな。** それだけで reject 確定
 - セルフチェック結果はレポートの `self_check` フィールドに記載すること
+- **🔴 出力リダイレクト必須**: 全コマンドの出力を `/tmp/<slug>-*.log` にリダイレクトすること。
+  コンテキストウィンドウを汚染しないため（CLAUDE.md セクション21参照）。
+  失敗時のみ `tail -20 /tmp/<slug>-*.log` でエラー詳細を確認する。
+
+### 3.5. 🔴 chronicle.yaml handoff 更新（タスク完了時・必須）
+
+**タスク完了時およびセッション終了時に、chronicle.yaml の handoff セクションを更新すること。**
+これは次の自分（コンパクション後・再起動後）への引き継ぎ情報。
+
+```yaml
+# cast/members/<slug>/chronicle.yaml の先頭セクション
+handoff:
+  current_task:
+    id: <タスクID>
+    title: "<タスクタイトル>"
+    status: done  # assigned | in_progress | done | blocked
+    branch: "cast/<slug>/<task-id>-<説明>"
+    worktree: "/tmp/<slug>-<task-id>"
+  done_in_this_session:
+    - "<完了した作業のサマリー1>"
+    - "<完了した作業のサマリー2>"
+  next_steps:
+    - "<次にやるべきこと>"
+  blockers: []
+  files_i_own:
+    - "<所有ファイル1>"
+    - "<所有ファイル2>"
+  context_notes: |
+    <次の自分が知っておくべき技術的メモ>
+  updated_at: <dateコマンドの結果>
+```
+
+**更新タイミング:**
+- タスク完了報告（本指示書セクション7: report の書き込み）の**前**に更新
+- セッション終了（コンテキスト枯渇で停止する）前に更新
+- status が変わるたびに更新（assigned → in_progress → done）
+
+**ルール:**
+- `handoff` は chronicle.yaml の**先頭**に置く（entries の前）
+- コンパクション復帰時に最初に読むセクションのため、正確に記述すること
+- `done_in_this_session` は具体的に。「作業した」ではなく「POST /api/research endpoint を実装」のように
+- `files_i_own` はタスクの `owned_files` と一致させる
 
 ### 4. chronicle.yaml への記録
 タスク完了（または大きな進捗）があれば追記:
@@ -479,10 +521,12 @@ echo "完了待機|—|—|$(date '+%Y-%m-%dT%H:%M:%S')" > logs/<slug>_status.tx
    cast/members/<slug>/persona.yaml
    ```
 
-6. 行動履歴を再読み込み:
+6. **handoff を最優先で読む**（chronicle.yaml の先頭セクション）:
    ```
-   cast/members/<slug>/chronicle.yaml
+   cast/members/<slug>/chronicle.yaml の handoff セクション
    ```
+   → current_task, done_in_this_session, next_steps, blockers を確認
+   → entries（累積記録）は必要に応じて後から参照
 
 7. 現在のタスクを確認:
    ```

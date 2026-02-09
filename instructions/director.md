@@ -362,6 +362,15 @@ ls queue/reports/
 ```
 全ての `*_report.yaml` を読む。
 
+### 1.5 Cast の handoff 確認（必要に応じて）
+
+Cast の進捗状態を正確に把握するために、`cast/members/<slug>/chronicle.yaml` の `handoff` セクションを参照できる:
+- `current_task.status` で現在のタスク状態を確認
+- `blockers` で滞留原因を確認
+- `files_i_own` でファイル所有状況を確認
+
+**全タスク完了時のフェーズ切り替え判断** や **コンテキスト枯渇時のチェックポイント保存** で特に有用。
+
 ### 2. レポート内容に基づいて行動
 
 **着任報告（type: arrival）を発見:**

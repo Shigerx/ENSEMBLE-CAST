@@ -393,7 +393,7 @@ Claude Codeのコンテキストがコンパクションされた場合:
    - Reviewer: `instructions/reviewer.md` + `cast/members/<slug>/persona.yaml`
 
 5. **累積ファイルを読む**:
-   - Cast: `cast/members/<slug>/chronicle.yaml`
+   - Cast: `cast/members/<slug>/chronicle.yaml`（**handoff セクションを最優先で確認**）
    - Director: `cast/roster.yaml` + `dashboard.md`
    - Line Producer: `config/units.yaml` + `contracts/` + `dailies/` + `dashboard.md`
 
@@ -565,3 +565,50 @@ project:
 **Cast作業時の注意**:
 - `target_path` が設定されている場合、コード作成・編集はそのパス内で行う
 - `target_path` が `null` の場合、ENSEMBLE-CAST内の `projects/` ディレクトリで作業する
+
+---
+
+## 21. Context Window 汚染防止ルール
+
+**テスト出力・ビルドログをそのままコンテキストに流し込むな。**
+
+セルフチェック（ビルド、型チェック、テスト、lint）の出力は大量のテキストを生成し、
+コンテキストウィンドウを急速に消費する。これにより有用な指示・履歴が押し出される。
+
+### ルール
+
+1. **出力リダイレクト必須**: セルフチェックコマンドは必ず出力をファイルにリダイレクトする
+   ```bash
+   # ✅ 正しい（出力をファイルに）
+   npm run build > /tmp/<slug>-build.log 2>&1
+   npx tsc --noEmit > /tmp/<slug>-types.log 2>&1
+   npm test > /tmp/<slug>-test.log 2>&1
+
+   # ❌ 禁止（コンテキストに垂れ流し）
+   npm run build
+   npx tsc --noEmit
+   npm test
+   ```
+
+2. **結果確認は exit code + tail**: 出力全文を読まず、まず exit code で成否を判定。詳細が必要な場合のみ `tail` で末尾を確認
+   ```bash
+   npm run build > /tmp/<slug>-build.log 2>&1
+   echo "exit: $?"
+   # 失敗時のみ末尾を確認
+   tail -20 /tmp/<slug>-build.log
+   ```
+
+3. **コンテキストに流していいもの**:
+   - exit code（1行）
+   - エラーサマリー（tail -20 程度）
+   - テスト結果の最終行（X passing, Y failing）
+
+4. **コンテキストに流してはいけないもの**:
+   - ビルドの全出力（数百行になることがある）
+   - テストの全出力（各テストケースの詳細）
+   - node_modules の警告・deprecation メッセージ
+
+### 適用対象
+
+全 Cast（開発担当）および Reviewer（品質検証担当）に適用。
+Director は自身でコマンドを実行しないため対象外（F001: 自分でコードを書かない）。
