@@ -1016,30 +1016,89 @@ Moody Blues の能力で過去を再現する。コードの変更履歴を遡�
 
 ---
 
-#### 仕様5: Design Debate Protocol
+#### 仕様5: Design Debate Protocol（P2.5ディベートで再設計済み）
+
+> **詳細ディベートログ**: `docs/p25-debate-log.md`（全14項目100%合意）
 
 ```
+メンバー構成:
+  - Advocate（擁護者）: 設計を擁護。実現可能性を主張。必須
+  - Challenger（批判者）: 設計を攻撃。欠陥を探す。必須
+  - Consultant（専門顧問）: 技術的見解を提供。オプション。v3の Technical Advisor と同一概念
+    ※ 1 Agent = 1 責任の原則。Consultant は別 Task tool 呼び出し
+
+基盤: Task tool 逐次方式（Agent Teams は不使用。v4合意: AT = P7オプション）
+
 ディレクトリ構造:
   queue/design/
-    <phase>_debate.md      # 議論本体（Markdown）
-    <phase>_final.yaml     # 最終合意（YAML）
+    <phase>_debate.md        # 議論本体（セクション A1, C1, T1, A2, C2 を追記）
+    <phase>_final.yaml       # 最終合意（構造化 YAML）
+    adhoc_<topic>_debate.md  # アドホック議論（Phase途中）
+    adhoc_<topic>_final.yaml
 
-実行フロー:
+セクション命名規則（_debate.md 内）:
+  A1 = Advocate 擁護論（Round 1）
+  C1 = Challenger 反論 + 判定テーブル（Round 1）
+  T1 = Consultant 専門的見解（Round 1、オプション）
+  A2 = Advocate 修正案 or 反駁（Round 2）
+  C2 = Challenger 最終判定（Round 2）
+
+実行フロー（最大2ラウンド・対称構造）:
   1. Director が Phase 設計書（_debate.md）を作成
-  2. Task tool で 2体のサブエージェントを並列召喚:
-     - Advocate（擁護）: model haiku
-     - Challenger（批判）: model haiku
-  3. 2-3ラウンドの書面議論（_debate.md に追記）
-  4. Director が統合 → _final.yaml 作成
-  5. 未解決点は dashboard.md「🚨 要対応」に記載
 
-スキップ条件（Director 判断）:
+  2. Round 1:
+     a. Task tool — Advocate 召喚
+        入力: _debate.md + プロジェクトコンテキスト
+        出力: 擁護論（Section A1）
+
+     b. Task tool — Challenger 召喚
+        入力: _debate.md（A1 含む）
+        出力: 反論 + 判定テーブル（Section C1）
+
+     c. Task tool — Consultant 召喚（オプション。技術的専門性が必要な場合のみ）
+        入力: _debate.md（A1 + C1 含む）
+        出力: 専門的見解（Section T1）
+
+  3. Director が Round 1 結果を評価:
+     - 全項目合意 or 軽微な指摘のみ → _final.yaml 作成。終了
+     - 重大な反論あり → Round 2 へ
+
+  4. Round 2（必要な場合のみ。Consultant は参加しない）:
+     a. Task tool — Advocate 再召喚
+        入力: 全議論（_debate.md 全体）
+        出力: 修正案 or 反駁（Section A2）
+
+     b. Task tool — Challenger 再召喚
+        入力: 全議論（_debate.md 全体）
+        出力: 最終判定（Section C2）
+
+  5. Director が統合 → _final.yaml 作成
+     - 合意点を tasks に反映
+     - 未解決点は dashboard.md「🚨 要対応」に記載
+
+Phase途中のアドホック Debate:
+  - 対象 Cast を事前に一時停止（send-keys で待機指示 + Busy/Idle 確認）
+  - Round 1 のみ（Advocate + Challenger の 2 回で完結）
+  - Consultant は呼ばない
+  - 未解決点は Owner エスカレーション
+  - 完了後 Cast を起床して修正タスク配布
+
+スキップ条件（Director 判断。デフォルトは「実行」）:
   - タスク数 2 以下の小規模Phase
   - バグ修正のみのPhase
   - Owner が明示的にスキップ許可
   スキップ時は dashboard.md に理由を記載
 
-コスト: Haiku × 2 = 微小。見返り: Phase全体の手戻り防止
+_final.yaml フォーマット:
+  phase, debate_date, rounds, consultant_called, consultant_theme,
+  participants, agreed[], unresolved[], tasks_adjusted[]
+  スキップ時: skipped: true, skip_reason
+
+コスト（Max プラン前提）:
+  Round 1 のみ（Consultant なし）: Task tool 2回 = 最小
+  Round 1 のみ（Consultant あり）: Task tool 3回 = 小
+  Round 2 まで（Consultant あり）: Task tool 5回 = 中（最大ケース）
+  逐次実行のためレートリミットへの影響は微小
 ```
 
 ---
@@ -1064,13 +1123,13 @@ Moody Blues の能力で過去を再現する。コードの変更履歴を遡�
 | `instructions/cast_template.md` | CI結果の読み方・対応方法を追加 |
 | `.gitignore` | queue/ci_results/, logs/ci/ を追加 |
 
-**P2.5: Design Debate Protocol**
+**P2.5: Design Debate Protocol**（P2.5ディベートで再設計済み。詳細: `docs/p25-debate-log.md`）
 | ファイル | 変更内容 |
 |---------|---------|
-| `queue/design/` | 新規ディレクトリ |
-| `instructions/director.md` | Design Debate 実行手順を Phase 開始フローに追加 |
-| `CLAUDE.md` | セクション追加「Design Debate Protocol」 |
-| `.gitignore` | queue/design/*_debate.md を追加（テンプレのみGit管理） |
+| `queue/design/` | 新規ディレクトリ（_debate.md + _final.yaml + adhoc_*） |
+| `instructions/director.md` | Design Debate Protocol セクション追加: トリガー/スキップ条件、実行手順、Advocate/Challenger/Consultantプロンプトテンプレート、_final.yaml書き方、アドホックDebate手順 |
+| `CLAUDE.md` | セクション追加「Design Debate Protocol」概要 |
+| `.gitignore` | queue/design/ を追加 |
 
 **P3: Cast間通信基盤**
 | ファイル | 変更内容 |
@@ -1139,9 +1198,12 @@ post-commit hook が `ci.js && notify-ci.sh` を呼ぶ形。これも実装時�
 
 #### 仕様5（Design Debate）への確認
 
-Haiku で Advocate / Challenger を召喚する設計だが、Maxプランで Haiku を Task tool から呼ぶ場合の挙動を確認したい。Task tool の `model: "haiku"` パラメータは Sonnet → Haiku へのダウングレードとして機能するはず。ただし Debate の品質が不十分なら Sonnet にフォールバックする判断を Director に委ねるべき。
-
-→ `config/ci.yaml` と同様に `config/debate.yaml` で `model: haiku` をデフォルトにし、Director が必要に応じて `model: sonnet` に変更できるようにする。
+**P2.5ディベートで再設計済み**（`docs/p25-debate-log.md`）。主要な変更点:
+- `config/debate.yaml` は不採用 → `instructions/director.md` に直接記述
+- Task tool 逐次方式（Haiku/Sonnet のモデル選択は Director 判断）
+- Consultant（= v3 Technical Advisor）をオプション第3メンバーとして追加
+- 最大2ラウンド対称構造、セクション命名規則（A1, C1, T1, A2, C2）
+- アドホック Debate（Phase途中、Round 1のみ）の手順を追加
 
 #### 以上。ブロッカーなし。
 
