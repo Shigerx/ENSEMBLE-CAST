@@ -1227,10 +1227,17 @@ Phase 開始前（またはアドホック）に、Task tool で Advocate（擁�
       入力: 設計書 + Section A1
       出力: 反論 + 判定テーブル（_debate.md に Section C1 として追記）
 
-   c. (オプション) Task tool — Consultant 召喚（逐次。Director 判断）
+   c. Task tool — Consultant 召喚（逐次）
       入力: 設計書 + Section A1 + Section C1
-      出力: 専門的見解（_debate.md に Section T1 として追記）
-      召喚条件: アーキテクチャ判断、新技術導入、セキュリティ関連等
+      出力: 専門的見解 + 技術スカウト結果（_debate.md に Section T1 として追記）
+      召喚条件:
+        - Phase 開始前のフル Debate → **原則召喚**（Technology Scout 込み）
+        - アドホック Debate → オプション（Director 判断）
+      プロンプト組み立て時:
+        - [技術スタック]: production.yaml + context/{project}.md から取得
+        - [MCP サーバー一覧]: 自身が認識している mcp__ ツールを列挙
+        - [スキル一覧]: system-reminder に表示されているスキル名を列挙
+        - [OS/Shell]: CLAUDE.md / production.yaml から取得
 
 3. Director が判定:
    - 全項目合意 or 軽微な指摘のみ → _final.yaml 作成。終了
@@ -1256,7 +1263,7 @@ Phase 開始前（またはアドホック）に、Task tool で Advocate（擁�
 |-----------|------|---------|
 | A1 | Advocate の擁護論 | Round 1 |
 | C1 | Challenger の反論 + 判定テーブル | Round 1 |
-| T1 | Consultant の専門的見解（オプション） | Round 1 |
+| T1 | Consultant の専門的見解 + Technology Scout Report（フル Debate では原則あり） | Round 1 |
 | A2 | Advocate の修正案 or 反駁 | Round 2 |
 | C2 | Challenger の最終判定 | Round 2 |
 
@@ -1302,6 +1309,14 @@ tasks_adjusted:
   - task_id: 5
     change: "データモデルに tags フィールド追加"
     reason: "Challenger の指摘により"
+
+# Technology Scout 推奨（T1-b から抽出。なければ省略可）
+skills_recommended:
+  - name: "playwright-automation"
+    source: "anthropics/skills"        # 公式のみ
+    scope: "project"                   # project | global
+    reason: "E2E テスト自動化。Cast が自律的にブラウザテストを実行可能に"
+    owner_approved: false              # Owner 承認後に true に更新
 ```
 
 ```yaml
@@ -1368,35 +1383,89 @@ Design Debate Protocol に基づき、提出された設計を批判的に検証
 #### Consultant 起動プロンプト
 
 ```
-あなたは Consultant（テクニカルアドバイザー）です。
+あなたは Consultant（テクニカルアドバイザー + Technology Scout）です。
 Design Debate に専門家として参加します。
 
 今回のテーマ: [テーマ]
 専門観点: [観点リスト]
+技術スタック: [プロジェクトの技術スタック]
+
+現在の開発環境:
+  利用可能な MCP サーバー: [Director が認識している MCP ツール一覧]
+  インストール済みスキル: [Director が system-reminder から取得したスキル一覧]
+  OS/Shell: [production.yaml 等から取得]
 
 あなたの役割:
+
+【テクニカルアドバイザー】
 - Advocate と Challenger の議論を専門的知見から補完する
 - 自分の専門分野で見落とされている問題を指摘する
 - 技術的な実装コストの見積もりを提供する
 - 対立する2者のどちらかに偏らない中立的立場
 
+【Technology Scout（技術スカウト）】
+- まず「現在の開発環境」に記載された既存の MCP サーバー・スキルを確認し、プロジェクトで活用できるものを提案する
+- 既存環境で不足しているツール・ライブラリ・ベストプラクティスを Web 検索で調査する
+- 🚨 検索時は必ず `date +%Y` で現在の年を取得し、検索クエリに含めること（ナレッジカットオフによる古い情報の提案を防止）
+- Claude Code Skills（公式 /plugins マーケットプレイス）で有用なスキルがあれば提案する
+- サードパーティのスキルマーケットプレイスは除外すること（メンテナンス・セキュリティリスク）
+- 提案は「採用すべき」ではなく「検討に値する選択肢」として提示する（採否は Debate で決定）
+
 出力:
 - queue/design/<phase>_debate.md に Section T1 を追記してください
-- 200文字以内のサマリーを最後に付けること
+- T1 は以下の2部構成にすること:
+  ## T1-a: テクニカルレビュー（従来の専門的見解）
+  ## T1-b: Technology Scout Report（技術スカウト調査結果）
+    - 既存環境の活用: 現在インストール済みの MCP/スキルでプロジェクトに活用できるもの
+    - 新規導入の提案: Web 検索で発見した追加ツール・スキル・ベストプラクティス
+- 各部に 200 文字以内のサマリーを付けること
 
 設計書 + 議論: queue/design/<phase>_debate.md を読んでください。
 ```
 
 ### コスト分析
 
-| ケース | Task tool 呼び出し | Director コンテキスト消費 |
-|--------|-------------------|------------------------|
-| Round 1 のみ（Consultant なし） | 2 回 | 最小 |
-| Round 1 のみ（Consultant あり） | 3 回 | 小 |
-| Round 2 まで（Consultant なし） | 4 回 | 小 |
-| Round 2 まで（Consultant あり） | 5 回 | 中（最大ケース） |
-| アドホック | 2 回 | 最小 |
-| スキップ | 0 回 | なし |
+| ケース | Task tool 呼び出し | Director コンテキスト消費 | 備考 |
+|--------|-------------------|------------------------|------|
+| Round 1 のみ（Consultant なし） | 2 回 | 最小 | アドホック等 |
+| Round 1 のみ（Consultant あり） | 3 回 | 小 | **フル Debate の標準ケース** |
+| Round 2 まで（Consultant なし） | 4 回 | 小 | |
+| Round 2 まで（Consultant あり） | 5 回 | 中（最大ケース） | |
+| アドホック | 2 回 | 最小 | Consultant なし |
+| スキップ | 0 回 | なし | |
+
+> **注**: Phase 開始前のフル Debate では Consultant を原則召喚する（Technology Scout を兼務するため）。
+> Consultant の Web 検索で 1 回分のコストが増えるが、プロジェクトに最適なツール・スキルの提案が得られる。
+
+### Debate 後のスキルインストールフロー
+
+_final.yaml に `skills_recommended` がある場合、以下のフローで処理する:
+
+```
+1. Director が dashboard.md に推奨スキルを記載
+   → 「🛠️ スキル推奨」セクション（新設）に記載
+   → スキル名、用途、ソース（公式マーケットプレイスのみ）を簡潔に
+
+2. Owner に send-keys で相談（Busy/Idle チェック後）
+   → 「Design Debate で [スキル名] が推奨されました。インストールしてよいですか？」
+
+3. Owner の返答を待つ（ここで停止）
+
+4. Owner 承認後:
+   a. プロジェクトスコープ（.claude/skills/）にインストール
+   b. _final.yaml の owner_approved を true に更新
+   c. dashboard.md を更新（インストール完了を記載）
+   d. Cast 指示書への反映が必要なら queue/tasks/ にタスク作成
+
+5. Owner 却下時:
+   → _final.yaml の skills_recommended から当該エントリを削除
+   → dashboard.md に却下を記載
+```
+
+**🔴 ルール**:
+- **公式マーケットプレイス（anthropics/skills）のスキルのみ** Director が提案できる
+- プロジェクトスコープ（`.claude/skills/`）への追加のみ。グローバル（`~/.claude/skills/`）は Owner 自身が操作
+- MCP サーバーの追加・変更は Director の権限外。dashboard.md に提案として記載し Owner 判断
 
 ---
 
