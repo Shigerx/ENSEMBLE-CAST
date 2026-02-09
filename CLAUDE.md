@@ -79,11 +79,11 @@ LP（ラインプロデューサー）が現場統括を担い、複数ユニッ
 
 ```yaml
 # config/panes.yaml の例（v2: scale: small — v4 改訂）
-owner: "%0"       # 人間（Owner）が直接操作。Claude Code なし
-director: "%1"
+# v4: Ownerペインなし。tmuxはAI専用。Ownerは別ターミナル（ens-couch等）から操作
+director: "%0"
 cast:
-  botan: "%2"
-  lamy: "%3"
+  botan: "%1"
+  lamy: "%2"
 ```
 
 ```yaml

@@ -338,38 +338,23 @@ EOF
 create_session_small() {
   log_action "[5/7] tmuxセッション作成 + Claude Code 起動（scale: small）..."
 
-  # v4: Owner ペイン（人間が直接操作。Claude Code は起動しない）
+  # v4: Ownerペインなし。tmuxはAI専用。Ownerは別ターミナル（ens-couch等）から操作
+  # Directorが最初のペイン
   tmux new-session -d -s "$SESSION" -c "$PROJECT_PATH" -x 200 -y 50
-  OWNER_PANE=$(tmux display-message -t "${SESSION}:0.0" -p '#{pane_id}')
-  tmux select-pane -t "$OWNER_PANE" -T "owner"
-
-  # Directorペインを追加 → 固有ID（%N）を取得
-  DIRECTOR_PANE=$(tmux split-window -t "${SESSION}:0" -h -P -F '#{pane_id}' -c "$PROJECT_PATH")
+  DIRECTOR_PANE=$(tmux display-message -t "${SESSION}:0.0" -p '#{pane_id}')
   tmux select-pane -t "$DIRECTOR_PANE" -T "director"
-
-  # レイアウト調整
-  tmux select-layout -t "${SESSION}:0" even-horizontal
-
-  # Ownerペイン背景色（差別化）
-  tmux select-pane -t "$OWNER_PANE" -P 'bg=#1a1a2e'
 
   # panes.yaml 生成
   {
     echo "# ENSEMBLE CAST — ペインID管理"
     echo "# launch-ensemble.sh が生成。全エージェントが参照。"
     echo "# tmux固有ID（%N形式）はペイン追加・削除で変わらない。"
-    echo "owner: \"$OWNER_PANE\""
+    echo "# v4: Ownerペインなし。Ownerは別ターミナルから操作"
     echo "director: \"$DIRECTOR_PANE\""
     echo "cast:"
   } > "$PANES_YAML"
 
-  log_success "Owner pane: $OWNER_PANE (人間操作用・Claude Code なし)"
   log_success "Director pane: $DIRECTOR_PANE"
-
-  # --- Owner ペイン: プロンプト設定のみ（Claude Code は起動しない） ---
-  safe_send_keys "$OWNER_PANE" "export PS1='(\033[1;35m👑Owner\033[0m) \033[1;32m\w\033[0m\$ '"
-
-  sleep 1
 
   # --- Director Claude Code 起動 ---
   safe_send_keys "$DIRECTOR_PANE" "export PS1='(\033[1;31m🎬Director\033[0m) \033[1;32m\w\033[0m\$ '"
@@ -626,7 +611,7 @@ show_complete() {
   tmux set-option -t "$SESSION" mouse on
   tmux set-option -t "$SESSION" pane-border-status top
   tmux set-option -t "$SESSION" pane-border-format " #{pane_title} "
-  tmux select-pane -t "$OWNER_PANE"
+  tmux select-pane -t "$DIRECTOR_PANE"
 
   # スタジオ配置図
   echo ""
@@ -634,19 +619,23 @@ show_complete() {
   echo ""
 
   if [ "$scale" = "small" ]; then
-    echo -e "${MAGENTA}    ┌─────────────┐${NC}     ${RED}┌─────────────┐${NC}"
-    echo -e "${MAGENTA}    │  👑         │${NC}     ${RED}│  🎬         │${NC}"
-    echo -e "${MAGENTA}    │  OWNER      │${NC} ──▶ ${RED}│  DIRECTOR   │${NC}"
-    echo -e "${MAGENTA}    │  ($OWNER_PANE)       │${NC}     ${RED}│  ($DIRECTOR_PANE)       │${NC}"
-    echo -e "${MAGENTA}    │  人間       │${NC}     ${RED}│  テックリード│${NC}"
-    echo -e "${MAGENTA}    └─────────────┘${NC}     ${RED}└──────┬──────┘${NC}"
-    echo -e "                               ${RED}│${NC}"
-    echo -e "              ┌────────────────${RED}┼${NC}────────────────┐"
-    echo -e "              ▼                ${RED}▼${NC}                ▼"
-    echo -e "${BLUE}       ┌───────────┐   ┌───────────┐   ┌───────────┐${NC}"
-    echo -e "${BLUE}       │ 🎭 CAST   │   │ 🎭 CAST   │   │ 🔴 RED   │${NC}"
-    echo -e "${BLUE}       │ (待機中)   │   │ (待機中)   │   │  TEAM    │${NC}"
-    echo -e "${BLUE}       └───────────┘   └───────────┘   └───────────┘${NC}"
+    echo -e "${MAGENTA}  👑 Owner（別ターミナル: ens-couch でモニタリング）${NC}"
+    echo -e "${MAGENTA}    │${NC}"
+    echo -e "${MAGENTA}    │ send-keys / tmux attach${NC}"
+    echo -e "${MAGENTA}    ▼${NC}"
+    echo -e "${RED}    ┌─────────────┐${NC}"
+    echo -e "${RED}    │  🎬         │${NC}"
+    echo -e "${RED}    │  DIRECTOR   │${NC}"
+    echo -e "${RED}    │  ($DIRECTOR_PANE)       │${NC}"
+    echo -e "${RED}    │  テックリード│${NC}"
+    echo -e "${RED}    └──────┬──────┘${NC}"
+    echo -e "           ${RED}│${NC}"
+    echo -e "    ┌──────${RED}┼${NC}──────┬──────────┐"
+    echo -e "    ▼      ${RED}▼${NC}      ▼          ▼"
+    echo -e "${BLUE}  ┌──────┐ ┌──────┐ ┌──────┐ ${CYAN}┌──────┐${NC}"
+    echo -e "${BLUE}  │🎭CAST│ │🎭CAST│ │🎭CAST│ ${CYAN}│🔴RED │${NC}"
+    echo -e "${BLUE}  │      │ │      │ │      │ ${CYAN}│ TEAM │${NC}"
+    echo -e "${BLUE}  └──────┘ └──────┘ └──────┘ ${CYAN}└──────┘${NC}"
   elif [ "$scale" = "large" ]; then
     echo -e "${MAGENTA}    ┌─────────────┐${NC}"
     echo -e "${MAGENTA}    │  🎬 EP      │${NC}"
@@ -687,8 +676,9 @@ EOF
   echo -e "    ${CYAN}tmux attach-session -t ensemble${NC}"
   echo ""
   echo -e "${DIM}  ペインIDは config/panes.yaml に記録済み。${NC}"
-  echo -e "${DIM}  v4: Owner（あなた）が直接 Director に指示を出します。${NC}"
-  echo -e "${DIM}  Ownerペインから send-keys で Director を操作してください。${NC}"
+  echo -e "${DIM}  v4: tmux は AI 専用。Owner は別ターミナルから操作。${NC}"
+  echo -e "${DIM}  モニタリング: ens-couch（別ターミナルで実行）${NC}"
+  echo -e "${DIM}  Director に指示: tmux send-keys -t \"<director_pane_id>\" \"指示内容\"${NC}"
   echo ""
 }
 
