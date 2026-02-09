@@ -72,17 +72,20 @@ if [ -n "$DIRECTOR_PANE" ]; then
 fi
 
 # Red Team を起床（v4追加: roster.yaml で dev_role: "Red Team" のメンバーを検索）
+# 前提: roster.yaml の各メンバーブロック内で slug: が dev_role: より前に記載されていること
 ROSTER_FILE="$REPO_ROOT/cast/roster.yaml"
 if [ -f "$ROSTER_FILE" ]; then
-  # roster.yaml から Red Team の slug を取得
-  # 形式: "  - slug: \"abbacchio\"" の次行あたりに "    dev_role: \"Red Team\"" がある想定
   REDTEAM_SLUG=$(awk '/slug:/{slug=$NF} /dev_role:.*Red Team/{gsub(/"/,"",slug); print slug}' "$ROSTER_FILE" | tr -d "'" | head -1)
 
-  if [ -n "$REDTEAM_SLUG" ]; then
+  if [ -z "$REDTEAM_SLUG" ]; then
+    echo "[notify-ci] INFO: No Red Team member found in $ROSTER_FILE (expected dev_role containing 'Red Team')" >&2
+  else
     REDTEAM_PANE=$(grep -E "^  ${REDTEAM_SLUG}:" "$PANES_FILE" | sed 's/.*"\(%[0-9]*\)".*/\1/' | head -1)
 
     if [ -n "$REDTEAM_PANE" ]; then
       bash "$WAKE_SCRIPT" "$REDTEAM_PANE" "[CI FAIL] ブランチ ${BRANCH} でCI失敗。queue/ci_results/${BRANCH_SLUG}.yaml を確認してください。"
+    else
+      echo "[notify-ci] WARNING: Red Team member '$REDTEAM_SLUG' found in roster but no pane_id in $PANES_FILE" >&2
     fi
   fi
 fi

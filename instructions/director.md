@@ -190,19 +190,16 @@ escalated あり？ → エスカレーション対応（下記「Cast間通信�
   ├─ 1件 → 自分で簡易レビュー（即判断・高速）
   └─ 2件以上 or 複雑 → Task tool で Script Supervisor を並列召喚
   ↓
-approved → Red Team（roster.yaml に red_team ロールが存在する場合）を起床
-  → Red Team の報告を待つ（二段階マージ）
-  → Red Team 報告確認:
-    → verdict: approved → main にマージ
-    → verdict: blocked → 修正タスク作成 → Cast に戻す
-    → verdict: conditional → must_fix を Cast に送付
+approved → Red Team（roster.yaml に dev_role: "Red Team" が存在する場合）を起床
+  → ここで停止。Red Team が報告後に send-keys で再起床する（二段階マージ）
   → Red Team なし → そのまま main にマージ
 rejected → 修正タスク作成 → Cast起床
   ↓
+# 起床パターン: Red Team からの send-keys で起床された場合
 Red Team 報告（type: red_team_review）がある？
-  → verdict: approved → マージ実行
-  → verdict: blocked → 修正タスク作成 → Cast起床
-  → verdict: conditional → must_fix 確認後判断
+  → verdict: approved → main にマージ
+  → verdict: blocked → 修正タスク作成 → Cast起床（下記「Red Team マージブロック対応」参照）
+  → verdict: conditional → must_fix を Cast に送付
   ↓
 失敗/ブロック報告？
   ├─ アーキテクチャ判断が必要？ → Design Debate Protocol（アドホック）を実行
@@ -1050,7 +1047,7 @@ Director 簡易レビュー or Script Supervisor 召喚
 approved → Red Team を起床（abbacchio）
   → send-message.sh でレビュー依頼:
     bash scripts/send-message.sh <red-team-slug> "Red Team レビュー依頼。<branch> ブランチを検証してください。タスク: #<task-id>"
-  → ここで停止。Red Team の報告を待つ
+  → ここで停止。Red Team が報告後に send-keys で再起床する
   ↓
 Red Team 報告（queue/reports/<red-team-slug>_report.yaml）を確認
   ↓
@@ -1068,6 +1065,11 @@ verdict: conditional
 ```
 
 **Red Team が roster.yaml にいない場合**: 二段階目をスキップし、Director レビュー approved で直接マージ。
+
+**verdict 用語の違い（注意）**:
+- Script Supervisor / Director 簡易レビュー: `approved` / `rejected`
+- Red Team: `approved` / `blocked` / `conditional`
+- `rejected`（レビュー不合格）と `blocked`（マージブロック）は対応する処理は同じ（修正タスク作成）。`conditional` は Red Team 固有（must_fix 付き条件付き承認）。
 
 ---
 

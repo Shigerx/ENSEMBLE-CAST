@@ -251,6 +251,7 @@ Claude Codeは「待機」できない。プロンプトが出た = スクリプ
 | dashboard.md | 全員 | **Director のみ**（v3ではLPが更新）。Red Team は「Red Team Findings」セクションのみ追記可 |
 | logs/activity.log | 全員 | **Director + Cast**（追記のみ。Cast は chat/progress イベントのみ） |
 | logs/<slug>_status.txt | 全員 | **対象Cast のみ**（上書き） |
+| logs/<red-team-slug>_status.txt | 全員 | **Red Team のみ**（上書き） |
 | logs/<reviewer-slug>_status.txt | 全員 | **Reviewer のみ**（上書き） |
 | logs/director_status.txt | 全員 | **Director のみ**（上書き） |
 
@@ -398,14 +399,17 @@ Claude Codeのコンテキストがコンパクションされた場合:
    - Director: `instructions/director.md`
    - Cast: `instructions/cast_template.md` + `cast/members/<slug>/persona.yaml`
    - Reviewer: `instructions/reviewer.md` + `cast/members/<slug>/persona.yaml`
+   - Red Team: `instructions/red_team.md` + `cast/members/<slug>/persona.yaml`
 
 5. **累積ファイルを読む**:
    - Cast: `cast/members/<slug>/chronicle.yaml`（**handoff セクションを最優先で確認**）
+   - Red Team: `cast/members/<slug>/chronicle.yaml` + `cast/roster.yaml`（全ブランチ巡回に必要）
    - Director: `cast/roster.yaml` + `dashboard.md` + `queue/design/`（Debate 進行中の場合）
    - Line Producer: `config/units.yaml` + `contracts/` + `dailies/` + `dashboard.md`
 
 6. **現在のタスクを確認**:
    - Cast: `queue/tasks/<slug>.yaml`
+   - Red Team: タスクキューなし。起床時に全ブランチ巡回 + レポート確認
    - Director: `queue/producer_to_director.yaml`（v2）/ `queue/lp_to_units/<unit>.yaml`（v3）
    - Line Producer: `queue/producer_to_lp.yaml` + `queue/inter_unit/`
 
