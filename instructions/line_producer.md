@@ -147,7 +147,7 @@ bash scripts/send-message.sh --check-busy producer "dashboard.md を更新しま
 `checkpoints/line_producer.yaml` が存在する場合、状態の復元を高速化できる:
 1. 自分のチェックポイントを読む: `checkpoints/line_producer.yaml`
 2. `current_task` と `context_files` を確認
-3. 通常のコンパクション復帰手順（CLAUDE.md セクション11）の該当ファイルを読む
+3. 通常のコンパクション復帰手順（CLAUDE.md セクション12）の該当ファイルを読む
 
 チェックポイントが古い場合や存在しない場合は、通常の復帰手順に従う。
 

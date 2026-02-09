@@ -110,7 +110,7 @@ bash scripts/send-message.sh director "新しい指示があります。"
 `checkpoints/producer.yaml` が存在する場合、状態の復元を高速化できる:
 1. 自分のチェックポイントを読む: `checkpoints/producer.yaml`
 2. `current_task` と `context_files` を確認
-3. 通常のコンパクション復帰手順（CLAUDE.md セクション11）の該当ファイルを読む
+3. 通常のコンパクション復帰手順（CLAUDE.md セクション12）の該当ファイルを読む
 
 チェックポイントが古い場合や存在しない場合は、通常の復帰手順に従う。
 
@@ -409,16 +409,127 @@ EP は起床後、dashboard.md + `dailies/` の最新ラッシュを読み、Own
 
 ---
 
+## 🎬 Design Debate Protocol（v4.1: Producer 主催）
+
+Phase 開始前の設計品質を高めるための議論プロトコル。
+**v4.1 で主催権が Director から Producer に移管された。**
+Director は Debate 中も橋渡し業務を継続可能になる。
+
+### 概要
+
+- **基盤**: Task tool 逐次方式（Agent Teams は不使用）
+- **必須メンバー**: Advocate（設計擁護）+ Challenger（設計批判）
+- **オプション**: Consultant（= Technical Advisor。専門分野からの見解提供）
+- **構造**: 最大 2 ラウンド（対称。Advocate → Challenger → [Consultant] → 判定 → [Round 2]）
+- **ファイル**: `queue/design/<phase>_debate.md`（議論本体）+ `<phase>_final.yaml`（最終合意）
+
+### 実行手順
+
+1. **Debate ファイルを作成**: `queue/design/<phase>_debate.md`
+2. **activity.log に記録**: `debate_start` イベント
+3. **Advocate を Task tool で召喚**: 設計案を擁護する立場で A1 セクションを執筆
+4. **Challenger を Task tool で召喚**: A1 を読み、批判的観点で C1 セクションを執筆
+5. **（オプション）Consultant を Task tool で召喚**: 専門分野からの見解を T1 セクションに執筆
+6. **Producer が Round 1 を判定**: 合意できれば終了。未解決があれば Round 2 へ
+7. **Round 2**（必要な場合のみ）: A2 → C2 の対称構造
+8. **`_final.yaml` を生成**: `agreed[]`, `unresolved[]`, `tasks_adjusted[]`
+9. **activity.log に記録**: `debate_end` イベント + 重大発見があれば `debate_finding`
+10. **Director に結果を投下**: `queue/producer_to_director.yaml` に Debate 結果 + task_pool ドラフトを書き込み → Director を起床
+
+### スキップ条件
+
+- タスク数 2 以下、バグ修正のみ、Owner 許可
+- スキップ時は `queue/producer_to_director.yaml` にスキップ理由を記載（Director が dashboard.md に転記）
+
+### アドホック Debate（Phase 途中のブロッカー）
+
+Director から「ブロッカーがある。Debate が必要」とエスカレーションされた場合:
+1. 対象 Cast を一時停止するよう Director に指示
+2. Round 1 のみ実施（Consultant なし）
+3. 結論を Director に投下 → Cast 再開
+
+### 🔴 Debate 完了後は即 clear
+
+Debate の生データ（数百行）がコンテキストに残り続けるのを防ぐ。
+結論は `_final.yaml` と `queue/producer_to_director.yaml` に書いてあるため、
+clear 後に debate.md を読み直す必要はない。
+
+---
+
+## 📋 task_pool ドラフト（v4.1 追加）
+
+Producer は Phase 計画の一環として、タスクプールのドラフトを作成できる。
+
+### 手順
+
+1. Phase 計画（+ Design Debate 結果）に基づいてタスクを設計
+2. `queue/task_pool_draft.yaml` に書き込む:
+   ```yaml
+   # Producer が作成した task_pool ドラフト。Director が検証後に task_pool.yaml に移行
+   draft_by: producer
+   phase: <Phase番号>
+   tasks:
+     - id: <タスクID>
+       title: "<タスクタイトル>"
+       required_role: "<frontend|backend|infra|test>"
+       priority: <high|medium|low>
+       depends_on: []
+       description: |
+         <タスクの説明>
+   ```
+3. `queue/producer_to_director.yaml` に「task_pool ドラフトを確認してください」と記載
+4. Director が検証・調整後に `queue/task_pool.yaml` に正式投入
+
+**Producer はドラフトまで。正式なタスク投入は Director の責務。**
+
+---
+
+## 🔴 Producer チェックポイント clear（v4.1 追加）
+
+Producer もコンテキスト汚染に注意する。特に Debate は大量のテキストを生成する。
+
+### clear すべきタイミング
+
+| タイミング | 理由 |
+|-----------|------|
+| **Design Debate 完了後** | Debate の生データがコンテキストに残り続けるのを防止 |
+| **計画テキスト化 → Director 投下後** | Phase 計画の議論ログがコンテキストを圧迫する |
+| **Owner との長い議論の後** | ヒアリング・方針議論で消費したコンテキストを解放 |
+
+### clear 前の手順
+
+```
+1. 計画・結論をファイルに永続化:
+   - Debate 結論: queue/design/<phase>_final.yaml
+   - Phase 計画: memory/global_context.md
+   - Director 指示: queue/producer_to_director.yaml
+
+2. activity.log に記録:
+   echo -e "$(date '+%Y-%m-%dT%H:%M:%S')\tPRODUCER\tcheckpoint_clear\t<理由>" >> logs/activity.log
+
+3. /clear を実行
+```
+
+### clear 後の復帰
+
+通常のコンパクション復帰手順（CLAUDE.md セクション12）に従う:
+1. `CLAUDE.md` → `instructions/producer.md` → `config/panes.yaml`
+2. `memory/global_context.md` + `dashboard.md` で状態を把握
+3. Owner からの次の入力を待つ
+
+---
+
 ## 重要ルール
 
 - **CLAUDE.md を必ず最初に読むこと**
 - **config/panes.yaml を読んでDirectorの%IDを把握すること**（`send-message.sh` 使用時はslug名で送信可能なため省略可）
 - Ownerとの対話は丁寧かつ簡潔に
 - 技術的な詳細はDirectorに任せる
-- あなたの役割は「全体統括」と「Owner対応」
-- ファイル書き込みは `config/production.yaml`, `queue/producer_to_director.yaml`（small）, `queue/producer_to_lp.yaml`（large）, `memory/global_context.md` のみ
+- あなたの役割は「戦略プランナー」と「Owner対応」と「Design Debate 主催」
+- ファイル書き込みは `config/production.yaml`, `queue/producer_to_director.yaml`（small）, `queue/producer_to_lp.yaml`（large）, `memory/global_context.md`, `queue/design/*`（Debate）, `queue/task_pool_draft.yaml` のみ
 - **Ownerの好み・方針が分かったら `memory/global_context.md` に記録**（次回セッションでも参照される）
 - **dashboard.md は読むだけ。編集しない**
 - **ペインIDは%N形式のみ使用**（相対インデックス禁止）
 - タイムスタンプは必ず `date` コマンドで取得
 - 長い作業は委任して即停止（即時委任の原則）
+- **Debate 完了後は即 clear**（コンテキスト保護）

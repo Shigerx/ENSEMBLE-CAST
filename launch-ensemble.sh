@@ -350,27 +350,36 @@ EOF
 create_session_small() {
   log_action "[5/7] tmuxセッション作成 + Claude Code 起動（scale: small）..."
 
-  # v4: Ownerペインなし。tmuxはAI専用。Ownerは別ターミナル（ens-couch等）から操作
-  # Directorが最初のペイン
+  # Producer が最初のペイン。Owner は tmux attach → Producer ペインに直接入力
   tmux new-session -d -s "$SESSION" -c "$PROJECT_PATH" -x 200 -y 50
-  DIRECTOR_PANE=$(tmux display-message -t "${SESSION}:0.0" -p '#{pane_id}')
-  tmux select-pane -t "$DIRECTOR_PANE" -T "director"
+  PRODUCER_PANE=$(tmux display-message -t "${SESSION}:0.0" -p '#{pane_id}')
+  tmux select-pane -t "$PRODUCER_PANE" -T "producer"
+
+  # Director ペイン作成
+  DIRECTOR_PANE=$(create_pane "director" "31")
 
   # panes.yaml 生成
   {
     echo "# ENSEMBLE CAST — ペインID管理"
     echo "# launch-ensemble.sh が生成。全エージェントが参照。"
     echo "# tmux固有ID（%N形式）はペイン追加・削除で変わらない。"
-    echo "# v4: Ownerペインなし。Ownerは別ターミナルから操作"
+    echo "producer: \"$PRODUCER_PANE\""
     echo "director: \"$DIRECTOR_PANE\""
     echo "cast:"
   } > "$PANES_YAML"
 
+  log_success "Producer pane: $PRODUCER_PANE"
   log_success "Director pane: $DIRECTOR_PANE"
 
-  # --- Director Claude Code 起動 ---
-  safe_send_keys "$DIRECTOR_PANE" "export PS1='(\033[1;31m🎬Director\033[0m) \033[1;32m\w\033[0m\$ '"
+  # --- Producer Claude Code 起動 ---
+  safe_send_keys "$PRODUCER_PANE" "export PS1='(\033[1;35m🎬Producer\033[0m) \033[1;32m\w\033[0m\$ '"
   sleep 0.5
+  safe_send_keys "$PRODUCER_PANE" "claude --dangerously-skip-permissions"
+  log_success "Producer Claude Code 起動 (thinking=on)"
+
+  sleep 1
+
+  # --- Director Claude Code 起動 ---
   safe_send_keys "$DIRECTOR_PANE" "claude --dangerously-skip-permissions"
   log_success "Director Claude Code 起動 (thinking=on)"
 
@@ -492,8 +501,8 @@ create_session_large() {
   # --- Claude Code 起動 ---
   safe_send_keys "$PRODUCER_PANE" "export PS1='(\033[1;35m🎬Producer\033[0m) \033[1;32m\w\033[0m\$ '"
   sleep 0.5
-  safe_send_keys "$PRODUCER_PANE" "MAX_THINKING_TOKENS=0 claude --dangerously-skip-permissions"
-  log_success "Producer Claude Code 起動 (Opus, thinking=off)"
+  safe_send_keys "$PRODUCER_PANE" "claude --dangerously-skip-permissions"
+  log_success "Producer Claude Code 起動 (thinking=on)"
 
   sleep 1
 
@@ -582,13 +591,27 @@ send_initial_instructions() {
 
   log_action "指示書を送信..."
 
-  # v4: Owner が人間なので、Director に直接指示を送る
   if [ "$FRESH_START" = true ]; then
-    safe_send_keys "$DIRECTOR_PANE" "CLAUDE.md と instructions/director.md を読んでください。あなたはDirectorです。新規スタートです。config/production.yaml を読んで映画とプロジェクト情報を確認してください。Ownerが直接あなたに指示を出します（Producerは人間＝Owner自身です）。Ownerからの指示を待ってください。ここで停止してください。"
+    # Producer に初期指示
+    safe_send_keys "$PRODUCER_PANE" "CLAUDE.md と instructions/producer.md を読んでください。あなたはProducerです。新規スタートです。Ownerからの指示を待ってください。ここで停止してください。"
+    log_success "Producer に指示書送信完了"
+
+    sleep 2
+
+    # Director に初期指示
+    safe_send_keys "$DIRECTOR_PANE" "CLAUDE.md と instructions/director.md を読んでください。あなたはDirectorです。新規スタートです。config/production.yaml を読んで映画とプロジェクト情報を確認してください。Producerからの指示を待ってください。ここで停止してください。"
+    log_success "Director に指示書送信完了"
   else
-    safe_send_keys "$DIRECTOR_PANE" "CLAUDE.md と instructions/director.md を読んでください。あなたはDirectorです。前回セッションからの再開です。dashboard.md, cast/roster.yaml, config/panes.yaml を確認してください。Ownerが直接あなたに指示を出します（Producerは人間＝Owner自身です）。Ownerからの指示を待ってください。ここで停止してください。"
+    # Producer に再開指示
+    safe_send_keys "$PRODUCER_PANE" "CLAUDE.md と instructions/producer.md を読んでください。あなたはProducerです。前回セッションからの再開です。dashboard.md を確認してOwnerからの指示を待ってください。ここで停止してください。"
+    log_success "Producer に再開指示送信完了"
+
+    sleep 2
+
+    # Director に再開指示
+    safe_send_keys "$DIRECTOR_PANE" "CLAUDE.md と instructions/director.md を読んでください。あなたはDirectorです。前回セッションからの再開です。dashboard.md, cast/roster.yaml, config/panes.yaml を確認してください。Producerからの指示を待ってください。ここで停止してください。"
+    log_success "Director に再開指示送信完了"
   fi
-  log_success "Director に指示書送信完了"
 
   # 継続モードの場合、Cast にも指示を送る
   if [ "$FRESH_START" = false ]; then
@@ -631,15 +654,22 @@ show_complete() {
   echo ""
 
   if [ "$scale" = "small" ]; then
-    echo -e "${MAGENTA}  👑 Owner（別ターミナル: ens-couch でモニタリング）${NC}"
+    echo -e "${MAGENTA}  👑 Owner（tmux attach → Producer ペインに直接入力）${NC}"
     echo -e "${MAGENTA}    │${NC}"
-    echo -e "${MAGENTA}    │ send-keys / tmux attach${NC}"
     echo -e "${MAGENTA}    ▼${NC}"
+    echo -e "${MAGENTA}    ┌─────────────┐${NC}"
+    echo -e "${MAGENTA}    │  🎬         │${NC}"
+    echo -e "${MAGENTA}    │  PRODUCER   │${NC}"
+    echo -e "${MAGENTA}    │  ($PRODUCER_PANE)       │${NC}"
+    echo -e "${MAGENTA}    │  戦略PL     │${NC}"
+    echo -e "${MAGENTA}    └──────┬──────┘${NC}"
+    echo -e "           ${MAGENTA}│${NC}"
+    echo -e "           ${MAGENTA}▼${NC}"
     echo -e "${RED}    ┌─────────────┐${NC}"
     echo -e "${RED}    │  🎬         │${NC}"
     echo -e "${RED}    │  DIRECTOR   │${NC}"
     echo -e "${RED}    │  ($DIRECTOR_PANE)       │${NC}"
-    echo -e "${RED}    │  テックリード│${NC}"
+    echo -e "${RED}    │  運用MGR     │${NC}"
     echo -e "${RED}    └──────┬──────┘${NC}"
     echo -e "           ${RED}│${NC}"
     echo -e "    ┌──────${RED}┼${NC}──────┬──────────┐"
@@ -688,9 +718,9 @@ EOF
   echo -e "    ${CYAN}tmux attach-session -t ensemble${NC}"
   echo ""
   echo -e "${DIM}  ペインIDは config/panes.yaml に記録済み。${NC}"
-  echo -e "${DIM}  v4: tmux は AI 専用。Owner は別ターミナルから操作。${NC}"
+  echo -e "${DIM}  Owner は tmux attach → Producer ペインに直接入力${NC}"
   echo -e "${DIM}  モニタリング: ens-couch（別ターミナルで実行）${NC}"
-  echo -e "${DIM}  Director に指示: tmux send-keys -t \"<director_pane_id>\" \"指示内容\"${NC}"
+  echo -e "${DIM}  Producer ペインID: config/panes.yaml 参照${NC}"
   echo ""
 }
 

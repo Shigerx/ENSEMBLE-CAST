@@ -7,22 +7,501 @@
 # - Director は定期的に task_pool を確認し、滞留タスクがないか監視する
 
 pool:
-  # 例:
-  # - id: 1
-  #   title: "リサーチAPI CRUD実装"
-  #   description: |
-  #     GET/POST/PUT/DELETE の4エンドポイントを実装
-  #   priority: high          # high | medium | low
-  #   status: available       # available | claimed | completed | blocked
-  #   required_role: "BE"     # 取得条件: dev_role が一致する Cast のみ
-  #   required_skills: []     # 追加のスキル条件（オプション）
-  #   semantic_group: null    # 同一グループは直列化（既存ルール）
-  #   depends_on: []          # 依存タスク
-  #   owned_files:            # 排他ファイル
-  #     - "src/api/routes/research.ts"
-  #   shared_files: []        # 統合時に調整するファイル
-  #   branch: null            # Director がブランチ作成後に記入
-  #   worktree: null          # Director が worktree 作成後に記入
-  #   claimed_by: null        # Cast が取得時に slug を記入
-  #   claimed_at: null
-  #   created_at: null        # Director が date コマンドで記入
+  # ============================================================
+  # Phase 9: FLARE カタログ化 + レポート品質改善
+  # ============================================================
+
+  # --- Wave 1 ---
+  - id: 39
+    title: "DB スキーマ拡張 + API 更新 + types.ts"
+    priority: critical
+    status: completed
+    required_role: "インフラ/DB"
+    depends_on: []
+    owned_files:
+      - "schema.sql"
+      - "src/lib/types.ts"
+      - "src/lib/db.ts"
+      - "src/pages/api/research.ts"
+      - "src/pages/api/categories.ts"
+    branch: "cast/mista/39-db-schema-api"
+    worktree: "/tmp/mista-39"
+    claimed_by: mista
+    claimed_at: "2026-02-09T19:38:13"
+    created_at: "2026-02-09T19:38:13"
+
+  - id: 40
+    title: "Gemini パイプライン拡張: Stage 2.5 メタデータ抽出 + プロンプト強化"
+    priority: high
+    status: completed
+    required_role: "バックエンドリード"
+    depends_on: [39]
+    owned_files:
+      - "src/lib/gemini.ts"
+      - "worker/src/index.ts"
+    shared_files:
+      - "src/lib/types.ts"
+      - "src/lib/db.ts"
+    branch: "cast/bucciarati/40-pipeline-metadata"
+    worktree: "/tmp/bucciarati-40"
+    claimed_by: bucciarati
+    claimed_at: null
+    created_at: "2026-02-09T19:38:13"
+
+  - id: 41
+    title: "サイドバーレイアウト + @tailwindcss/typography + PROSE_CLASSES 改善"
+    priority: high
+    status: completed
+    required_role: "フロントエンドリード"
+    depends_on: []
+    owned_files:
+      - "src/styles/global.css"
+      - "src/layouts/BaseLayout.astro"
+      - "src/components/Sidebar.tsx"
+    shared_files:
+      - "src/components/knowledge/ResearchDetail.tsx"
+      - "package.json"
+      - "package-lock.json"
+    branch: "cast/giorno/41-sidebar-typography"
+    worktree: "/tmp/giorno-41"
+    claimed_by: giorno
+    claimed_at: "2026-02-09T19:38:13"
+    created_at: "2026-02-09T19:38:13"
+
+  # --- Wave 2（Wave 1 完了後） ---
+  - id: 42
+    title: "ナレッジカタログ UI（カード・グリッド/リスト・カテゴリフィルタ）"
+    priority: high
+    status: completed
+    required_role: "UI実装"
+    depends_on: [39, 41]
+    owned_files:
+      - "src/components/knowledge/KnowledgeCard.tsx"
+      - "src/components/knowledge/KnowledgeList.tsx"
+    branch: "cast/narancia/42-catalog-ui"
+    worktree: "/tmp/narancia-42"
+    claimed_by: narancia
+    claimed_at: "2026-02-09T19:53:00"
+    created_at: "2026-02-09T19:38:13"
+
+  - id: 43
+    title: "ソース引用可視化 + D3 チャート CSS 変数化"
+    priority: medium
+    status: completed
+    required_role: "バックエンドリード"
+    depends_on: [40, 41]
+    owned_files:
+      - "src/components/charts/BarChart.tsx"
+      - "src/components/charts/LineChart.tsx"
+      - "src/components/charts/PieChart.tsx"
+      - "src/components/charts/RadarChart.tsx"
+    shared_files:
+      - "src/components/knowledge/ResearchDetail.tsx"
+    branch: "cast/bucciarati/43-source-viz-d3"
+    worktree: "/tmp/bucciarati-43"
+    claimed_by: bucciarati
+    claimed_at: "2026-02-09T20:00:29"
+    created_at: "2026-02-09T19:38:13"
+
+  # --- Wave 3 ---
+  - id: 44
+    title: "Phase 9 統合 + 手動バックフィル + ビジュアル確認 + CF Pages/Consumer デプロイ"
+    priority: critical
+    status: completed
+    required_role: "インフラ/DB"
+    depends_on: [39, 40, 41, 42, 43]
+    branch: "cast/mista/44-phase9-integration"
+    worktree: "/tmp/mista-44"
+    claimed_by: mista
+    claimed_at: "2026-02-09T20:16:06"
+    created_at: "2026-02-09T19:38:13"
+
+  # ============================================================
+  # Phase 10: マガジンリデザイン + パイプライン品質改善
+  # Design Debate: queue/design/phase10_final.yaml
+  # ============================================================
+
+  # --- Wave 1（全並行） ---
+  - id: 45
+    title: "DBスキーマ拡張（複数画像 + 関連リサーチ対応）"
+    priority: critical
+    status: completed
+    required_role: "インフラ/DB"
+    depends_on: []
+    description: |
+      Phase 10 基盤タスク。researches テーブルに以下を追加:
+      1. images TEXT — JSON配列。セクション別画像のR2キー一覧 [{"key":"research/{id}/section_0.png","caption":"...","section":"executive_summary"}, ...]
+      2. related_topics TEXT — JSON配列。関連リサーチのキーワード ["AI エージェント", "LLM 比較", ...]
+      3. section_images_count INTEGER DEFAULT 0 — 生成済みセクション画像数
+
+      schema.sql に ALTER TABLE 追加。
+      src/lib/types.ts の Research 型に images, related_topics, section_images_count を追加。
+      src/lib/db.ts に画像メタデータ更新関数と関連リサーチ検索関数を追加:
+      - updateResearchImages(db, id, images) — images JSON を更新
+      - findRelatedResearches(db, id, limit) — 同カテゴリ or キーワードマッチで関連を返す（自身を除外）
+
+      D1マイグレーション SQL も作成すること。
+    owned_files:
+      - "schema.sql"
+      - "src/lib/types.ts"
+      - "src/lib/db.ts"
+    branch: "cast/mista/45-db-schema-images"
+    worktree: "/tmp/mista-45"
+    claimed_by: null
+    claimed_at: null
+    created_at: "2026-02-09T21:40:00"
+
+  - id: 46
+    title: "パイプライン全面改修（日付注入 + プロンプト強化 + チャート改善）"
+    priority: critical
+    status: completed
+    required_role: "バックエンドリード"
+    depends_on: []
+    description: |
+      Gemini パイプラインの品質を大幅向上させる。src/lib/gemini.ts を改修。
+
+      **1. 日付注入（最重要）**
+      - TRIAGE_SYSTEM_PROMPT と RESEARCH_SYSTEM_PROMPT の冒頭に「本日の日付: {current_date}」を動的に挿入
+      - Worker Consumer (worker/src/index.ts) で `new Date().toISOString().split('T')[0]` を取得し、プロンプトに渡す
+      - 「来年」「最新」等の相対表現を正確に解決させる指示を追加
+
+      **2. リサーチプロンプト強化（NotebookLM級を目指す）**
+      - 調査の深さ: 各セクションに「なぜそうなるのか」「具体的な事例」「数値データ」を必須化
+      - ソースの質: 「公式ドキュメント、学術論文、信頼性の高いメディアを優先」を明示
+      - 構造: Executive Summary → Background → 詳細分析（3セクション以上）→ データ/チャート → 今後の展望 → 結論 → 参考文献
+      - 文字数: 最低 5000 文字の本文を要求
+      - 画像プレースホルダー: 各主要セクションの後に `![section_image_N](placeholder)` を挿入させる（N=0,1,2...）。
+        最低3枚のプレースホルダーを要求
+
+      **3. チャート改善**
+      - チャートブロックに「このデータは本文のどのセクションに基づくか」を明記させる
+      - 「ダミーデータ禁止。本文に記載した数値・比較データのみをチャート化すること」を強調
+      - チャート種別の選択基準を明示: 比較→bar、推移→line、構成比→pie、多軸評価→radar
+
+      **4. Grounding 強化**
+      - complexity が "deep" でなくても、Google Search Grounding を常時有効化
+      - 検索クエリの質を向上（プロンプトで「具体的な検索キーワードを3-5個指定」）
+
+      **注意**: types.ts, db.ts は mista (#45) が変更中。images 関連の型変更は #45 に任せる。
+      プロンプト文字列と gemini.ts 内の関数ロジックのみ変更すること。
+    owned_files:
+      - "src/lib/gemini.ts"
+      - "worker/src/index.ts"
+    shared_files:
+      - "src/lib/types.ts"
+      - "src/lib/db.ts"
+    branch: "cast/bucciarati/46-pipeline-overhaul"
+    worktree: "/tmp/bucciarati-46"
+    claimed_by: null
+    claimed_at: null
+    created_at: "2026-02-09T21:40:00"
+
+  - id: 47
+    title: "ホワイトテーマ基盤（global.css + shadcn + 全ページ調整）"
+    priority: high
+    status: completed
+    required_role: "フロントエンドリード"
+    depends_on: []
+    description: |
+      ダークモード廃止 → ホワイトベースの洗練されたテーマに全面移行。
+      参考: https://demo.tcd-theme.com/tcd112/ (ARTISAN テーマ)
+
+      **1. global.css 全面改修**
+      - @custom-variant dark を削除
+      - @theme のカラー変数をホワイトベースに:
+        - background: #ffffff or #fafafa
+        - foreground: #1a1a1a
+        - card: #ffffff
+        - muted: #f5f5f5
+        - border: #e5e5e5
+        - primary: 上品なアクセントカラー（ARTISAN参考: ティール系 or ネイビー系）
+      - フォント: Inter + 日本語（Noto Sans JP or system）
+
+      **2. ThemeToggle.tsx 廃止**
+      - ファイル削除
+      - Sidebar.tsx から ThemeToggle の import/使用を除去
+      - <html> タグから class="dark" 関連ロジックを除去（Layout.astro）
+
+      **3. Sidebar.tsx リスタイル**
+      - 現在のダーク背景 → ホワイト or ライトグレー
+      - ARTISAN風のミニマルナビ（ロゴ + テキストリンク）
+      - アクティブ状態のスタイリング
+
+      **4. 既存ページの調整**
+      - index.astro: ダーク前提のクラスを修正（text-white → text-gray-900 等）
+      - research/index.astro: フォーム周りの色調整
+      - BaseLayout.astro: 背景色・テキスト色の基盤変更
+      - Layout.astro: dark class 除去
+
+      **注意**: knowledge/ ページの大幅レイアウト変更は Wave 2 (#50, #51) で実施。
+      このタスクではカラーとテーマの基盤のみ。KnowledgeCard/KnowledgeList の色は調整するが
+      レイアウト構造は変更しない。
+    owned_files:
+      - "src/styles/global.css"
+      - "src/components/ThemeToggle.tsx"
+      - "src/components/Sidebar.tsx"
+      - "src/layouts/BaseLayout.astro"
+      - "src/layouts/Layout.astro"
+      - "src/pages/index.astro"
+      - "src/pages/research/index.astro"
+    branch: "cast/giorno/47-white-theme"
+    worktree: "/tmp/giorno-47"
+    claimed_by: null
+    claimed_at: null
+    created_at: "2026-02-09T21:40:00"
+
+  - id: 48
+    title: "コンポーネント分割（ResearchDetail 分解）"
+    priority: high
+    status: completed
+    required_role: "UI実装"
+    depends_on: []
+    description: |
+      ResearchDetail.tsx（1300行）を保守可能な単位に分割する。
+      機能変更なし。リファクタリングのみ。
+
+      **分割先:**
+      1. `src/components/knowledge/ArticleBody.tsx` — Markdown本文レンダリング + チャート埋め込み
+         - parseContentSegments(), renderMarkdownSegment() を移動
+         - PROSE_CLASSES 定義を移動
+         - Executive Summary カード、セクション区切り等のポストプロセッサ
+
+      2. `src/components/knowledge/ImageGallery.tsx` — セクション画像表示（Wave 2 で雑誌風に改修予定）
+         - 現在のサムネイル表示ロジックを移動
+         - 将来の複数画像表示に対応できるProps設計（images: Array<{key, caption, section}>）
+
+      3. `src/components/knowledge/SourcePanel.tsx` — ソース引用パネル
+         - source_urls 表示、ファビコン、ドメイン抽出ロジックを移動
+
+      4. `src/components/knowledge/RelatedSection.tsx` — 関連リサーチ表示（スケルトン）
+         - Props: relatedResearches: Array<{id, title, thumbnail_url, category}>
+         - Wave 2 (#52) でデータ接続予定。このタスクではUI枠だけ作る
+
+      5. `src/components/knowledge/ProgressView.tsx` — リサーチ進行中の表示
+         - ポーリングロジック、プログレスバー、ステップ表示を移動
+
+      **ResearchDetail.tsx に残すもの:**
+      - 状態管理（polling, edit, delete）
+      - 各子コンポーネントの組み立て（レイアウトコンテナ）
+      - ヘッダー（タイトル、メタ情報、操作ボタン）
+
+      **注意**: 見た目は現状と完全に同じであること。CSSクラスも含めてそのまま移動。
+      ビジュアルの差分が出ない「純粋リファクタリング」を徹底。
+    owned_files:
+      - "src/components/knowledge/ResearchDetail.tsx"
+      - "src/components/knowledge/ArticleBody.tsx"
+      - "src/components/knowledge/ImageGallery.tsx"
+      - "src/components/knowledge/SourcePanel.tsx"
+      - "src/components/knowledge/RelatedSection.tsx"
+      - "src/components/knowledge/ProgressView.tsx"
+    branch: "cast/narancia/48-component-split"
+    worktree: "/tmp/narancia-48"
+    claimed_by: null
+    claimed_at: null
+    created_at: "2026-02-09T21:40:00"
+
+  # --- Wave 2（Wave 1 完了後・全並行） ---
+  - id: 49
+    title: "複数画像生成パイプライン（セクション別画像 + R2保存）"
+    priority: high
+    status: completed
+    required_role: "バックエンドリード"
+    depends_on: [45, 46]
+    description: |
+      リサーチ結果のセクションごとに画像を生成し、R2に保存する。
+
+      **1. 画像生成フロー**
+      - Research結果のMarkdownから `![section_image_N](placeholder)` を検出
+      - 各プレースホルダーの前後200文字をコンテキストとして抽出
+      - Gemini Pro Image で「このセクション内容を表すビジュアル」を生成
+      - 画像プロンプトに本文の要約+セクションタイトルを含めて具体性を上げる
+
+      **2. R2保存**
+      - キー: `research/{id}/section_{N}.png` (N=0,1,2...)
+      - サムネイルは従来通り `research/{id}/thumbnail.png`
+      - 画像メタデータを images JSON配列として D1 に保存（#45 の型を使用）
+
+      **3. Worker Consumer 改修**
+      - Stage 3 を拡張: サムネイル1枚 → サムネイル + セクション画像（最大5枚）
+      - 各画像生成は並列実行（Promise.allSettled）
+      - 画像生成失敗は個別にスキップ（他の画像に影響しない）
+      - タイムアウト: 画像全体で120秒
+
+      **4. Markdown置換**
+      - 生成完了後、result テキスト内の `![section_image_N](placeholder)` を
+        `![section_image_N](/api/images/research/{id}/section_{N}.png)` に置換して D1 更新
+
+      **コスト見積もり**: 1リサーチあたり画像3-5枚 × $0.04 = $0.12-0.20 追加
+    owned_files:
+      - "src/lib/gemini.ts"
+      - "worker/src/index.ts"
+      - "src/lib/r2.ts"
+    shared_files:
+      - "src/lib/types.ts"
+      - "src/lib/db.ts"
+    branch: "cast/bucciarati/49-multi-image-pipeline"
+    worktree: "/tmp/bucciarati-49"
+    claimed_by: null
+    claimed_at: null
+    created_at: "2026-02-09T21:40:00"
+
+  - id: 50
+    title: "トップページ + ナレッジカタログ（ARTISAN風画像グリッド）"
+    priority: high
+    status: completed
+    required_role: "フロントエンドリード"
+    depends_on: [47, 48]
+    description: |
+      ARTISAN (tcd112) を参考に、カタログ＋マガジン風のページデザインを実装。
+
+      **1. トップページ (index.astro) 全面リデザイン**
+      - ヒーロー: ARTISAN風フルブリード画像グリッド（最新リサーチ3-6件のサムネイルをモザイク配置）
+        - CSS Grid で不均等タイル（大1 + 中2 + 小3 等）
+        - 各タイルに画像＋タイトルオーバーレイ（半透明グラデーション背景）
+      - 下部: シンプルなCTAセクション（「リサーチを始める」ボタン）
+      - ARTISAN同様、最小限のテキスト。ビジュアルで語るデザイン
+
+      **2. ナレッジ一覧 (knowledge/index.astro + KnowledgeList + KnowledgeCard)**
+      - カード: 画像フルブリード（カード全体が画像）
+        - 画像の上にグラデーションオーバーレイ
+        - 下部にタイトル + カテゴリバッジ + 日付（白文字）
+        - ホバー時: 軽いスケールアップ + オーバーレイ濃度変化
+      - グリッド: ARTISAN風の不均等グリッド（先頭は大きく、残りは3列等分）
+      - カテゴリフィルタ: 横並びタブ（ARTISAN のギャラリーカテゴリ参考）
+      - サムネイルがない場合: カテゴリに応じたデフォルトグラデーション背景
+
+      **3. レスポンシブ**
+      - モバイル: 1列フルワイド
+      - タブレット: 2列
+      - デスクトップ: 3列（先頭記事は2列スパン）
+
+      参考スクリーンショット: /tmp/artisan-reference-fullpage.png, /tmp/artisan-gallery-fullpage.png
+    owned_files:
+      - "src/pages/index.astro"
+      - "src/components/knowledge/KnowledgeCard.tsx"
+      - "src/components/knowledge/KnowledgeList.tsx"
+      - "src/pages/knowledge/index.astro"
+    branch: "cast/giorno/50-magazine-catalog"
+    worktree: "/tmp/giorno-50"
+    claimed_by: null
+    claimed_at: null
+    created_at: "2026-02-09T21:40:00"
+
+  - id: 51
+    title: "レポート雑誌レイアウト（写真＋テキスト交互配置）"
+    priority: high
+    status: completed
+    required_role: "UI実装"
+    depends_on: [47, 48]
+    description: |
+      リサーチ詳細ページを旅行雑誌/ファッション誌のようなレイアウトに改修。
+
+      **1. ArticleBody.tsx 改修**
+      - セクション間に画像を大きく配置（フルワイド or 2/3幅）
+        - `![section_image_N]` を検出し、<figure> + <figcaption> でラップ
+        - 画像の配置を交互に（左寄せ→右寄せ→フルワイド のリズム）
+      - Executive Summary: カード型ではなくリード文スタイル（大きめフォント + 左ボーダー）
+      - セクション見出し: 大きなタイポグラフィ + 上下余白たっぷり
+      - 本文: 読みやすい行間（1.8em）、最大幅 680px でセンタリング
+
+      **2. ImageGallery.tsx 改修**
+      - 記事上部にヒーロー画像（サムネイルをフルワイド表示）
+      - セクション画像がある場合: 記事下部にギャラリーグリッド（2列）
+      - ライトボックス風の画像拡大表示（クリックで拡大）
+
+      **3. SourcePanel.tsx 改修**
+      - 記事末尾にエレガントな引用セクション
+      - ファビコン + ドメイン名 + リンク（カード風）
+      - 参考: 学術論文の参考文献リスト風
+
+      **4. 全体レイアウト（knowledge/[id].astro）**
+      - サイドバーを非表示（記事ページではフルワイド）
+      - 上部: パンくずリスト + カテゴリバッジ
+      - ヒーロー画像 → タイトル（大） → メタ情報（読了時間・日付）→ 本文 → ソース → 関連
+
+      **5. チャート表示改善**
+      - ライトテーマ対応（背景白、テキスト黒）
+      - チャート周りに余白とキャプション
+      - カード型の囲みでチャートを強調
+
+      参考スクリーンショット: /tmp/artisan-article-fullpage.png
+    owned_files:
+      - "src/components/knowledge/ArticleBody.tsx"
+      - "src/components/knowledge/ImageGallery.tsx"
+      - "src/components/knowledge/SourcePanel.tsx"
+      - "src/pages/knowledge/[id].astro"
+    shared_files:
+      - "src/styles/global.css"
+    branch: "cast/narancia/51-magazine-layout"
+    worktree: "/tmp/narancia-51"
+    claimed_by: null
+    claimed_at: null
+    created_at: "2026-02-09T21:40:00"
+
+  - id: 52
+    title: "関連リサーチ提案機能（API + UI）"
+    priority: medium
+    status: completed
+    required_role: "インフラ/DB"
+    depends_on: [45, 48]
+    description: |
+      リサーチ閲覧後に関連テーマを提案する機能を追加。
+
+      **1. API (src/pages/api/research/[id]/related.ts)**
+      - GET /api/research/{id}/related
+      - #45 で実装した findRelatedResearches() を呼び出し
+      - マッチ基準:
+        a. 同カテゴリの他リサーチ
+        b. キーワード（related_topics）の部分一致
+      - 結果: 最大5件。id, ai_title, ai_summary, thumbnail_url, ai_category を返す
+      - 自身（リクエスト元のid）は除外
+
+      **2. RelatedSection.tsx の実装完成**
+      - #48 で作成したスケルトンにデータフェッチを接続
+      - useEffect + fetch('/api/research/{id}/related')
+      - UIデザイン:
+        - 「関連リサーチ」見出し
+        - 横スクロール or 3列グリッドのミニカード
+        - 各カード: サムネイル + タイトル + カテゴリバッジ
+        - カードクリックで /knowledge/{id} に遷移
+      - データなし時: セクション非表示（空なら表示しない）
+
+      **3. related_topics の自動抽出**
+      - Worker Consumer で metadata 抽出時に related_topics も生成
+      - Gemini Flash に「関連トピックを5個、検索キーワード形式で出力」を追加
+      - worker/src/index.ts の Stage 2.5 を拡張
+    owned_files:
+      - "src/pages/api/research/[id]/related.ts"
+      - "src/components/knowledge/RelatedSection.tsx"
+    shared_files:
+      - "src/lib/db.ts"
+      - "src/lib/types.ts"
+      - "worker/src/index.ts"
+      - "src/lib/gemini.ts"
+    branch: "cast/mista/52-related-research"
+    worktree: "/tmp/mista-52"
+    claimed_by: null
+    claimed_at: null
+    created_at: "2026-02-09T21:40:00"
+
+  # --- Wave 3（統合） ---
+  - id: 53
+    title: "Phase 10 統合 + 既存データ再生成 + CF Pages/Consumer デプロイ"
+    priority: critical
+    status: available
+    required_role: "インフラ/DB"
+    depends_on: [49, 50, 51, 52]
+    description: |
+      全ブランチを main に統合し、本番デプロイ。
+
+      1. 全 Wave 2 ブランチのマージ（コンフリクト解消）
+      2. D1 マイグレーション実行（ALTER TABLE）
+      3. Worker Consumer デプロイ（新パイプライン）
+      4. CF Pages デプロイ（新UI）
+      5. 既存リサーチ3件を再実行（新パイプラインで品質確認）
+      6. ビジュアル確認（スクリーンショット撮影）
+    branch: "cast/mista/53-phase10-integration"
+    worktree: "/tmp/mista-53"
+    claimed_by: null
+    claimed_at: null
+    created_at: "2026-02-09T21:40:00"

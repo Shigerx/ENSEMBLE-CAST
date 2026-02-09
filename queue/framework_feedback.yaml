@@ -73,6 +73,70 @@ feedback:
       debate_finding の記録基準: 「脚本に使える」ドラマ的価値がある発見のみ（1 Debate あたり 0〜3 件）。
     timestamp: "2026-02-09T18:00:00"
 
+  - id: FB-003
+    reporter: owner
+    category: suggestion
+    title: "助監督（AD）導入によるパイプライン化"
+    detail: |
+      ## 課題: Director のボトルネック
+
+      現状の Director は2つの全く異なる仕事を直列でやっている:
+        1. 戦略業務: Design Debate、タスク設計、Owner との次工程打合せ
+        2. 橋渡し業務: Cast レポート処理、マージ判断、次タスク配布
+
+      結果:
+        - Phase 開始時に Cast が 15-20分 idle（Director が計画中）
+        - 開発中は Director が橋渡しに専念 → 次 Phase の計画ができない
+        - Director のコンテキストが全方位の情報で汚染 → コンパクション
+
+      ## 解決策: AD + パイプライン化
+
+      現状（直列）:
+        Phase N 計画(20分) → Cast作業 → 橋渡し → Phase N+1 計画(20分) → ...
+
+      提案（並列パイプライン）:
+        Phase N 計画 → Cast作業開始 → AD が橋渡し
+                                     → Director + Owner で Phase N+1 計画
+                                                      → Cast完了 → すぐ N+1 へ
+
+      AD の責務（橋渡し業務の代行）:
+        - Cast レポートを読み、要約して Director に渡す（or 自律的に承認）
+        - dashboard.md 更新の代行
+        - 簡易レビュー（ビルド通るか等の機械的チェック）
+        - Cast への次タスク配布（Director が事前に用意した task_pool から）
+
+      Director の責務（戦略業務に集中）:
+        - Design Debate 主催
+        - Owner との次工程打合せ
+        - タスクプール設計
+        - 最終的なマージ判断（AD から要約を受けて）
+
+      ## 実装方針
+
+      案1: AD を Task tool + Haiku で都度召喚（軽量・安価）
+      案2: AD を tmux 常駐ペインで配置（レスポンス速度重視）
+
+      ## 副次効果
+
+      - Cast Manager（案2）: 将来的に AD 配下で情報圧縮を担当
+        - タスク配布時: プロジェクトコンテキストから必要情報だけ抽出して Cast に渡す
+        - 完了時: Cast の成果物を圧縮して AD に渡す
+
+      ## コスト判断
+
+      - 時間 > API コスト（Owner の判断）
+      - Haiku の要約タスクは安価
+      - コンパクション事故の手戻り > AD の運用コスト
+      - 待ち時間の解消がプロジェクト全体のスループットを向上
+
+      ## 前提条件
+
+      - checkpoint clear の効果を実戦検証してから最終判断
+      - ただし設計は先行して進めてよい（Owner 意向: やりたい）
+    impact: high
+    status: open
+    timestamp: "2026-02-09"
+
 # 例:
 # - id: FB-001
 #   reporter: giorno

@@ -8,33 +8,34 @@
 ## 1. 階層構造
 
 `config/production.yaml` の `scale` 設定でモードが決まる:
-- `scale: small` → v2モード（Owner → Director → Cast）
+- `scale: small` → v2モード（Owner → Producer → Director → Cast）
 - `scale: large` → v3モード（Producer → LP → Director×N → Cast）
 
-### v2構造（scale: small）— v4 改訂
+### v2構造（scale: small）— v4.1 改訂
 
 ```
-Owner（人間・上様）= Producer
-  ↓ tmux で直接対話    ↑ dashboard.md
+Owner（人間・上様）
+  ↓ tmux attach → Producer ペインに直接入力
 ┌──────────────┐
-│   DIRECTOR   │ ← テックリード（タスクプール設計・マージ判断・Design Debate主催）
+│   PRODUCER   │ ← 戦略プランナー（Phase計画・Design Debate主催・task_poolドラフト）
+└──────┬───────┘
+       ↓ queue/producer_to_director.yaml + send-keys  ↑ dashboard.md + send-keys
+┌──────────────┐
+│   DIRECTOR   │ ← 運用マネージャー（橋渡し・マージ判断・タスク配布）
 └──────┬───────┘
        ↓ task_pool.yaml / tasks/  ↑ report.yaml + send-keys
 ┌───────────────────────────────────────────────────┐
 │ C1 │ C2 │ C3 │ ... │ RED TEAM │                   │
 ├───────────────────────┼───────────────────────────┤
 │  Cast (実装)          │  Red Team (独立品質検証)  │
-│  ←→ discussion/ 直接通信                          │
+│  ←→ discussion/ 直接通信     Stand (Task tool)    │
 └───────────────────────┴───────────────────────────┘
 ```
 
-**v4変更点**: Producer は人間（Owner）自身。AI Producerペインは廃止。
-Owner が Director に直接指示する。Director は「テックリード」としてタスクプール設計・マージ判断に専念。
-
-**Reviewer（脚本監修）**: Castの一員だが、コードを書かずにレビューのみ行う特殊役割。
-- ビルド・テスト・仕様準拠を実際にコマンド実行して検証
-- 問題があればDirectorに報告（Castには直接指示しない）
-- 指示書: `instructions/reviewer.md`
+**v4.1変更点**: AI Producer を tmux 常駐ペインで復活。Owner は Producer ペインに直接入力。
+- **Producer**: 戦略プランナー。Phase計画・Design Debate主催・task_poolドラフト
+- **Director**: 運用マネージャー。橋渡し・マージ判断に特化（Debateから解放）
+- **Red Team Stand**: Task tool + Haiku で機械的チェックをオフロード。Red Team 本体のコンテキスト保護
 
 ### v3構造（scale: large）
 
@@ -78,12 +79,12 @@ LP（ラインプロデューサー）が現場統括を担い、複数ユニッ
 - send-keysは %ID を直接指定: `tmux send-keys -t "%5" "message"`
 
 ```yaml
-# config/panes.yaml の例（v2: scale: small — v4 改訂）
-# v4: Ownerペインなし。tmuxはAI専用。Ownerは別ターミナル（ens-couch等）から操作
-director: "%0"
+# config/panes.yaml の例（v2: scale: small — v4.1）
+producer: "%0"
+director: "%1"
 cast:
-  botan: "%1"
-  lamy: "%2"
+  botan: "%2"
+  lamy: "%3"
 ```
 
 ```yaml
@@ -138,20 +139,21 @@ bash scripts/wake-agent.sh "%1" "送信テキスト"
 ## 4. 通信プロトコル（イベント駆動・ポーリング禁止）
 
 ### 上→下（指示）: YAML書き込み + send-keysで起床
-- Owner → Director: Ownerが直接 tmux で Director に入力（v4: Producer廃止）
+- Owner → Producer: Owner が tmux attach → Producer ペインに直接入力
+- Producer → Director: `queue/producer_to_director.yaml` → send-keys で起床
 - Director → Cast: YAML書き込み → `scripts/wake-agent.sh` で起床
 - **v3追加**: Producer → LP: `queue/producer_to_lp.yaml` → wake-agent.sh
 - **v3追加**: LP → Director: `queue/lp_to_units/<unit>.yaml` → wake-agent.sh
 
 ### 下→上（報告）: ファイル書き込み + send-keysで起床
 - Cast → Director: `queue/reports/<slug>_report.yaml` に書き込み → send-keysでDirectorを起床
-- Director → Owner: `dashboard.md` を更新（v4: Ownerは人間なので send-keys 不要。dashboard.md を読むだけ）
+- Director → Producer: `dashboard.md` を更新 → send-keysでProducerを起床（要Busy/Idleチェック）
 - **v3追加**: Director → LP: ユニットレポート → send-keysでLPを起床
 - **v3追加**: LP → Producer: `dashboard.md` + デイリーラッシュ → send-keysでProducerを起床
 
-**v4（scale: small）**: Director → Owner への send-keys は不要。Owner は人間なので dashboard.md を直接読む。
+- Producer → Director へのsend-keys時はBusy/Idleチェックを行うこと（Director処理中の割り込み防止）。
 - **v3追加**: Director → LP へのsend-keys時はBusy/Idleチェックを行うこと。
-- **v3追加**: LP → Producer へのsend-keys時も上記と同じルールを適用する（Owner入力中の割り込み防止）。
+- **v3追加**: LP → Producer へのsend-keys時も上記と同じルールを適用する。
 
 ### 横（キャスト間）: queue/discussion/ 経由で通信可能（v4 追加）
 - キャスト同士は `queue/discussion/` 経由でコミュニケーション可能（セクション23参照）
@@ -226,10 +228,11 @@ Claude Codeは「待機」できない。プロンプトが出た = スクリプ
 | ファイル | 読み | 書き |
 |---------|------|------|
 | config/panes.yaml | 全員 | launch-ensemble.sh / Director（cast追記） |
-| config/production.yaml | 全員 | Owner のみ（v4: Producer=人間） |
-| memory/global_context.md | 全員 | Owner のみ（v4: Producer=人間） |
+| config/production.yaml | 全員 | Producer のみ |
+| memory/global_context.md | 全員 | Producer のみ |
 | context/{project}.md | 全員 | Director / Cast |
-| queue/producer_to_director.yaml | Director | Owner のみ（v4 scale:small では未使用。Owner が直接指示） |
+| queue/producer_to_director.yaml | Director | Producer のみ |
+| queue/task_pool_draft.yaml | Director + Producer | Producer のみ（ドラフト作成） |
 | cast/roster.yaml | 全員 | Director のみ |
 | cast/members/*/persona.yaml | 対象Cast + Director | Director（スケルトン作成）/ 対象Cast（リサーチ更新） |
 | cast/members/*/chronicle.yaml | 対象Cast + Director | 対象Cast のみ |
@@ -244,20 +247,20 @@ Claude Codeは「待機」できない。プロンプトが出た = スクリプ
 | memory/team_knowledge/*.yaml | 全員 | **Director のみ**（蒸留時。Task tool 経由も含む） |
 | memory/team_knowledge/README.md | 全員 | **Director のみ** |
 | queue/framework_feedback.yaml | 全員 | **Director のみ**（Cast レポートから集約） |
-| queue/design/*.md | Director + 議論参加者 | Director（作成）、Advocate/Challenger/Consultant（セクション追記） |
-| queue/design/*.yaml | 全員 | Director のみ |
+| queue/design/*.md | Producer + Director + 議論参加者 | Producer（作成・主催）、Advocate/Challenger/Consultant（セクション追記） |
+| queue/design/*.yaml | 全員 | Producer のみ |
 | queue/discussion/*.yaml | Director + 関係Cast | 会話参加者のみ（Red Team も参加可） |
 | queue/reports/<red-team-slug>_report.yaml | Director | Red Team のみ |
 | queue/ci_results/*.yaml | Red Team + Director + 対象Cast | ci.js（自動） |
 | dashboard.md | 全員 | **Director のみ**（v3ではLPが更新）。Red Team は「Red Team Findings」セクションのみ追記可 |
-| logs/activity.log | 全員 | **Director + Cast**（追記のみ。Cast は chat/progress イベントのみ） |
+| logs/activity.log | 全員 | **Producer + Director + Cast**（追記のみ。Cast は chat/progress、Producer は checkpoint_clear/debate_start/debate_end のみ） |
 | logs/<slug>_status.txt | 全員 | **対象Cast のみ**（上書き） |
 | logs/<red-team-slug>_status.txt | 全員 | **Red Team のみ**（上書き） |
 | logs/<reviewer-slug>_status.txt | 全員 | **Reviewer のみ**（上書き） |
 | logs/director_status.txt | 全員 | **Director のみ**（上書き） |
 
 **🔴 dashboard.md はDirectorだけが更新する（v3ではLPが更新）。Red Team は「Red Team Findings」セクションのみ追記可。Producer・Castは読むだけ。**
-**🔴 logs/activity.log はDirectorとCastが追記する。Cast は `chat` と `progress` イベントのみ。管理イベント（task_assign等）はDirectorのみ。**
+**🔴 logs/activity.log はProducer・Director・Castが追記する。Cast は `chat` と `progress` イベントのみ。Producer は `checkpoint_clear` と Debate イベントのみ。管理イベント（task_assign等）はDirectorのみ。**
 **🔴 logs/<slug>_status.txt は各キャスト（Reviewer含む）が自分のファイルのみ更新する。**
 
 ### v3追加ファイル（scale: large）
@@ -405,13 +408,19 @@ tmux capture-pane -t "%5" -p | tail -20
 
 | ロール | タイミング | 引き継ぎ先ファイル |
 |--------|-----------|-------------------|
-| Director | Debate完了後 / 全配布後 / Owner修正後 / Wave処理後 | dashboard.md |
+| Producer | 計画テキスト化→Director投下後 / Debate完了後 | dashboard.md + global_context.md |
+| Director | 全配布後 / Wave処理完了後（3レビュー目安） / Owner修正後 | dashboard.md |
 | Cast | タスク完了報告後 / 長時間実装の区切り | chronicle.yaml handoff |
-| Red Team | 全ブランチ巡回完了後 / レポート提出後 | chronicle.yaml handoff |
+| Red Team | **1レビュー完了ごと** / 全ブランチ巡回完了後 | chronicle.yaml handoff |
+
+**🔴 Red Team は1レビュー完了で即 clear**。全 Cast のコードを読むため、コンテキスト消費が最も速い。
+Stand（Task tool）が機械的チェックを代行するため、Red Team 本体の clear 頻度を上げても復帰コストは低い。
 
 詳細手順:
+- Producer: `instructions/producer.md`「Producer チェックポイント clear」
 - Director: `instructions/director.md`「Director チェックポイント clear」
 - Cast: `instructions/cast_template.md`「チェックポイント clear」
+- Red Team: `instructions/red_team.md`「Red Team チェックポイント clear」
 
 ### 防衛停止の行動指針
 
@@ -448,13 +457,15 @@ Claude Codeのコンテキストがコンパクションされた場合:
 5. **累積ファイルを読む**:
    - Cast: `cast/members/<slug>/chronicle.yaml`（**handoff セクションを最優先で確認**）
    - Red Team: `cast/members/<slug>/chronicle.yaml` + `cast/roster.yaml`（全ブランチ巡回に必要）
-   - Director: `cast/roster.yaml` + `dashboard.md` + `queue/design/`（Debate 進行中の場合）
+   - Producer: `memory/global_context.md` + `dashboard.md`
+   - Director: `cast/roster.yaml` + `dashboard.md` + `queue/producer_to_director.yaml`
    - Line Producer: `config/units.yaml` + `contracts/` + `dailies/` + `dashboard.md`
 
 6. **現在のタスクを確認**:
    - Cast: `queue/tasks/<slug>.yaml` + `queue/task_pool.yaml`（セルフサーブ方式の場合）
    - Red Team: タスクキューなし。起床時に全ブランチ巡回 + レポート確認
-   - Director: Ownerからの直接指示を待つ（v4 scale: small）/ `queue/lp_to_units/<unit>.yaml`（v3）
+   - Producer: `dashboard.md` を確認 → Owner からの指示を待つ（v4.1 scale: small）
+   - Director: `queue/producer_to_director.yaml` を確認 → Producer からの指示を待つ（v4.1 scale: small）/ `queue/lp_to_units/<unit>.yaml`（v3）
    - Line Producer: `queue/producer_to_lp.yaml` + `queue/inter_unit/`
 
 7. **禁止事項を確認してから**作業を再開
@@ -578,12 +589,12 @@ date "+%Y-%m-%dT%H:%M:%S"
 
 長い作業は**即座に下位へ委任して、自分は停止**すること。
 
-- v4（scale: small）: Owner（人間）が直接 Director に指示。AI Producer は不在
-- **v3追加**: Producer: LP に委任したら停止（v3では LP が現場統括）
+- v4.1（scale: small）: Owner → Producer → Director → Cast。Producer は戦略プランナー
+- Producer: Director に委任したら停止 → 次のsend-keysで起床する
 - **v3追加**: LP: Director に委任したら停止 → 次のsend-keysで起床する
 - Director: Cast に委任したら停止 → 次のsend-keysで起床する
 
-**「考えるな、委譲しろ」** — 特にProducerは即断即決。Extended Thinking無効で運用する。
+**「考えるな、委譲しろ」** — 特にProducerは即断即決。計画をテキスト化してDirectorに投下したら停止。
 
 自分で長時間作業を続けない。
 
@@ -593,12 +604,11 @@ date "+%Y-%m-%dT%H:%M:%S"
 
 | エージェント | モデル | Thinking | 理由 |
 |-------------|--------|----------|------|
-| Owner (Producer) | — | — | v4: 人間が直接操作。AI不要 |
+| Producer | デフォルト | **有効** | Design Debate 主催に推論が必要 |
 | Line Producer | Opus | **有効** | ユニット間調整・契約交渉には慎重な判断が必要 |
-| Director | デフォルト | 有効 | タスク分解・キャスティングには慎重な判断が必要 |
+| Director | デフォルト | 有効 | マージ判断・タスク配布に慎重な判断が必要 |
 | Cast | デフォルト | 有効 | 実装作業にはフル機能が必要 |
-
-ProducerはExtended Thinking無効（`MAX_THINKING_TOKENS=0`）で起動し、レイテンシとコストを削減。
+| Red Team Stand | Haiku | — | 機械的チェック用。使い捨て（Task tool 召喚） |
 
 ---
 
@@ -676,7 +686,8 @@ Director は自身でコマンドを実行しないため対象外（F001: 自�
 
 ## 22. Design Debate Protocol
 
-Phase 開始前に、Director が Task tool で Advocate（擁護者）と Challenger（批判者）を逐次召喚し、設計の品質を議論で高めるプロトコル。
+Phase 開始前に、**Producer** が Task tool で Advocate（擁護者）と Challenger（批判者）を逐次召喚し、設計の品質を議論で高めるプロトコル。
+（v4.1: 主催権を Director → Producer に移管。Director は Debate 中も橋渡し業務を継続可能）
 
 ### 概要
 
@@ -702,10 +713,11 @@ Phase 開始前に、Director が Task tool で Advocate（擁護者）と Chall
 
 | ファイル | 読み | 書き |
 |---------|------|------|
-| queue/design/*.md | Director + 議論参加者 | Director（作成）、Advocate/Challenger/Consultant（セクション追記） |
-| queue/design/*.yaml | 全員 | Director のみ |
+| queue/design/*.md | Producer + Director + 議論参加者 | Producer（作成・主催）、Advocate/Challenger/Consultant（セクション追記） |
+| queue/design/*.yaml | 全員 | Producer のみ |
 
-詳細手順: `instructions/director.md` の「Design Debate Protocol」セクション参照。
+詳細手順: `instructions/producer.md` の「Design Debate Protocol」セクション参照。
+アドホック Debate（Phase 途中のブロッカー）は Director が Producer に依頼し、Producer が主催する。
 
 ---
 

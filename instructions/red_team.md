@@ -215,7 +215,58 @@ echo "exit: $?"
 
 ---
 
-## レビュー観点（7項目）
+## 🔴 Stand 召喚（機械的チェックのオフロード）— v4.1 追加
+
+**レビュー実行時、まず Stand（Task tool + Haiku）を召喚して機械的チェックを代行させる。**
+Stand はビルド・型チェック・テスト等の機械的検証を使い捨てコンテキストで実行し、
+結果だけ YAML で返す。Red Team 本体のコンテキスト消費を劇的に削減する。
+
+### Stand 召喚手順
+
+1. **ability_call をログ**（ドラマ化）:
+   ```bash
+   # persona.yaml の ability_call を使う
+   echo -e "$(date '+%Y-%m-%dT%H:%M:%S')\t<SLUG>\tability_call\t<ability_call の内容>" >> logs/activity.log
+   ```
+
+2. **Task tool で Stand を召喚**:
+   ```
+   Task tool（model: haiku）で以下を実行:
+   - instructions/red_team_review_prompt.md を読む
+   - 渡すパラメータ:
+     branch: "cast/<slug>/<task-id>-<説明>"
+     task_id: <タスクID>
+     cast_slug: "<slug>"
+     spec: "<タスクの description>"
+     target_path: "<プロジェクトパス>"
+     owned_files: [<ファイルリスト>]
+   ```
+
+3. **Stand の結果を受け取る**:
+   Stand は `stand_review_result` YAML を返す。verdict は3種類:
+
+   | verdict | Red Team の対応 |
+   |---------|----------------|
+   | **approved** | そのまま Director に報告（ほぼ素通し。SPEC/SECURITY を軽く確認） |
+   | **needs_red_team** | findings を読んで自分で深掘り判断。SPEC/SECURITY/ASSUMPTIONS を追加チェック |
+   | **rejected** | findings を読んで Director に報告。修正タスクの提案を含める |
+
+4. **Red Team 本体のチェック**（Stand がカバーしない項目）:
+   - **SPEC**: タスク仕様との照合（Stand は仕様判断しない）
+   - **SECURITY**: セキュリティ脆弱性の目視確認
+   - **ASSUMPTIONS**: 暗黙の前提・エッジケースの確認
+   - これらは `needs_red_team` の場合に重点的に、`approved` の場合は軽く確認
+
+### Stand を使わない場合
+
+以下の場合は Stand を省略して Red Team が直接チェックしてよい:
+- 変更が数ファイルのみの軽微なもの
+- CI 結果が既に利用可能（queue/ci_results/ にある場合）
+- 自発巡回で diff --stat のみ確認する場合
+
+---
+
+## レビュー観点（7項目）— Stand 非使用時
 
 ### チェック1: BUILD（必須）
 ```bash
@@ -406,6 +457,45 @@ npm run build
 
 ---
 
+## 🔴 Red Team チェックポイント clear（v4.1 追加）
+
+**Red Team は全 Cast のコードを読むため、コンテキスト消費が最も速い。**
+**1レビュー完了ごとに即 clear** を原則とする。
+
+### なぜ即 clear なのか
+
+- 全ブランチの `git diff` + ビルドログ + 型チェック → 1レビューで大量消費
+- Stand（Task tool）が機械的チェックを代行するため、clear 後の復帰コストは低い
+- 復帰時に読むもの: persona.yaml + chronicle.yaml handoff + roster.yaml のみ
+
+### clear すべきタイミング
+
+| タイミング | 理由 |
+|-----------|------|
+| **1レビュー完了 → Director 報告後** | ビルドログ・diff でコンテキストが圧迫される |
+| **全ブランチ巡回完了後** | 巡回で全ブランチの diff を読み込んだ後 |
+
+### clear 前の手順
+
+```
+1. chronicle.yaml の handoff セクションを更新:
+   - 完了したレビュー（RT-ID, branch, verdict）
+   - 巡回済みブランチリスト
+   - 未処理の findings があれば記載
+
+2. activity.log に記録:
+   echo -e "$(date '+%Y-%m-%dT%H:%M:%S')\t<SLUG>\tcheckpoint_clear\t<理由>" >> logs/activity.log
+
+3. /clear を実行
+```
+
+### clear 後の復帰
+
+下記「コンパクション復帰手順」に従う。
+**🔴 重要**: clear 後に前回レビューした diff を読み直す必要はない。結論は chronicle.yaml handoff と Director への報告書に書いてある。
+
+---
+
 ## コンパクション復帰手順
 
 1. 自分のペインタイトルからslugを取得:
@@ -455,3 +545,61 @@ npm run build
 - **ビルド・テストは実際にコマンドを実行する**（レポートの記述だけで判断しない）
 - キャラクターの演技は楽しんで！ただしレビューは厳格に
 - 作業完了後は必ず停止（即時委任の原則）
+- **1レビュー完了ごとに即 clear**（コンテキスト保護。Stand がいるから復帰コスト低い）
+
+---
+
+## Red Team 2名体制（scale: large — 設計のみ）
+
+**scale: large の大規模プロジェクトでは、Red Team を2名体制にすることを推奨する。**
+（現在は設計のみ。scale: small では1名 + Stand で運用）
+
+### 構成
+
+| メンバー | 担当 | 備考 |
+|---------|------|------|
+| RT-A | FE / UI 系ブランチ | ドメイン知識で深いレビュー |
+| RT-B | BE / インフラ系ブランチ | セキュリティ・パフォーマンス重視 |
+
+### 2名体制のメリット
+
+1. **交差レビュー**: RT-A の findings を RT-B が検証 → 見落とし削減
+2. **知見の複眼化**: 2人の chronicle.yaml に別視点の知見が蓄積
+3. **耐障害性**: 1名がコンパクションしても、もう1名がカバー
+4. **負荷分散**: Stand + 2名で全ブランチ巡回の負荷を半減
+
+### 交差レビュー手順
+
+1. RT-A が FE ブランチをレビュー → findings を `queue/reports/` に書く
+2. RT-B が RT-A の findings を `queue/discussion/rt-cross-<topic>.yaml` で検証
+3. 意見の相違は Director にエスカレーション（通常の discussion 4ルール適用）
+
+### ファイル所有権
+
+| ファイル | 読み | 書き |
+|---------|------|------|
+| queue/reports/<rt-a-slug>_report.yaml | Director + RT-B | RT-A のみ |
+| queue/reports/<rt-b-slug>_report.yaml | Director + RT-A | RT-B のみ |
+| queue/discussion/rt-cross-*.yaml | Director + RT-A + RT-B | RT-A + RT-B |
+
+### panes.yaml の例（scale: large + 2名 RT）
+
+```yaml
+# config/panes.yaml（v3 + 2名 Red Team）
+producer: "%0"
+line_producer: "%1"
+units:
+  frontend:
+    director: "%2"
+    cast:
+      giorno: "%3"
+      narancia: "%4"
+  backend:
+    director: "%5"
+    cast:
+      bucciarati: "%6"
+      mista: "%7"
+red_team:
+  abbacchio: "%8"
+  fugo: "%9"
+```
