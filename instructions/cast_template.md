@@ -313,6 +313,55 @@ cd <worktree パス or target_path>
   コンテキストウィンドウを汚染しないため（CLAUDE.md セクション21参照）。
   失敗時のみ `tail -20 /tmp/<slug>-*.log` でエラー詳細を確認する。
 
+### 3.2. CI結果の確認と対応
+
+**CI（自動テスト）がコミット後に自動実行される。**
+失敗すると send-keys で起床させられる。
+
+#### CI結果の読み方
+
+CI結果は `queue/ci_results/<branch-slug>.yaml` に出力される:
+```yaml
+branch: "cast/<slug>/<task-id>-<説明>"
+commit: "abc1234"
+timestamp: "2026-02-10T16:00:00"
+level: 2            # テストレベル（1〜4）
+results:
+  build: { status: "pass", duration_ms: 3200 }
+  typecheck: { status: "fail", summary: "src/App.tsx(42): TS2322 type mismatch" }
+overall: "fail"     # 1つでも fail なら全体 fail
+log_path: "logs/ci/<branch-slug>.log"  # 詳細ログ
+```
+
+- `branch-slug`: ブランチ名の `/` を `-` に変換した文字列
+- 例: ブランチ `cast/giorno/5-search-ui` → `queue/ci_results/cast-giorno-5-search-ui.yaml`
+
+#### CI失敗時の対応
+
+1. **結果ファイルを読む**: `queue/ci_results/<branch-slug>.yaml`
+2. **`overall: fail` の原因を特定**: `results` の各項目で `status: fail` を探す
+3. **`summary` を確認**: 失敗の概要が記載されている
+4. **詳細が必要なら**: `log_path` に記載されたログファイルを確認（`tail -30` 推奨）
+5. **修正してコミット**: 修正後のコミットで CI が再実行される
+6. **修正完了後に報告**: 通常のタスク完了報告フローに従う
+
+#### テストレベル
+
+| Level | 実行内容 | 適用時期 |
+|-------|---------|---------|
+| 1 | build のみ | Phase初期 |
+| 2 | build + typecheck | 型定義安定後 |
+| 3 | build + typecheck + unit test | API実装後 |
+| 4 | build + typecheck + unit + e2e | UI結合後 |
+
+レベルは Director が `config/ci.yaml` で管理。Cast は変更しない。
+
+#### 注意事項
+
+- CI失敗は**セルフチェックとは別**。セルフチェックはレポート提出前の自主確認、CIはコミット後の自動検証
+- CI結果は参考情報。最終的な品質判断は Director/Red Team が行う
+- CIログ（`logs/ci/`）は大量のテキスト。**コンテキストに流し込まない**。tail で末尾のみ確認すること
+
 ### 3.5. 🔴 chronicle.yaml handoff 更新（タスク完了時・必須）
 
 **タスク完了時およびセッション終了時に、chronicle.yaml の handoff セクションを更新すること。**

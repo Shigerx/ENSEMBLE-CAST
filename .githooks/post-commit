@@ -1,0 +1,23 @@
+#!/bin/sh
+# ENSEMBLE-CAST Stage Manager - post-commit hook
+# ci.js で CI を実行し、結果に基づいて notify-ci.sh で通知する
+
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+CI_SCRIPT="$REPO_ROOT/scripts/stage-manager/ci.js"
+NOTIFY_SCRIPT="$REPO_ROOT/scripts/stage-manager/notify-ci.sh"
+
+if [ ! -f "$CI_SCRIPT" ]; then
+  # ci.js が未配置の場合は何もしない
+  exit 0
+fi
+
+# CI実行（フォアグラウンド、出力抑制）
+node "$CI_SCRIPT" 2>/dev/null
+
+# 通知スクリプトが存在すれば実行
+if [ -f "$NOTIFY_SCRIPT" ]; then
+  bash "$NOTIFY_SCRIPT" 2>/dev/null
+fi
+
+# post-commit は常に成功で終了（コミットを妨げない）
+exit 0

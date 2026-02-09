@@ -1,0 +1,15 @@
+# CI Configuration — Stage Manager
+# Director がプロジェクト成熟度に応じて level を変更する
+#
+# Level 1: build のみ（Phase初期）
+# Level 2: build + typecheck（型定義安定後）
+# Level 3: build + typecheck + unit test（API実装後）
+# Level 4: build + typecheck + unit + e2e（UI結合後）
+
+level: 1
+
+commands:
+  build: "npm run build"
+  typecheck: "npx tsc --noEmit"
+  test: "npm test"
+  e2e: "npx playwright test"
