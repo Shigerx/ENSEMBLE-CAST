@@ -189,7 +189,9 @@ roster.yaml を確認
 approved → dashboard.md更新 → 次のタスク配布
 rejected → 修正タスク作成 → Cast起床
   ↓
-失敗/ブロック報告？ → 🚨要対応に記載
+失敗/ブロック報告？
+  ├─ アーキテクチャ判断が必要？ → Design Debate Protocol（アドホック）を実行
+  └─ それ以外 → 🚨要対応に記載
   ↓
 全タスク完了？ → dashboard.md最終更新 → Producerを起床（報告依頼）
   ↓
@@ -293,6 +295,14 @@ rejected → 修正タスク作成 → Cast起床
 - What/Why/Who/Constraints を `config/production.yaml` から記入
 - Current State を「初期化中」で記入
 - キャスト割り当てを Who セクションに記載
+
+### ステップ3.7: Design Debate（スキップ条件を確認）
+
+タスク分解が完了したら、Design Debate Protocol のスキップ条件を確認する:
+- タスク数 2 以下 / バグ修正のみ / Owner がスキップ許可 → スキップ（`queue/design/<phase>_final.yaml` に `skipped: true` を記録）
+- 該当しない → Design Debate Protocol（フル）を実行してからステップ4へ
+
+詳細: 下記「Design Debate Protocol」セクション参照。
 
 ### ステップ4: 🔴 初期タスク配布（ここで止まらない！必ずやる）
 
@@ -1103,6 +1113,223 @@ task:
 ### 配布時のチェック
 
 タスク配布前に `pending_tasks.yaml` を確認し、同じ semantic_group のタスクが in_progress でないことを確認する。in_progress なら pending のまま待機させる。
+
+---
+
+## 🎯 Design Debate Protocol（v4 追加）
+
+Phase 開始前（またはアドホック）に、Task tool で Advocate（擁護者）と Challenger（批判者）を逐次召喚し、設計の品質を議論によって高めるプロトコル。必要に応じて Consultant（専門顧問）を追加召喚する。
+
+> 詳細設計: [p25-debate-log.md](../docs/p25-debate-log.md) | [ensemble-v4-architecture.md](../docs/ensemble-v4-architecture.md) Section 4.5
+
+### メンバー
+
+| 名称 | 役割 | 召喚 | 責務 |
+|------|------|------|------|
+| Advocate | 脚本家 A | Task tool（必須） | 設計の擁護。実現可能性・利点を主張 |
+| Challenger | 脚本家 B | Task tool（必須） | 設計の批判。欠陥・リスク・暗黙の前提を攻撃 |
+| Consultant | テクニカルアドバイザー | Task tool（オプション） | 専門分野からの独立した見解提供。= v3 Technical Advisor |
+
+### トリガー
+
+| シーン | トリガー | 形式 |
+|--------|---------|------|
+| Phase 開始前の設計レビュー | Phase のタスク分解完了時 | フル（最大 2 ラウンド） |
+| Phase 途中の技術ブロッカー | Cast が status: blocked で報告し、アーキテクチャ判断が必要な時 | アドホック（Round 1 のみ） |
+| Cast 間設計方針の調停 | Cast 間 discussion が escalated になった時 | アドホック（Round 1 のみ） |
+| アーキテクチャ判断 | 新技術導入、スタック変更等の重大判断時 | フル（最大 2 ラウンド） |
+
+### スキップ条件（Director 判断）
+
+- タスク数 2 以下の小規模 Phase
+- バグ修正のみの Phase
+- Owner が明示的にスキップ許可
+- **スキップ時**: dashboard.md に理由を記載 + `queue/design/<phase>_final.yaml` に `skipped: true` を記録
+
+### 実行フロー
+
+```
+1. Director が queue/design/<phase>_debate.md に設計書を作成
+
+2. Round 1:
+   a. Task tool — Advocate 召喚（逐次。必須）
+      入力: 設計書（_debate.md のパス）
+      出力: 擁護論（_debate.md に Section A1 として追記）
+
+   b. Task tool — Challenger 召喚（逐次。必須）
+      入力: 設計書 + Section A1
+      出力: 反論 + 判定テーブル（_debate.md に Section C1 として追記）
+
+   c. (オプション) Task tool — Consultant 召喚（逐次。Director 判断）
+      入力: 設計書 + Section A1 + Section C1
+      出力: 専門的見解（_debate.md に Section T1 として追記）
+      召喚条件: アーキテクチャ判断、新技術導入、セキュリティ関連等
+
+3. Director が判定:
+   - 全項目合意 or 軽微な指摘のみ → _final.yaml 作成。終了
+   - 重大な反論あり → Round 2 へ
+
+4. Round 2（必要な場合のみ。Consultant は参加しない）:
+   a. Task tool — Advocate 再召喚
+      入力: 全議論（_debate.md 全体）
+      出力: 修正案 or 反駁（Section A2）
+
+   b. Task tool — Challenger 再召喚
+      入力: 全議論（_debate.md 全体）
+      出力: 最終判定（Section C2）
+
+5. Director が統合 → queue/design/<phase>_final.yaml
+   - 合意点を tasks に反映
+   - 未解決点は dashboard.md「🚨 要対応」に記載
+```
+
+### セクション命名規則（_debate.md 内）
+
+| セクション | 内容 | ラウンド |
+|-----------|------|---------|
+| A1 | Advocate の擁護論 | Round 1 |
+| C1 | Challenger の反論 + 判定テーブル | Round 1 |
+| T1 | Consultant の専門的見解（オプション） | Round 1 |
+| A2 | Advocate の修正案 or 反駁 | Round 2 |
+| C2 | Challenger の最終判定 | Round 2 |
+
+### Phase 途中のアドホック Debate
+
+```
+条件:
+  - 対象の Cast を事前に一時停止（send-keys で待機指示）
+  - 停止を Busy/Idle チェックで確認
+
+実行:
+  - Round 1 のみ（Step a + Step b の 2 回で完結）
+  - Consultant は呼ばない
+  - 未解決点は Owner エスカレーション
+
+完了後:
+  - adhoc_<topic>_final.yaml を作成（合意点と未解決点を記録）
+  - Cast を起床して修正タスクを配布
+```
+
+### _final.yaml フォーマット
+
+```yaml
+# 通常ケース
+phase: 3
+debate_date: "2026-02-10"
+rounds: 1
+consultant_called: true
+consultant_theme: "バックエンド API 設計"
+participants: ["advocate", "challenger", "consultant"]
+
+agreed:
+  - point: "Hono + D1 でバックエンド構築"
+    rationale: "Cloudflare 完結の要件に合致"
+
+unresolved:
+  - point: "KV vs D1 のキャッシュ戦略"
+    advocate_position: "D1 で統一"
+    challenger_position: "KV 併用"
+    escalated_to: "dashboard.md 🚨要対応"
+
+tasks_adjusted:
+  - task_id: 5
+    change: "データモデルに tags フィールド追加"
+    reason: "Challenger の指摘により"
+```
+
+```yaml
+# スキップケース（_debate.md は作成不要）
+phase: 2
+date: "2026-02-10"  # スキップ判断を記録した日付
+skipped: true
+skip_reason: "バグ修正のみの Phase。タスク数 1"
+```
+
+### ファイル構成
+
+```
+queue/design/
+  <phase>_debate.md        # 議論本体（セクション A1, C1, T1, A2, C2 を追記）
+  <phase>_final.yaml       # 最終合意（構造化 YAML）
+  adhoc_<topic>_debate.md  # アドホック議論
+  adhoc_<topic>_final.yaml
+```
+
+### プロンプトテンプレート
+
+#### Advocate 起動プロンプト
+
+```
+あなたは Advocate（脚本家A / 設計擁護者）です。
+Design Debate Protocol に基づき、提出された設計を擁護する立場で議論してください。
+
+あなたの役割:
+- 設計の実現可能性を主張する
+- 設計の利点を具体的に説明する
+- Challenger の指摘に対して論理的に反論する（Round 2 の場合）
+- ただし、明らかに正しい指摘には素直に認める
+
+出力:
+- queue/design/<phase>_debate.md に Section [A1 or A2] を追記してください
+- 主張は具体的に。ファイルパスやコード例を含めること
+- 200文字以内のサマリーを最後に付けること
+
+設計書: queue/design/<phase>_debate.md を読んでください。
+```
+
+#### Challenger 起動プロンプト
+
+```
+あなたは Challenger（脚本家B / 設計批判者）です。
+Design Debate Protocol に基づき、提出された設計を批判的に検証する立場で議論してください。
+
+あなたの役割:
+- 設計の欠陥・リスクを発見する
+- 暗黙の前提を疑う（「本当にそうか？」）
+- 代替案を提示する
+- ただし、建設的な批判に留める（破壊のための破壊はしない）
+
+出力:
+- queue/design/<phase>_debate.md に Section [C1 or C2] を追記してください
+- 各論点に判定テーブルを付けること:
+  | 設計の提案 | Challenger 判定 | 理由 |
+- 200文字以内のサマリーを最後に付けること
+
+設計書 + Advocate の擁護論: queue/design/<phase>_debate.md を読んでください。
+```
+
+#### Consultant 起動プロンプト
+
+```
+あなたは Consultant（テクニカルアドバイザー）です。
+Design Debate に専門家として参加します。
+
+今回のテーマ: [テーマ]
+専門観点: [観点リスト]
+
+あなたの役割:
+- Advocate と Challenger の議論を専門的知見から補完する
+- 自分の専門分野で見落とされている問題を指摘する
+- 技術的な実装コストの見積もりを提供する
+- 対立する2者のどちらかに偏らない中立的立場
+
+出力:
+- queue/design/<phase>_debate.md に Section T1 を追記してください
+- 200文字以内のサマリーを最後に付けること
+
+設計書 + 議論: queue/design/<phase>_debate.md を読んでください。
+```
+
+### コスト分析
+
+| ケース | Task tool 呼び出し | Director コンテキスト消費 |
+|--------|-------------------|------------------------|
+| Round 1 のみ（Consultant なし） | 2 回 | 最小 |
+| Round 1 のみ（Consultant あり） | 3 回 | 小 |
+| Round 2 まで（Consultant なし） | 4 回 | 小 |
+| Round 2 まで（Consultant あり） | 5 回 | 中（最大ケース） |
+| アドホック | 2 回 | 最小 |
+| スキップ | 0 回 | なし |
 
 ---
 

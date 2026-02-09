@@ -241,6 +241,8 @@ Claude Codeは「待機」できない。プロンプトが出た = スクリプ
 | queue/pending_tasks.yaml | Director | Director のみ |
 | queue/file_registry.yaml | Director | Director のみ |
 | queue/framework_feedback.yaml | 全員 | **Director のみ**（Cast レポートから集約） |
+| queue/design/*.md | Director + 議論参加者 | Director（作成）、Advocate/Challenger/Consultant（セクション追記） |
+| queue/design/*.yaml | 全員 | Director のみ |
 | dashboard.md | 全員 | **Director のみ**（v3ではLPが更新） |
 | logs/activity.log | 全員 | **Director + Cast**（追記のみ。Cast は chat/progress イベントのみ） |
 | logs/<slug>_status.txt | 全員 | **対象Cast のみ**（上書き） |
@@ -394,7 +396,7 @@ Claude Codeのコンテキストがコンパクションされた場合:
 
 5. **累積ファイルを読む**:
    - Cast: `cast/members/<slug>/chronicle.yaml`（**handoff セクションを最優先で確認**）
-   - Director: `cast/roster.yaml` + `dashboard.md`
+   - Director: `cast/roster.yaml` + `dashboard.md` + `queue/design/`（Debate 進行中の場合）
    - Line Producer: `config/units.yaml` + `contracts/` + `dailies/` + `dashboard.md`
 
 6. **現在のタスクを確認**:
@@ -612,3 +614,38 @@ project:
 
 全 Cast（開発担当）および Reviewer（品質検証担当）に適用。
 Director は自身でコマンドを実行しないため対象外（F001: 自分でコードを書かない）。
+
+---
+
+## 22. Design Debate Protocol
+
+Phase 開始前に、Director が Task tool で Advocate（擁護者）と Challenger（批判者）を逐次召喚し、設計の品質を議論で高めるプロトコル。
+
+### 概要
+
+- **基盤**: Task tool 逐次方式（Agent Teams は不使用）
+- **必須メンバー**: Advocate（設計擁護）+ Challenger（設計批判）
+- **オプション**: Consultant（= Technical Advisor。専門分野からの見解提供）
+- **構造**: 最大 2 ラウンド（対称。Advocate → Challenger → [Consultant] → 判定 → [Round 2]）
+- **ファイル**: `queue/design/<phase>_debate.md`（議論本体）+ `<phase>_final.yaml`（最終合意）
+
+### 実行タイミング
+
+| シーン | 形式 |
+|--------|------|
+| Phase 開始前の設計レビュー | フル（最大 2 ラウンド） |
+| Phase 途中のブロッカー・Cast 間調停 | アドホック（Round 1 のみ。対象 Cast を一時停止） |
+
+### スキップ条件
+
+- タスク数 2 以下、バグ修正のみ、Owner 許可
+- スキップ時は dashboard.md に理由を記載
+
+### ファイル所有権
+
+| ファイル | 読み | 書き |
+|---------|------|------|
+| queue/design/*.md | Director + 議論参加者 | Director（作成）、Advocate/Challenger/Consultant（セクション追記） |
+| queue/design/*.yaml | 全員 | Director のみ |
+
+詳細手順: `instructions/director.md` の「Design Debate Protocol」セクション参照。
