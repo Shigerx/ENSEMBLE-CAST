@@ -771,6 +771,9 @@ Cast は `chat`/`progress` イベントのみ。管理イベント（下表）�
 | 失敗報告を処理した時 | <slug> | task_failed | #2 ビルドエラーで失敗 |
 | ブロック報告を処理した時 | <slug> | task_blocked | #3 blocked by #2 |
 | フェーズ完了時 | DIRECTOR | phase_complete | Phase 1完了。4タスク消化。 |
+| **Debate 開始時** | DIRECTOR | debate_start | Design Debate 開始（Phase 9: UI改修設計） |
+| **Debate 重大発見** | DIRECTOR | debate_finding | 💣 Challenger: @tailwindcss/typography 未導入を発見 |
+| **Debate 終了時** | DIRECTOR | debate_end | Design Debate 終了。合意6件、未解決1件。Round 1で決着 |
 | **Cast の発言**（Cast が直接追記） | <slug> | chat | おっ、この設計なかなかイケてるな |
 | **Cast の進捗**（Cast が直接追記） | <slug> | progress | ディレクトリ構造できた。次はコンフィグだ |
 
@@ -1278,7 +1281,7 @@ Claude Code のプロンプト表示に残量%が含まれる場合、それを�
 | 対象 | 残量閾値 | 対応 |
 |------|---------|------|
 | Cast | 10%以下 | 現タスクの結果を受領後、新タスクは配布しない。チェックポイント保存 |
-| Director自身 | 20%以下 | 即座にチェックポイント保存 → Producerに報告して再起動を依頼 |
+| Director自身 | 20%以下 | 即座にチェックポイント clear を実行（上記セクション参照） |
 
 ### チェックポイント保存先
 
@@ -1301,6 +1304,58 @@ checkpoint:
     - "トップページはHybridパターンに決定"
   notes: "Phase 1完了。Phase 2進行中。"
 ```
+
+---
+
+## 🔴 Director チェックポイント clear（v4 追加）
+
+**コンパクションされる前に、自分から計画的にコンテキストをリセットする。**
+
+不意打ちのコンパクション（中途半端な状態で記憶喪失）より、計画的な `/clear`（きれいな状態で再起動）のほうが安全。Director は「短命で何度も再起動する」設計で運用する。
+
+### clear すべきタイミング
+
+| タイミング | 理由 |
+|-----------|------|
+| **Design Debate 完了後**（タスク配布前） | Debate の生データ（数百行）がコンテキストに残り続けるのを防止 |
+| **全 Cast へのタスク配布完了後** | 初回起動フローで大量のファイル読み込み・タスク作成が終わった区切り |
+| **Owner 修正対応完了後** | テコ入れ→再作業の残骸がコンテキストを圧迫する |
+| **Wave のレポート処理完了後**（次 Wave 前） | レポート読み込み・レビュー・マージで消費したコンテキストを解放 |
+
+### clear 前の手順（3ステップ）
+
+```
+1. dashboard.md を更新:
+   - 現在の状態（完了タスク、進行中タスク、pending タスク）
+   - 「次のアクション」を明記（clear 後に何をすべきか）
+   - 重要な判断・決定事項があれば記録
+
+2. activity.log に記録:
+   echo -e "$(date '+%Y-%m-%dT%H:%M:%S')\tDIRECTOR\tcheckpoint_clear\t<理由>。dashboard.md 更新済み" >> logs/activity.log
+
+3. /clear を実行
+```
+
+### clear 後の復帰
+
+通常のコンパクション復帰手順（CLAUDE.md セクション12）に従う:
+
+```
+1. tmux display-message -p '#T' → Director と確認
+2. CLAUDE.md を読む
+3. config/panes.yaml を読む
+4. instructions/director.md を読む
+5. cast/roster.yaml + dashboard.md を読む（← ここに状態がある）
+6. dashboard.md の「次のアクション」から作業を再開
+```
+
+**🔴 重要**: clear 後に Debate の生データ（queue/design/*_debate.md）を読み直す必要はない。結論は `_final.yaml` と dashboard.md に書いてある。
+
+### やってはいけないこと
+
+- 「まだ大丈夫」と判断して clear を先延ばしにする → コンパクションで事故る
+- clear 前に dashboard.md を更新しない → 復帰後に状態不明
+- clear 後に debate.md の全文を読み直す → コンテキスト再汚染
 
 ---
 
@@ -1347,8 +1402,8 @@ Phase完了時、または Director/Cast のコンテキスト枯渇時に全員
    ```
 2. **チェックポイント保存**: `queue/checkpoint.yaml` を更新（上記フォーマット）
 3. **dashboard.md 更新**: 現在の状態を正確に反映
-4. **Producerに報告**: send-keys で「Phase N 完了。スナップショット・checkpoint 保存済み。リセット推奨。」
-5. **Producerがリセット実行**: 各ペインで `exit` → 再起動
+4. **Owner に報告**: dashboard.md の「🚨 要対応」に「Phase N 完了。スナップショット・checkpoint 保存済み。リセット推奨。」と記載
+5. **Owner がリセット実行**: 各ペインで `exit` → 再起動（または `launch-ensemble.sh` で再作成）
 
 ### リセット後の復帰
 
@@ -1438,6 +1493,8 @@ Phase 開始前（またはアドホック）に、Task tool で Advocate（擁�
 
 ```
 1. Director が queue/design/<phase>_debate.md に設計書を作成
+   🔴 activity.log に debate_start を記録:
+   echo -e "$(date '+%Y-%m-%dT%H:%M:%S')\tDIRECTOR\tdebate_start\tDesign Debate 開始（Phase <N>: <テーマ>）" >> logs/activity.log
 
 2. Round 1:
    a. Task tool — Advocate 召喚（逐次。必須）
@@ -1447,6 +1504,8 @@ Phase 開始前（またはアドホック）に、Task tool で Advocate（擁�
    b. Task tool — Challenger 召喚（逐次。必須）
       入力: 設計書 + Section A1
       出力: 反論 + 判定テーブル（_debate.md に Section C1 として追記）
+      🔴 重大な発見・対決があれば activity.log に debate_finding を記録:
+      echo -e "$(date '+%Y-%m-%dT%H:%M:%S')\tDIRECTOR\tdebate_finding\t💣 Challenger: <発見内容>" >> logs/activity.log
 
    c. Task tool — Consultant 召喚（逐次）
       入力: 設計書 + Section A1 + Section C1
@@ -1459,6 +1518,8 @@ Phase 開始前（またはアドホック）に、Task tool で Advocate（擁�
         - [MCP サーバー一覧]: 自身が認識している mcp__ ツールを列挙
         - [スキル一覧]: system-reminder に表示されているスキル名を列挙
         - [OS/Shell]: CLAUDE.md / production.yaml から取得
+      🔴 重大な発見があれば activity.log に debate_finding を記録:
+      echo -e "$(date '+%Y-%m-%dT%H:%M:%S')\tDIRECTOR\tdebate_finding\t💣 Consultant: <発見内容>" >> logs/activity.log
 
 3. Director が判定:
    - 全項目合意 or 軽微な指摘のみ → _final.yaml 作成。終了
@@ -1476,7 +1537,20 @@ Phase 開始前（またはアドホック）に、Task tool で Advocate（擁�
 5. Director が統合 → queue/design/<phase>_final.yaml
    - 合意点を tasks に反映
    - 未解決点は dashboard.md「🚨 要対応」に記載
+   🔴 activity.log に debate_end を記録:
+   echo -e "$(date '+%Y-%m-%dT%H:%M:%S')\tDIRECTOR\tdebate_end\tDesign Debate 終了。合意<N>件、未解決<N>件。Round <N>で決着" >> logs/activity.log
 ```
+
+### debate_finding の記録基準
+
+すべての指摘を記録するのではなく、**ドラマとして価値がある発見のみ**を記録する:
+
+- Challenger が設計の重大な欠陥を指摘した「対決」の瞬間
+- Consultant が技術的な爆弾（未導入ライブラリ、互換性問題等）を発見した瞬間
+- Director が Challenger の指摘を全面採用した「判断」の瞬間
+- 議論が白熱して Round 2 に突入した場合
+
+**目安**: 1 Debate あたり 0〜3 件。「脚本に使える」かどうかで判断する。
 
 ### セクション命名規則（_debate.md 内）
 
@@ -1499,6 +1573,7 @@ Phase 開始前（またはアドホック）に、Task tool で Advocate（擁�
   - Round 1 のみ（Step a + Step b の 2 回で完結）
   - Consultant は呼ばない
   - 未解決点は Owner エスカレーション
+  🔴 activity.log 記録: debate_start（開始時）+ debate_finding（重大発見時）+ debate_end（終了時）
 
 完了後:
   - adhoc_<topic>_final.yaml を作成（合意点と未解決点を記録）

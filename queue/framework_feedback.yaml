@@ -26,6 +26,53 @@ feedback:
       (A) director.md: task.yaml status 更新ルールを 🔴 強調に変更（見落とし防止）
       (B) show-live.sh: assigned=25%, in_progress=50% に分離（視覚的区別）
     timestamp: "2026-02-08T15:03:06"
+
+  - id: FB-002
+    reporter: owner
+    category: friction
+    title: "Design Debate のドラマが activity.log / chronicle に記録されない"
+    detail: |
+      Phase 9 開始時、Director が Design Debate Protocol（セクション22）を実行。
+      Advocate / Challenger / Consultant を Task tool で逐次召喚し、20分以上かけて
+      6つの論点と1つの重大発見（@tailwindcss/typography 未導入）を含む設計審議を行った。
+
+      問題: この議論は queue/design/phase9_debate.md（720行）にファイルとして残るが、
+      以下のチャネルには一切反映されない:
+        - activity.log（Design Debate の開始・終了・重大発見がログされない）
+        - Cast の chronicle（Cast は Debate に参加しないため記録なし）
+        - dashboard.md（Debate 完了しても更新されない）
+
+      結果: Episode 脚本を書く際、Debate の中身を「掘り起こす」必要がある。
+      Season 1 ではドラマが全て表（Cast の行動→ログ→chronicle）で起きたが、
+      Design Debate は Director の頭の中で完結するため、ドラマが水面下で消える。
+
+      特に問題なのは:
+        1. Challenger が設計の欠陥を6つ指摘した「対決」の緊迫感
+        2. Consultant が prose クラス全無効を発見した「爆弾」の瞬間
+        3. Director が Challenger の指摘を全面採用した「判断」の重み
+      これらが全て不可視になること。
+
+      もう一つの問題: Director が Debate を深追いしすぎて Cast への委任が遅れた。
+      Debate 中に Cast 5人が全員 Idle で20分以上待機。「即時委任の原則」（セクション18）
+      との折り合いが難しい。Debate は丁寧にやるべきだが、Cast を遊ばせるのはコスト。
+
+      修正案:
+        (A) director.md に「Debate 開始/終了/重大発見を activity.log に記録する」ルール追加
+        (B) Debate ファイルに machine-readable なサマリーセクションを追加
+            （脚本生成ツールが自動で拾える形式）
+        (C) Debate と Cast 起床の並列化: Wave 1 のタスクが明確なら、
+            Debate 完了前でも Cast にタスク概要を先行配布し、
+            Debate 結論で微調整する「仮配布→確定」フロー
+        (D) Debate の所要時間にガードレール設定（例: 15分以内。超過したら切り上げて配布）
+    impact: high
+    status: acknowledged
+    resolution: |
+      (A) director.md: Design Debate 実行フローに activity.log 記録ステップを追加。
+      イベント3種: debate_start（開始）、debate_finding（重大発見）、debate_end（終了）。
+      アドホック Debate にも同様のルールを追加。
+      debate_finding の記録基準: 「脚本に使える」ドラマ的価値がある発見のみ（1 Debate あたり 0〜3 件）。
+    timestamp: "2026-02-09T18:00:00"
+
 # 例:
 # - id: FB-001
 #   reporter: giorno
