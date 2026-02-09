@@ -224,6 +224,18 @@ cleanup_session() {
     : > "$pid_file"
   fi
 
+  # Theater サーバーの残骸を掃除
+  local theater_pidfile="$PROJECT_PATH/logs/.theater-server.pid"
+  if [ -f "$theater_pidfile" ]; then
+    local theater_pid
+    theater_pid=$(cat "$theater_pidfile" 2>/dev/null)
+    if [ -n "$theater_pid" ] && kill -0 "$theater_pid" 2>/dev/null; then
+      kill "$theater_pid" 2>/dev/null || true
+      log_info "前回の Theater サーバーを停止しました"
+    fi
+    rm -f "$theater_pidfile"
+  fi
+
   tmux kill-session -t "$SESSION" 2>/dev/null && log_info "前回セッションを終了しました" || log_info "既存セッションなし"
 }
 

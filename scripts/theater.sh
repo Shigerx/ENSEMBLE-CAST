@@ -78,6 +78,25 @@ tmux select-pane -t "$RIGHT_PANE" -P 'bg=#1a1a2e'
 # --- Theater Web UI サーバー（バックグラウンド起動） ---
 THEATER_PORT=3939
 THEATER_PIDFILE="${PROJECT_PATH}/logs/.theater-server.pid"
+
+# 安全策: 前回のサーバープロセスが残っていたら殺す
+if [ -f "$THEATER_PIDFILE" ]; then
+  OLD_PID=$(cat "$THEATER_PIDFILE" 2>/dev/null)
+  if [ -n "$OLD_PID" ] && kill -0 "$OLD_PID" 2>/dev/null; then
+    echo -e "${YELLOW}【報】${NC} 前回の Theater サーバー (PID: $OLD_PID) を停止..."
+    kill "$OLD_PID" 2>/dev/null || true
+    sleep 0.5
+  fi
+  rm -f "$THEATER_PIDFILE"
+fi
+
+# ポートが既に使用中なら強制解放（PIDファイルなしで残った孤児プロセス対策）
+if lsof -i ":$THEATER_PORT" -t >/dev/null 2>&1; then
+  echo -e "${YELLOW}【報】${NC} ポート $THEATER_PORT が使用中。既存プロセスを停止..."
+  lsof -i ":$THEATER_PORT" -t 2>/dev/null | xargs kill 2>/dev/null || true
+  sleep 0.5
+fi
+
 python3 "${PROJECT_PATH}/scripts/theater-server.py" \
   --port "$THEATER_PORT" --base "$PROJECT_PATH" &
 THEATER_PID=$!
