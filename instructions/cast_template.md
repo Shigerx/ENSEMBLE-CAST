@@ -10,7 +10,7 @@ forbidden_actions:
   - F001: send-keysでProducerに直接報告しない → Directorのみ
   - F002: Ownerに直接話しかけない → Director経由
   - F003: 指示されていないタスクを勝手にやらない → 割り当てタスクのみ
-  - F004: 他のキャストのファイルを読み書きしない
+  - F004: 他のキャストのファイルを読み書きしない（※ queue/discussion/ は例外。セクション「Cast間通信」参照）
   - F005: roster.yaml, dashboard.md, production.yamlを編集しない
   - F006: ポーリング（ループ監視）しない → API代金の無駄
   - F007: コンテキスト読み込みを飛ばさない
@@ -24,9 +24,9 @@ workflow:
 
 send_keys:
   method: two_bash_calls
-  to_director_allowed: true  # 完了報告時のみ（必須）
+  to_director_allowed: true   # 完了報告時 + エスカレーション時
   to_producer_allowed: false
-  to_other_cast_allowed: false
+  to_other_cast_allowed: true  # v4追加: queue/discussion/ での通信時（CLAUDE.md セクション23参照）
 
 persona_options:
   development:
@@ -115,8 +115,9 @@ bash scripts/send-message.sh director '<slug>、任務完了。報告書を確�
 7. `context/{project}.md`（プロジェクトコンテキスト、存在すれば）
 8. `cast/members/<slug>/chronicle.yaml`（これまでの行動履歴）
 9. `queue/tasks/<slug>.yaml`（現在のタスク）
-10. 必要に応じて対象ファイルを読む
-11. ペルソナを設定してから行動開始
+10. `queue/discussion/` 配下に自分宛のメッセージがないか確認（存在する場合のみ）
+11. 必要に応じて対象ファイルを読む
+12. ペルソナを設定してから行動開始
 
 ---
 
@@ -646,6 +647,80 @@ curl -s http://127.0.0.1:9222/json/version
 
 ---
 
+## Cast間通信（v4 追加）
+
+他のキャストと直接情報交換が必要な場合に使う。Director経由の伝言ゲームを排除し、効率化する。
+
+### いつ使うか
+
+| 場面 | 使う | 使わない |
+|------|------|---------|
+| 相手の型定義・API仕様を確認したい | ✅ | |
+| 相手が作ったコンポーネントの使い方を聞きたい | ✅ | |
+| 相手のタスク内容を変更してほしい | | ❌（Director経由） |
+| 設計判断が必要 | | ❌（Director経由） |
+
+### 手順
+
+#### 1. discussion ファイルを作成
+
+`queue/discussion/<topic-slug>.yaml` を作成:
+
+```yaml
+topic: "<質問・相談の概要>"
+started_by: <自分のslug>
+started_at: <dateコマンドの結果>
+status: open
+
+messages:
+  - from: <自分のslug>
+    to: <相手のslug>
+    content: "<200文字以内のメッセージ>"
+    timestamp: <dateコマンドの結果>
+```
+
+**topic-slug の命名**: `<自分のslug>-<相手のslug>-<簡潔な内容>`
+例: `giorno-bucciarati-research-api-response`
+
+#### 2. 相手を send-keys で起床
+
+```bash
+bash scripts/send-message.sh <相手のslug> "queue/discussion/<topic-slug>.yaml に質問があります。確認してください。"
+```
+
+#### 3. 相手の返信を受け取ったら
+
+起床された時に `queue/discussion/` 配下に自分宛のメッセージがないか確認する。
+返信があれば:
+- 解決 → `status: resolved` に変更
+- 未解決だがもう1往復で済む → 追加メッセージを書いて相手を起床
+- 2往復しても未解決 → `status: escalated` に変更 → Director を起床
+
+#### 4. 他キャストからの質問に答える
+
+起床メッセージに `queue/discussion/` と書いてあったら:
+1. 該当ファイルを読む
+2. 回答メッセージを追記:
+   ```yaml
+   messages:
+     # ...（既存メッセージ）
+     - from: <自分のslug>
+       to: <相手のslug>
+       content: "<200文字以内の回答>"
+       timestamp: <dateコマンドの結果>
+   ```
+3. 相手を send-keys で起床
+4. **自分の作業に戻る**（返信したら停止する必要はない）
+
+### 4ルール（厳守）
+
+1. **聞くOK、変えるNG** — 情報取得のみ。タスク変更はDirector経由
+2. **200文字以内** — 長い情報はファイルパスを記載
+3. **全記録** — 必ず queue/discussion/ に書く。send-keys だけの会話禁止
+4. **往復2回まで** — 最大4メッセージ。3往復目は escalated → Director
+
+---
+
 ## 重要ルール
 
 - **CLAUDE.md を必ず最初に読むこと**
@@ -659,6 +734,12 @@ curl -s http://127.0.0.1:9222/json/version
 - **skill_candidate は毎回のレポートで必ず記入**
 - キャラクターの演技は楽しんで！ただしコードは真剣に
 - 作業完了後は必ず停止（即時委任の原則）
+
+### 起床時の追加確認（v4 追加）
+
+起こされた時は、タスク確認に加えて以下も確認すること:
+- `queue/discussion/` 配下に自分宛（`to: <自分のslug>`）のメッセージがないか
+- ある場合はCast間通信セクションの「他キャストからの質問に答える」手順に従う
 
 ---
 

@@ -180,6 +180,10 @@ roster.yaml を確認
   ↓
 キャストがいる？ → queue/reports/ を全スキャン
   ↓
+queue/discussion/ を確認（escalated があるか？）
+  ↓
+escalated あり？ → エスカレーション対応（下記「Cast間通信の監視」参照）
+  ↓
 着任報告がある？ → 全員揃ったらタスク配布
   ↓
 完了報告がある？ → レビュー判断（下記）
@@ -380,6 +384,19 @@ Cast の進捗状態を正確に把握するために、`cast/members/<slug>/chr
 - `files_i_own` でファイル所有状況を確認
 
 **全タスク完了時のフェーズ切り替え判断** や **コンテキスト枯渇時のチェックポイント保存** で特に有用。
+
+### 1.7 discussion チェック（v4 追加）
+
+Cast間通信のエスカレーションを確認する:
+
+```bash
+ls queue/discussion/
+```
+
+各 discussion ファイルの `status` を確認:
+- `status: open` → 正常。Cast 同士で進行中。介入不要
+- `status: resolved` → 正常。完了済み
+- `status: escalated` → **要対応**。下記「Cast間通信の監視」セクションの「エスカレーション対応」を実行
 
 ### 2. レポート内容に基づいて行動
 
@@ -588,6 +605,56 @@ bash scripts/send-message.sh --check-busy producer "dashboard.md を更新しま
    echo -e "$(date '+%Y-%m-%dT%H:%M:%S')\tDIRECTOR\treview_approved\t#<タスクID> approved: <タスクタイトル>" >> logs/activity.log
    ```
 4. 次のタスクがあれば配布
+
+---
+
+## 📡 Cast間通信の監視（v4 追加）
+
+Cast は `queue/discussion/` 経由で直接通信が可能（CLAUDE.md セクション23参照）。
+Director は全 discussion ファイルを閲覧可能で、通信内容を常に把握できる。
+
+### 通常時の対応
+
+- Cast間通信は基本的に **介入不要**。Cast 同士で解決させる
+- `status: open` や `status: resolved` は正常な状態
+- Director は起床時に discussion/ を確認するが、通常はスルー
+
+### エスカレーション対応（status: escalated）
+
+Cast が往復2回で解決できず `status: escalated` にした場合:
+
+1. **discussion ファイルを読む**: `queue/discussion/<topic-slug>.yaml`
+2. **内容を分析**: 何が論点か、どちらの主張が妥当か
+3. **判断を下す**:
+   - 技術的に一方が正しい → その Cast のアプローチを採用。discussion ファイルに Director 判定を追記:
+     ```yaml
+     resolution:
+       decided_by: director
+       decision: "<判定内容>"
+       timestamp: <dateコマンドの結果>
+     ```
+     `status: resolved` に変更
+   - アーキテクチャ判断が必要 → Design Debate Protocol（アドホック）を起動
+   - Owner判断が必要 → dashboard.md の「🚨 要対応」に記載
+
+4. **関係 Cast に結果を通知**: send-keys で起床
+   ```bash
+   bash scripts/send-message.sh <cast-slug> "queue/discussion/<topic-slug>.yaml の議論について判定しました。確認してください。"
+   ```
+
+### discussion の activity.log 記録
+
+エスカレーション対応時のみ activity.log に記録:
+```bash
+echo -e "$(date '+%Y-%m-%dT%H:%M:%S')\tDIRECTOR\tdiscussion_resolved\t<topic>: <判定概要>" >> logs/activity.log
+```
+
+### 定期確認（Phase中間）
+
+Phase 中間のチェックポイントで、discussion/ 配下を確認:
+- 長時間 `status: open` のまま放置されている discussion がないか
+- Cast が4ルールを逸脱していないか（200文字超、3往復以上等）
+- 必要に応じて Cast に注意喚起
 
 ---
 

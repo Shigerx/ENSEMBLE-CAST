@@ -52,6 +52,10 @@ queue/design/*.md
 queue/design/*.yaml
 !queue/design/.gitkeep
 
+# --- Cast間通信（ランタイムデータ） ---
+queue/discussion/*.yaml
+!queue/discussion/.gitkeep
+
 # --- CI結果（ランタイムデータ） ---
 queue/ci_results/*.yaml
 logs/ci/*.log

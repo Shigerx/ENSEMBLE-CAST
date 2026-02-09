@@ -155,8 +155,10 @@ Busyなら **30秒待って再チェック**（最大3回）。3回ともBusyな
 - **v3追加**: Director → LP へのsend-keys時も同様にBusy/Idleチェックを行うこと。
 - **v3追加**: LP → Producer へのsend-keys時も上記と同じルールを適用する（Owner入力中の割り込み防止）。
 
-### 横（キャスト間）: 直接通信禁止
-- キャスト同士は直接やりとりしない。Director経由でのみ協調する。
+### 横（キャスト間）: queue/discussion/ 経由で通信可能（v4 追加）
+- キャスト同士は `queue/discussion/` 経由でコミュニケーション可能（セクション23参照）
+- 4ルール厳守: 聞くOK/変えるNG、200文字以内、全記録、往復2回まで
+- エスカレーション（3往復目が必要な場合）は Director 経由
 - **v3追加**: Director間の直接通信も禁止。LP経由でのみ協調する。
 - **v3追加**: ユニット間メッセージは `queue/inter_unit/` に書き込み、Stage Manager（router.js）がルーティングする。
 
@@ -243,6 +245,7 @@ Claude Codeは「待機」できない。プロンプトが出た = スクリプ
 | queue/framework_feedback.yaml | 全員 | **Director のみ**（Cast レポートから集約） |
 | queue/design/*.md | Director + 議論参加者 | Director（作成）、Advocate/Challenger/Consultant（セクション追記） |
 | queue/design/*.yaml | 全員 | Director のみ |
+| queue/discussion/*.yaml | Director + 関係Cast | 会話参加者のみ |
 | dashboard.md | 全員 | **Director のみ**（v3ではLPが更新） |
 | logs/activity.log | 全員 | **Director + Cast**（追記のみ。Cast は chat/progress イベントのみ） |
 | logs/<slug>_status.txt | 全員 | **対象Cast のみ**（上書き） |
@@ -649,3 +652,58 @@ Phase 開始前に、Director が Task tool で Advocate（擁護者）と Chall
 | queue/design/*.yaml | 全員 | Director のみ |
 
 詳細手順: `instructions/director.md` の「Design Debate Protocol」セクション参照。
+
+---
+
+## 23. Cast間通信ルール（v4 追加）
+
+Cast 同士が `queue/discussion/` を介して直接コミュニケーションできる。
+Director を経由しない情報交換が可能だが、以下の4ルールを厳守すること。
+
+### 4つのルール
+
+1. **聞くのはOK、変えるのはNG** — 情報取得（型定義の確認、API仕様の質問等）は自由。相手のタスク変更・設計判断はDirector経由
+2. **短く、ファイル参照** — メッセージは200文字以内。長い情報はファイルパスを記載
+3. **全記録** — 全メッセージは `queue/discussion/<topic-slug>.yaml` に保存。Directorはいつでも閲覧可能
+4. **往復2回まで** — 1トピック最大4メッセージ。3往復目が必要なら `status: escalated` にしてDirectorへエスカレーション
+
+### discussion ファイルフォーマット
+
+```yaml
+# queue/discussion/<topic-slug>.yaml
+topic: "リサーチAPIのレスポンス型"
+started_by: giorno
+started_at: "2026-02-10T14:00:00"
+status: open  # open | resolved | escalated
+
+messages:
+  - from: giorno
+    to: bucciarati
+    content: "GET /research/:id のレスポンスに tags フィールド足せる？型定義見たい"
+    timestamp: "2026-02-10T14:00:00"
+
+  - from: bucciarati
+    to: giorno
+    content: "OK。src/types/research.ts の ResearchResult 型を見て。tags: string[] で追加する"
+    timestamp: "2026-02-10T14:05:00"
+```
+
+### エスカレーション
+
+往復2回（4メッセージ）で resolved にならない場合:
+1. `status: escalated` に変更
+2. send-keys で Director を起床
+3. Director が議論内容を確認し、判断を下す
+
+### ファイル所有権
+
+| ファイル | 読み | 書き |
+|---------|------|------|
+| queue/discussion/*.yaml | Director + 関係Cast | 会話参加者のみ（started_by + to） |
+
+### 禁止事項
+
+- 相手のタスクを変更する指示を出すこと
+- 200文字を超えるメッセージ
+- 3往復目の続行（escalated にせずに会話を続けること）
+- discussion を使わず send-keys だけで会話すること（記録が残らない）
