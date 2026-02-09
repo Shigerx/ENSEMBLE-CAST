@@ -338,10 +338,10 @@ EOF
 create_session_small() {
   log_action "[5/7] tmuxセッション作成 + Claude Code 起動（scale: small）..."
 
-  # Producerペインでセッション作成 → 固有ID（%N）を取得
+  # v4: Owner ペイン（人間が直接操作。Claude Code は起動しない）
   tmux new-session -d -s "$SESSION" -c "$PROJECT_PATH" -x 200 -y 50
-  PRODUCER_PANE=$(tmux display-message -t "${SESSION}:0.0" -p '#{pane_id}')
-  tmux select-pane -t "$PRODUCER_PANE" -T "producer"
+  OWNER_PANE=$(tmux display-message -t "${SESSION}:0.0" -p '#{pane_id}')
+  tmux select-pane -t "$OWNER_PANE" -T "owner"
 
   # Directorペインを追加 → 固有ID（%N）を取得
   DIRECTOR_PANE=$(tmux split-window -t "${SESSION}:0" -h -P -F '#{pane_id}' -c "$PROJECT_PATH")
@@ -350,27 +350,24 @@ create_session_small() {
   # レイアウト調整
   tmux select-layout -t "${SESSION}:0" even-horizontal
 
-  # Producerペイン背景色（差別化）
-  tmux select-pane -t "$PRODUCER_PANE" -P 'bg=#1a1a2e'
+  # Ownerペイン背景色（差別化）
+  tmux select-pane -t "$OWNER_PANE" -P 'bg=#1a1a2e'
 
   # panes.yaml 生成
   {
     echo "# ENSEMBLE CAST — ペインID管理"
     echo "# launch-ensemble.sh が生成。全エージェントが参照。"
     echo "# tmux固有ID（%N形式）はペイン追加・削除で変わらない。"
-    echo "producer: \"$PRODUCER_PANE\""
+    echo "owner: \"$OWNER_PANE\""
     echo "director: \"$DIRECTOR_PANE\""
     echo "cast:"
   } > "$PANES_YAML"
 
-  log_success "Producer pane: $PRODUCER_PANE"
+  log_success "Owner pane: $OWNER_PANE (人間操作用・Claude Code なし)"
   log_success "Director pane: $DIRECTOR_PANE"
 
-  # --- Producer Claude Code 起動 ---
-  safe_send_keys "$PRODUCER_PANE" "export PS1='(\033[1;35m🎬Producer\033[0m) \033[1;32m\w\033[0m\$ '"
-  sleep 0.5
-  safe_send_keys "$PRODUCER_PANE" "MAX_THINKING_TOKENS=0 claude --dangerously-skip-permissions"
-  log_success "Producer Claude Code 起動 (Opus, thinking=off)"
+  # --- Owner ペイン: プロンプト設定のみ（Claude Code は起動しない） ---
+  safe_send_keys "$OWNER_PANE" "export PS1='(\033[1;35m👑Owner\033[0m) \033[1;32m\w\033[0m\$ '"
 
   sleep 1
 
@@ -510,6 +507,36 @@ create_session_large() {
 }
 
 # ========================================
+# STEP 5.5: Chrome DevTools デバッグ起動
+# ========================================
+start_debug_chrome() {
+  log_action "[5.5/7] Chrome DevTools デバッグ用ブラウザを起動..."
+
+  local chrome_exe_wsl="/mnt/c/Program Files/Google/Chrome/Application/chrome.exe"
+  local chrome_exe_gitbash="/c/Program Files/Google/Chrome/Application/chrome.exe"
+  local user_data_dir="C:\\Users\\shige\\AppData\\Local\\Temp\\chrome-debug"
+
+  # 既にデバッグポートが開いていればスキップ
+  if curl -s --max-time 2 http://localhost:9222/json/version &>/dev/null; then
+    log_info "Chrome DevTools デバッグポート(9222) は既に起動済み。スキップ。"
+    return
+  fi
+
+  # WSL と Git Bash の両方に対応
+  if [ -f "$chrome_exe_wsl" ]; then
+    "$chrome_exe_wsl" --remote-debugging-port=9222 --user-data-dir="$user_data_dir" &>/dev/null &
+    disown
+    log_success "Chrome DevTools デバッグブラウザを起動（port 9222, WSL経由）"
+  elif [ -f "$chrome_exe_gitbash" ]; then
+    "$chrome_exe_gitbash" --remote-debugging-port=9222 --user-data-dir="$user_data_dir" &>/dev/null &
+    disown
+    log_success "Chrome DevTools デバッグブラウザを起動（port 9222, Git Bash経由）"
+  else
+    log_info "Chrome が見つかりません。DevTools デバッグはスキップ。"
+  fi
+}
+
+# ========================================
 # STEP 6: Stage Manager 起動
 # ========================================
 start_stage_manager() {
@@ -558,21 +585,16 @@ send_initial_instructions() {
 
   log_action "指示書を送信..."
 
+  # v4: Owner が人間なので、Director に直接指示を送る
   if [ "$FRESH_START" = true ]; then
-    safe_send_keys "$PRODUCER_PANE" "instructions/producer.md を読んで、その指示に従ってください。CLAUDE.md も必ず読んでください。あなたはProducerです。新規スタートです。Ownerに映画とプロジェクトをヒアリングしてください。"
+    safe_send_keys "$DIRECTOR_PANE" "CLAUDE.md と instructions/director.md を読んでください。あなたはDirectorです。新規スタートです。config/production.yaml を読んで映画とプロジェクト情報を確認してください。Ownerが直接あなたに指示を出します（Producerは人間＝Owner自身です）。Ownerからの指示を待ってください。ここで停止してください。"
   else
-    safe_send_keys "$PRODUCER_PANE" "instructions/producer.md を読んで、その指示に従ってください。CLAUDE.md も必ず読んでください。あなたはProducerです。前回セッションからの再開です。dashboard.md, cast/roster.yaml, cast/members/ を確認して、Ownerに状況を報告し、次の指示を仰いでください。"
+    safe_send_keys "$DIRECTOR_PANE" "CLAUDE.md と instructions/director.md を読んでください。あなたはDirectorです。前回セッションからの再開です。dashboard.md, cast/roster.yaml, config/panes.yaml を確認してください。Ownerが直接あなたに指示を出します（Producerは人間＝Owner自身です）。Ownerからの指示を待ってください。ここで停止してください。"
   fi
-  log_success "Producer に指示書送信完了"
+  log_success "Director に指示書送信完了"
 
-  # Director はスタンバイ（Producerが起こす）
-  # 継続モードの場合、Director と Cast にも指示を送る
+  # 継続モードの場合、Cast にも指示を送る
   if [ "$FRESH_START" = false ]; then
-    sleep 2
-    safe_send_keys "$DIRECTOR_PANE" "CLAUDE.md と instructions/director.md を読んでください。あなたはDirectorです。前回セッションからの再開です。dashboard.md, cast/roster.yaml, config/panes.yaml を確認して、Producerからの指示を待ってください。指示がなければここで停止してください。"
-    log_success "Director に再開指示を送信"
-
-    # Cast にも再開指示を送信
     if [ -f "$ROSTER_YAML" ]; then
       local slugs
       slugs=$(roster_get_slugs "$ROSTER_YAML")
@@ -604,26 +626,26 @@ show_complete() {
   tmux set-option -t "$SESSION" mouse on
   tmux set-option -t "$SESSION" pane-border-status top
   tmux set-option -t "$SESSION" pane-border-format " #{pane_title} "
-  tmux select-pane -t "$PRODUCER_PANE"
+  tmux select-pane -t "$OWNER_PANE"
 
   # スタジオ配置図
   echo ""
-  echo -e "${CYAN}    🎬 ENSEMBLE CAST — スタジオ配置図 (scale: $scale)${NC}"
+  echo -e "${CYAN}    🎬 ENSEMBLE CAST v4 — スタジオ配置図 (scale: $scale)${NC}"
   echo ""
 
   if [ "$scale" = "small" ]; then
     echo -e "${MAGENTA}    ┌─────────────┐${NC}     ${RED}┌─────────────┐${NC}"
-    echo -e "${MAGENTA}    │  🎬         │${NC}     ${RED}│  🎬         │${NC}"
-    echo -e "${MAGENTA}    │  PRODUCER   │${NC} ──▶ ${RED}│  DIRECTOR   │${NC}"
-    echo -e "${MAGENTA}    │  ($PRODUCER_PANE)       │${NC}     ${RED}│  ($DIRECTOR_PANE)       │${NC}"
-    echo -e "${MAGENTA}    │  統括       │${NC}     ${RED}│  演出       │${NC}"
+    echo -e "${MAGENTA}    │  👑         │${NC}     ${RED}│  🎬         │${NC}"
+    echo -e "${MAGENTA}    │  OWNER      │${NC} ──▶ ${RED}│  DIRECTOR   │${NC}"
+    echo -e "${MAGENTA}    │  ($OWNER_PANE)       │${NC}     ${RED}│  ($DIRECTOR_PANE)       │${NC}"
+    echo -e "${MAGENTA}    │  人間       │${NC}     ${RED}│  テックリード│${NC}"
     echo -e "${MAGENTA}    └─────────────┘${NC}     ${RED}└──────┬──────┘${NC}"
     echo -e "                               ${RED}│${NC}"
     echo -e "              ┌────────────────${RED}┼${NC}────────────────┐"
     echo -e "              ▼                ${RED}▼${NC}                ▼"
     echo -e "${BLUE}       ┌───────────┐   ┌───────────┐   ┌───────────┐${NC}"
-    echo -e "${BLUE}       │ 🎭 CAST1  │   │ 🎭 CAST2  │   │ 🎭 CAST..│${NC}"
-    echo -e "${BLUE}       │ (待機中)   │   │ (待機中)   │   │ (待機中)  │${NC}"
+    echo -e "${BLUE}       │ 🎭 CAST   │   │ 🎭 CAST   │   │ 🔴 RED   │${NC}"
+    echo -e "${BLUE}       │ (待機中)   │   │ (待機中)   │   │  TEAM    │${NC}"
     echo -e "${BLUE}       └───────────┘   └───────────┘   └───────────┘${NC}"
   elif [ "$scale" = "large" ]; then
     echo -e "${MAGENTA}    ┌─────────────┐${NC}"
@@ -665,8 +687,8 @@ EOF
   echo -e "    ${CYAN}tmux attach-session -t ensemble${NC}"
   echo ""
   echo -e "${DIM}  ペインIDは config/panes.yaml に記録済み。${NC}"
-  echo -e "${DIM}  Producerが映画とプロジェクトについてヒアリングします。${NC}"
-  echo -e "${DIM}  お好きな映画と作りたいプロジェクトを伝えてください!${NC}"
+  echo -e "${DIM}  v4: Owner（あなた）が直接 Director に指示を出します。${NC}"
+  echo -e "${DIM}  Ownerペインから send-keys で Director を操作してください。${NC}"
   echo ""
 }
 
@@ -693,6 +715,7 @@ main() {
     *) log_error "不明な scale: $scale（small または large を指定してください）" ;;
   esac
 
+  start_debug_chrome
   start_stage_manager
   send_initial_instructions "$scale"
   show_complete "$scale"

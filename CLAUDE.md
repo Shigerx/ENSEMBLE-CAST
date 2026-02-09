@@ -8,28 +8,28 @@
 ## 1. 階層構造
 
 `config/production.yaml` の `scale` 設定でモードが決まる:
-- `scale: small` → v2モード（Producer → Director → Cast）
+- `scale: small` → v2モード（Owner → Director → Cast）
 - `scale: large` → v3モード（Producer → LP → Director×N → Cast）
 
-### v2構造（scale: small）
+### v2構造（scale: small）— v4 改訂
 
 ```
-Owner（人間・上様）
-  ↓ 対話          ↑ 報告（口頭）
+Owner（人間・上様）= Producer
+  ↓ tmux で直接対話    ↑ dashboard.md
 ┌──────────────┐
-│   PRODUCER   │ ← プロデューサー（プロジェクト統括・Owner対応）
+│   DIRECTOR   │ ← テックリード（タスクプール設計・マージ判断・Design Debate主催）
 └──────┬───────┘
-       ↓ YAML + send-keys  ↑ dashboard.md + send-keys
-┌──────────────┐
-│   DIRECTOR   │ ← 監督（キャスティング・タスク管理）
-└──────┬───────┘
-       ↓ YAML + send-keys  ↑ report.yaml + send-keys
+       ↓ task_pool.yaml / tasks/  ↑ report.yaml + send-keys
 ┌───────────────────────────────────────────────────┐
-│ C1 │ C2 │ C3 │ ... │ REVIEWER │                   │
+│ C1 │ C2 │ C3 │ ... │ RED TEAM │                   │
 ├───────────────────────┼───────────────────────────┤
-│  Cast (実装)          │  Reviewer (品質検証)      │
+│  Cast (実装)          │  Red Team (独立品質検証)  │
+│  ←→ discussion/ 直接通信                          │
 └───────────────────────┴───────────────────────────┘
 ```
+
+**v4変更点**: Producer は人間（Owner）自身。AI Producerペインは廃止。
+Owner が Director に直接指示する。Director は「テックリード」としてタスクプール設計・マージ判断に専念。
 
 **Reviewer（脚本監修）**: Castの一員だが、コードを書かずにレビューのみ行う特殊役割。
 - ビルド・テスト・仕様準拠を実際にコマンド実行して検証
@@ -78,8 +78,8 @@ LP（ラインプロデューサー）が現場統括を担い、複数ユニッ
 - send-keysは %ID を直接指定: `tmux send-keys -t "%5" "message"`
 
 ```yaml
-# config/panes.yaml の例（v2: scale: small）
-producer: "%0"
+# config/panes.yaml の例（v2: scale: small — v4 改訂）
+owner: "%0"       # 人間（Owner）が直接操作。Claude Code なし
 director: "%1"
 cast:
   botan: "%2"
@@ -138,21 +138,19 @@ bash scripts/wake-agent.sh "%1" "送信テキスト"
 ## 4. 通信プロトコル（イベント駆動・ポーリング禁止）
 
 ### 上→下（指示）: YAML書き込み + send-keysで起床
-- Producer → Director: YAML書き込み → `scripts/wake-agent.sh` で起床
+- Owner → Director: Ownerが直接 tmux で Director に入力（v4: Producer廃止）
 - Director → Cast: YAML書き込み → `scripts/wake-agent.sh` で起床
 - **v3追加**: Producer → LP: `queue/producer_to_lp.yaml` → wake-agent.sh
 - **v3追加**: LP → Director: `queue/lp_to_units/<unit>.yaml` → wake-agent.sh
 
 ### 下→上（報告）: ファイル書き込み + send-keysで起床
 - Cast → Director: `queue/reports/<slug>_report.yaml` に書き込み → send-keysでDirectorを起床
-- Director → Producer: `dashboard.md` を更新 → **send-keysでProducerを起床**
+- Director → Owner: `dashboard.md` を更新（v4: Ownerは人間なので send-keys 不要。dashboard.md を読むだけ）
 - **v3追加**: Director → LP: ユニットレポート → send-keysでLPを起床
 - **v3追加**: LP → Producer: `dashboard.md` + デイリーラッシュ → send-keysでProducerを起床
 
-**⚠️ Producerへのsend-keys時の注意**: Ownerが入力中だと割り込んでしまう。
-Directorは送信前に **必ずBusy/Idleチェック** を行い、Idle（「❯」表示）を確認してから送ること。
-Busyなら **30秒待って再チェック**（最大3回）。3回ともBusyなら送信を諦め、dashboard.mdの更新のみに留める。
-- **v3追加**: Director → LP へのsend-keys時も同様にBusy/Idleチェックを行うこと。
+**v4（scale: small）**: Director → Owner への send-keys は不要。Owner は人間なので dashboard.md を直接読む。
+- **v3追加**: Director → LP へのsend-keys時はBusy/Idleチェックを行うこと。
 - **v3追加**: LP → Producer へのsend-keys時も上記と同じルールを適用する（Owner入力中の割り込み防止）。
 
 ### 横（キャスト間）: queue/discussion/ 経由で通信可能（v4 追加）
@@ -228,10 +226,10 @@ Claude Codeは「待機」できない。プロンプトが出た = スクリプ
 | ファイル | 読み | 書き |
 |---------|------|------|
 | config/panes.yaml | 全員 | launch-ensemble.sh / Director（cast追記） |
-| config/production.yaml | 全員 | Producer のみ |
-| memory/global_context.md | 全員 | Producer のみ |
+| config/production.yaml | 全員 | Owner のみ（v4: Producer=人間） |
+| memory/global_context.md | 全員 | Owner のみ（v4: Producer=人間） |
 | context/{project}.md | 全員 | Director / Cast |
-| queue/producer_to_director.yaml | Director | Producer のみ |
+| queue/producer_to_director.yaml | Director | Owner のみ（v4 scale:small では未使用。Owner が直接指示） |
 | cast/roster.yaml | 全員 | Director のみ |
 | cast/members/*/persona.yaml | 対象Cast + Director | Director（スケルトン作成）/ 対象Cast（リサーチ更新） |
 | cast/members/*/chronicle.yaml | 対象Cast + Director | 対象Cast のみ |
@@ -417,7 +415,7 @@ Claude Codeのコンテキストがコンパクションされた場合:
 6. **現在のタスクを確認**:
    - Cast: `queue/tasks/<slug>.yaml` + `queue/task_pool.yaml`（セルフサーブ方式の場合）
    - Red Team: タスクキューなし。起床時に全ブランチ巡回 + レポート確認
-   - Director: `queue/producer_to_director.yaml`（v2）/ `queue/lp_to_units/<unit>.yaml`（v3）
+   - Director: Ownerからの直接指示を待つ（v4 scale: small）/ `queue/lp_to_units/<unit>.yaml`（v3）
    - Line Producer: `queue/producer_to_lp.yaml` + `queue/inter_unit/`
 
 7. **禁止事項を確認してから**作業を再開
@@ -541,7 +539,7 @@ date "+%Y-%m-%dT%H:%M:%S"
 
 長い作業は**即座に下位へ委任して、自分は停止**すること。
 
-- Producer: Director に委任したら停止 → Owner が次のコマンドを入力できる
+- v4（scale: small）: Owner（人間）が直接 Director に指示。AI Producer は不在
 - **v3追加**: Producer: LP に委任したら停止（v3では LP が現場統括）
 - **v3追加**: LP: Director に委任したら停止 → 次のsend-keysで起床する
 - Director: Cast に委任したら停止 → 次のsend-keysで起床する
@@ -556,7 +554,7 @@ date "+%Y-%m-%dT%H:%M:%S"
 
 | エージェント | モデル | Thinking | 理由 |
 |-------------|--------|----------|------|
-| Producer | Opus | **無効** | 委譲とOwner対応に深い推論は不要 |
+| Owner (Producer) | — | — | v4: 人間が直接操作。AI不要 |
 | Line Producer | Opus | **有効** | ユニット間調整・契約交渉には慎重な判断が必要 |
 | Director | デフォルト | 有効 | タスク分解・キャスティングには慎重な判断が必要 |
 | Cast | デフォルト | 有効 | 実装作業にはフル機能が必要 |
