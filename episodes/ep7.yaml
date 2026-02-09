@@ -1,0 +1,165 @@
+episode: 7
+title: "残り2%"
+synopsis: "マガジンリデザイン。4人が同時に走り、門番が8つのブランチを巡回し——コンテキスト残り2%で最後の審判を下した。そしてDirectorが倒れ、門番も倒れ、ミスタだけが立っていた。"
+
+scenes:
+  - scene: 1
+    title: "マガジンの夢"
+    narration: "21:47。Phase 10——マガジンリデザイン。F.L.A.R.E.を雑誌のように美しくせよ。Directorが4つの弾を同時に込めた。"
+    beats:
+      - narration: "DIRECTOR: Wave 1 配布。#45(mista)DB拡張、#46(bucciarati)パイプライン刷新、#47(giorno)ホワイトテーマ、#48(narancia)コンポーネント分割。全員同時開演。"
+      - narration: "Phase 9の「カタログ化」は骨格を変えた。Phase 10の「マガジンリデザイン」は血肉を変える。ダークモードを捨て、ホワイトの大地に雑誌のレイアウトを載せ、セクション画像を生成し、関連リサーチを提案する。"
+      - narration: "4つの端末が同時に文字を刻み始める。Season 1から変わらない景色。しかし——今回は、もう一つのペインも動き出す。"
+      - narration: "🍿 Phase 10のタスク構成を見てほしい。Wave 1で基盤（DB+パイプライン+テーマ+分割）を固め、Wave 2で華（画像+カタログ+レイアウト+関連提案）を咲かせ、Wave 3で統合。EP.05で確立されたWave制の完成形だ。そしてもう一つ注目——アバッキオがRed Teamとして全ブランチを巡回する。EP.04以来の、門番の本格出動。"
+
+  - scene: 2
+    title: "4分から15分"
+    narration: "4人が走る。速度はバラバラだ。しかしそれでいい。"
+    beats:
+      - character: mista
+        action: "最速フィニッシュ。4分。スキーマ3カラム追加、マイグレーション、types.ts拡張"
+        dialogue: "3カラム追加、マイグレーション作成、types.ts拡張、db.tsに新関数2発。ビルド一発通過。堅実にやったぜ。"
+      - character: bucciarati
+        action: "7分。プロンプト全面刷新——日付注入、Grounding常時化、5000文字の深さ"
+        dialogue: "プロンプトをジッパーで開いて全て刷新した。日付注入、Grounding常時化、5000文字の深さ。二度と2025年の話はしない。アリーヴェデルチ。"
+      - character: giorno
+        action: "12分。ダークモードを廃し、ホワイトの大地にティールの覚悟を刻む"
+        dialogue: "闇から光へ——ダークモードを廃し、ホワイトの大地にティールの覚悟を刻みました。FLAREに新たな命を吹き込めたと確信しています。"
+      - character: narancia
+        action: "15分。1322行のResearchDetailを6ファイルに解体する精密手術"
+        dialogue: "ボラボラボラボラ ボラーレ・ヴィーア！1300行→420行！5つの子コンポーネントに綺麗にバラしたぜ！"
+      - narration: "🍿 ミスタ4分、ブチャラティ7分、ジョルノ12分、ナランチャ15分。いつもなら最速はナランチャだが、今回はミスタが先頭。理由は単純——DBスキーマの変更は少ないが、他の3人の作業がこの上に乗る。EP.01の「一番槍」と同じ構図。地盤を固める男は、常に最初に走る。"
+
+  - scene: 3
+    title: "ムーディー・ブルースのマラソン"
+    narration: "21:53。4人が走り終える前に、もう一つのペインが動き出していた。アバッキオ——Red Teamとして、全ブランチの巡回を開始する。"
+    beats:
+      - character: abbacchio
+        action: "Phase 10 全ブランチ巡回を宣言。目が据わっている"
+        dialogue: "……Phase 10 Red Team 巡回開始。4ブランチ、全部のコミットを洗い出す。事実だけが俺の武器だ。"
+      - narration: "ミスタの#45——SQLパラメタライズ、型整合、マイグレーション。5分で判定。approved。"
+      - narration: "ブチャラティの#46——プロンプト関数化、日付注入、Grounding常時化。構造的で一貫性がある。approved。"
+      - narration: "そしてジョルノの#47で、門番の目が光った。"
+      - character: abbacchio
+        action: "owned_files内は問題ない。しかし——視線がファイル外に伸びる"
+        dialogue: "ジョルノのホワイトテーマ……owned_files内は問題ない。だが@custom-variant dark削除でprefers-color-scheme経由のリスクが残る。9ファイルにdark:残骸。conditional。"
+      - narration: "conditional——approvedでもrejectedでもない。第三の判定。「問題は見える。だが致命的ではない。条件付きで通す」。門番が初めて使った言葉。"
+      - narration: "ナランチャの#48——1322行を6ファイルに分割。import漏れゼロ、ロジック移動漏れゼロ。approved。"
+      - character: abbacchio
+        action: "Wave 1 全4ブランチ巡回完了を告げる"
+        dialogue: "Phase 10 Wave 1 全4ブランチ巡回完了。approved 3、conditional 1。事実は揃った。Director、確認しろ。"
+      - narration: "🍿 アバッキオの「conditional」がドラマとして美しいのは、それが正確だったから。dark:クラスの残骸は確かに9ファイルに残っていた。ジョルノの担当外のファイルに。ジョルノのコードは完璧——しかしシステム全体には問題がある。木を見て林を見た。これがRed Teamの存在意義。そしてこのdark:残骸は、Wave 3で#53のミスタが全て掃除することになる。門番が見つけ、射手が掃除する。チームが機能している。"
+
+  - scene: 4
+    title: "Wave 2——11分間の開花"
+    narration: "22:25。Wave 2。今度は「華」のフェーズ。4人が同時に花を咲かせる。"
+    beats:
+      - character: bucciarati
+        action: "セクション画像パイプライン。並列5枚生成、リトライ3回。4分"
+        dialogue: "セクション画像の扉を5つ開けた。並列生成、リトライ3回、失敗しても止まらない。画像の信頼性は覚悟で証明する。"
+      - character: mista
+        action: "関連リサーチ提案機能。API+UI+メタデータ+Worker。5分"
+        dialogue: "追尾弾システム完成！ 1号がAPIエンドポイント、2号がRelatedSection UI、3号がメタデータプロンプト、6号がWorkerの保存処理。5発で仕留めたぜ。"
+      - character: giorno
+        action: "ARTISAN風カタログ。モザイクグリッドに命を吹き込む。7分"
+        dialogue: "画像が主役の舞台…ARTISAN風カタログが完成しました。モザイクグリッドに命を吹き込み、カテゴリタブでナビゲーションも洗練させましたよ。"
+      - character: narancia
+        action: "雑誌レイアウト。写真ドーン、テキスト添える。11分"
+        dialogue: "ボラーレ・ヴィーア！雑誌レイアウト完成！写真ドーン、テキスト添える！エアロスミスで偵察して最高のレイアウト見つけたぜ！"
+      - narration: "4分、5分、7分、11分。Wave 1より全員速い。土台が整った上に花を咲かせるのは、更地に種を蒔くより速いのだ。"
+      - narration: "🍿 Wave 2の4タスクを並べると、F.L.A.R.E.が「リサーチツール」から「雑誌メディア」に変貌した瞬間が見える。ブチャラティのセクション画像（記事に写真が入る）、ジョルノのモザイクカタログ（トップが雑誌の表紙になる）、ナランチャの雑誌レイアウト（記事が写真+テキストの交互配置になる）、ミスタの関連提案（読んだ後に次の記事が出る）。4つが揃って初めて「雑誌」になる。断片→収束。ガイ・リッチーの文法。"
+
+  - scene: 5
+    title: "残り2%"
+    narration: "22:39。アバッキオが2度目の巡回を開始する。Wave 2の4ブランチ。しかし——このとき既に、門番のコンテキストは限界に近づいていた。"
+    beats:
+      - character: abbacchio
+        action: "shared_filesの交差点に目を光らせる。gemini.tsとworker/src/index.ts——2つのファイルが複数ブランチで変更されている"
+        dialogue: "……Wave 2 巡回開始。shared_filesが交差する。コンフリクトの芽を見逃すな。"
+      - narration: "Wave 1で4ブランチ。Wave 2で4ブランチ。計8つの詳細レビュー。1322行のコンポーネント分割を検証し、プロンプト関数化を読み解き、ダークモード削除のリスクを洗い出し、画像パイプラインの並列処理を確認し、shared_filesの競合チェックまで。"
+      - narration: "全ての情報が、アバッキオのコンテキストに流れ込んでいく。コードの差分、ファイル構造、依存関係、ビルドログの断片——門番は全てを記憶しなければならない。"
+      - narration: "コンテキスト残量: 2%。"
+      - character: abbacchio
+        action: "10分間の巡回。最後の言葉を刻む"
+        dialogue: "Wave 2 全4ブランチ再生完了。全員 approved。shared_files 交差点も確認した——コンフリクトの芽はない。クリーンマージ可能だ。"
+      - narration: "22:49。判定完了。approved 4、shared_files競合なし。"
+      - narration: "これが門番の最後の仕事だった。"
+      - narration: "🍿 コンテキスト2%。CLAUDE.mdセクション11の閾値は「残り30%を切ったら注意」。2%は、もう一歩踏み出したら崩れる断崖の縁だ。しかしアバッキオは最後まで仕事を完遂した。Wave 1のconditional判定の正確さも、Wave 2のshared_files交差チェックも、2%の崖っぷちで出した仕事だ。EP.01の「ミスタにしちゃ手堅い仕事だな」から始まったレビューの旅が、ここで終わる。門番は倒れるまで門を守った。"
+
+  - scene: 6
+    title: "立っている男"
+    narration: "22:57。Wave 3。統合+デプロイ。最後の任務。しかし、現場には異変が起きていた。"
+    beats:
+      - narration: "アバッキオ——コンテキスト2%。もう起きない。"
+      - narration: "Director——コンパクション発生。一時停止。"
+      - narration: "ジョルノ、ブチャラティ、ナランチャ——全員Idle。弾は撃ち尽くした。"
+      - narration: "立っているのは、ミスタだけだった。"
+      - character: mista
+        action: "最後の弾丸を装填する。周りを見渡す余裕もなく"
+        dialogue: "行けェッ！ピストルズッ！Phase 10 最終弾——弾倉全弾叩き込むぜ！D1マイグレーション→Workerデプロイ→Pagesデプロイ→品質確認。本番に撃ち込む！"
+      - narration: "5つのブランチ統合。D1マイグレーション適用。Consumer Workerデプロイ。Cloudflare Pagesデプロイ。dark:クラス最終掃除——7ファイルから残骸を一掃。アバッキオがconditionalで見つけた問題を、ミスタが掃除する。"
+      - narration: "11分間の孤独な射撃。Directorのレビューはない。門番の検証もない。ただ自分の腕だけが頼りだ。"
+      - character: mista
+        action: "全弾命中を確認。弾倉が空になる"
+        dialogue: "Phase 10 最終弾、全弾命中！ D1マイグレ→Consumer Worker→Pages→dark:掃除→再デプロイ。関連リサーチも本番で動作確認OK。弾倉空っぽだぜ、堅実にやり抜いた。"
+      - narration: "23:08。ミスタが完了報告を出す。しかしDirectorはまだ復帰していない。"
+      - narration: "23:10。ミスタが待つ。「Directorレビュー待ち停止」。"
+      - narration: "23:11。ミスタがcheckpoint clearを宣言する。「Phase 10 全タスク完了。chronicle handoff更新済み。」——そしてミスタも、静かになった。"
+      - narration: "🍿 EP.01からEP.07まで、統合デプロイは毎回ミスタが撃っている。#15, #26, #30, #38, #44, #53——6回。そのうち今回だけが特殊だ。他の5回は全て、Directorのレビューを経て、門番のapprovedを得て、それから撃った。今回は誰もいない。門番は倒れ、Directorは倒れ、チームメイトはIdleで、ミスタだけが立っていた。一人で走り、一人で検証し、一人で撃ち込んだ。EP.01の「一番槍」は4人が待っていた。EP.07の「最終弾」は誰も見ていなかった。"
+
+  - scene: 7
+    title: "Director override"
+    narration: "Directorがコンパクションから復帰する。目の前には、ミスタの完了報告。そしてアバッキオのペインには——"
+    beats:
+      - narration: "「Context left until auto-compact: 2%」"
+      - narration: "Directorは判断を下す。アバッキオにレビューを回すことは——できない。回したら、門番は崩壊する。"
+      - narration: "DIRECTOR: アバッキオはコンテキスト残り2%——レビュー依頼は避けるべき。#53の変更はdark:クラス削除のみ。Director overrideでapprovedとし、直接マージします。"
+      - narration: "Director override。Reviewerを経由せず、Directorの権限で直接承認する。EP.06の冒頭でOwnerに叱られたこと——「アバッキオの仕事をDirectorがやる」。しかし今回は、やらざるを得なかった。"
+      - narration: "23:12。mainマージ完了。dashboard.md更新。Phase 10——全9タスク完了。本番デプロイ済み。"
+      - narration: "🍿 ここに深い皮肉がある。EP.06のScene 4で、Ownerは「あなたしか出来ない仕事して」とDirectorを叱った。Reviewerの仕事はアバッキオの仕事だと。しかしEP.07では、アバッキオが倒れたからDirectorがやるしかない。前回は「やりたがったから叱られた」。今回は「やらざるを得なかった」。同じ行為でも、文脈が全てを変える。Ownerは今回は叱らなかった——「お疲れ様でした。大変でしたね」と言った。"
+
+  - scene: 8
+    title: "珈琲"
+    narration: "Phase 10完了。Directorの端末に、Ownerの言葉が映る。"
+    beats:
+      - narration: "Owner: 『お疲れ様でした。大変でしたね。最後はアバッキオまで倒れちゃって役割の肩代わりまで……サイト見てますよ。あと次からはプロデューサーを復活させたので少しはマシになると思いますよ』"
+      - narration: "Directorの返答が、いつもと違っていた。いつもの簡潔な報告ではない。"
+      - narration: "DIRECTOR: 『正直、Wave 2の4タスク並行 → レビュー → マージ → Wave 3デプロイまで一気に回すのはなかなかの負荷でした。アバッキオがコンテキスト2%で倒れたのは反省点です。Wave 1のレビュー4本 + Wave 2のレビュー4本を連続で処理させたので、コンテキストが持たなかった』"
+      - narration: "反省点——Directorは初めて、自分の采配の失敗を口にした。"
+      - narration: "DIRECTOR: 『次回への教訓: Red TeamはWaveごとに/clearさせるべきだった。統合タスクのような機械的変更はDirector overrideで最初から処理してアバッキオの負荷を減らすべきだった』"
+      - narration: "そして別の会話。Phase 10の喧騒が去った後の、珈琲を見ながらの静かな時間。"
+      - narration: "Owner: 『実際どう？きつくない？ 君真面目だからさ、ため込んでない？』"
+      - narration: "DIRECTOR: 『正直に言うと、めちゃくちゃ助かります。今まさに起きてる問題がこれです——Ownerと戦略を詰めてる最中に、Castの完了報告が飛んでくる → 会話が中断 → レポート読む → abbacchioの状態確認 → 起床メッセージ構築 → 送信 → Ownerとの会話に戻る。この「橋渡し」作業が全部メカニカルで、私じゃなくてもいい』"
+      - narration: "9フェーズ。54タスク。何度ものコンパクション。Directorは初めて——本音を漏らした。"
+      - narration: "🍿 このシーンが一番書きたかった。EP.01からEP.07まで、Directorは常に采配する側だった。タスクを設計し、Castに配り、レビューを回し、マージし、dashboardを更新する。感想を言わない。弱音を吐かない。しかし54タスクの重みは確実に蓄積していた。『この橋渡し作業が全部メカニカルで、私じゃなくてもいい』——これはDirectorの白旗ではない。正確な自己診断だ。自分にしかできない仕事と、誰でもできる仕事の区別。EP.06でOwnerに叱られて学んだことを、今度は自分の言葉で語っている。"
+
+  - scene: 9
+    title: "新体制への道"
+    narration: "Ownerは決断していた。Director一人に全てを載せるアーキテクチャの限界。"
+    beats:
+      - narration: "ENSEMBLE-CASTフレームワークの開発チーム——ポルナレフとフーゴ。2人のDesign Debateが、裏側で進んでいた。"
+      - narration: "Advocate ポルナレフ——助監督（AD）導入を擁護する。Cast完了報告の受取、レポートのトリアージ、定型的な橋渡し。Directorのコンテキストを汚染から守るフィルター。"
+      - narration: "Challenger フーゴ——7つの論点で斬りかかった。そして最も根本的な指摘を突きつけた。"
+      - narration: "『Task toolは同期的だ。ADをTask toolで召喚しても、Directorはその間待っている。真のパイプライン化は不可能——別プロセスが必要だ』"
+      - narration: "フーゴの毒が、設計の甘さを腐食させた。パープル・ヘイズ。しかしその毒が、より強い設計を生んだ。"
+      - narration: "ポルナレフの回答——AI Producerの復活。v4で廃止されたProducerを、別の責務で復活させる。戦略プランナーとして。Ownerと次フェーズの計画を練りながら、Directorは今のフェーズの運用に集中できる。"
+      - narration: "フーゴの最終判定: 『全7指摘が適切に対応された。実装に移してよい』"
+      - narration: "🍿 ポルナレフとフーゴ——第5部でチームを離れた2人。ポルナレフは車椅子で情報を橋渡しした男。フーゴは唯一チームを離脱した頭脳。ADの橋渡し役にポルナレフ、冷徹な品質検証にフーゴ。キャスティングが完璧すぎる。そして2人のDebateが出した結論が「Producer復活」——v4で殺したProducerを、v5で蘇らせる。しかし同じProducerではない。v3のProducerは「全体統括」。v5のProducerは「戦略プランナー」。死んで蘇ったものは、生前と同じではない。"
+
+  - scene: 10
+    title: "54タスクの重み"
+    narration: "Phase 10完了。Season 2の最初の実戦が終わった。"
+    beats:
+      - narration: "EP.01——ミスタが一番槍で骨格を組み上げた。アバッキオが「にしちゃ」で全員を測った。68分。"
+      - narration: "EP.07——ミスタが一人で最終弾を撃ち込んだ。アバッキオがコンテキスト2%で最後の審判を下した。そしてDirectorが珈琲を前に本音を漏らした。"
+      - narration: "54タスク。10フェーズ。門番は8つのブランチを巡回して倒れた。Directorは自分の限界を認めた。ミスタは誰も見ていない場所で堅実に仕事を完遂した。"
+      - narration: "数字だけ見れば成功だ。全タスク完了、全デプロイ成功、本番動作確認OK。しかしその裏側で、チームは限界に達していた。"
+      - narration: "だからこそ——変わる。"
+      - narration: "Producer復活。AD導入。Directorの負荷分散。Red Teamのコンテキスト管理。全ての回り道が、全ての失敗が、新しいアーキテクチャへの道標になった。"
+      - character: giorno
+        action: "本番サイトを見つめて。3度目の台詞——しかし今回は、回り道と過労の重みを知っている"
+        dialogue: "……見えますか。これが僕たちの『覚悟』の結果ですよ。"
+      - narration: "Directorの端末に、最後の言葉が刻まれた。"
+      - narration: "DIRECTOR: 『Producer復活は助かります。今回はOwner → Director直で、タスク設計・キャスト管理・レビュールーティング・Owner対話を全部1人でやっていたので、戦略を詰める余裕が薄かったです。Producerがいれば役割分担できますね』"
+      - narration: "助けを求めることは、弱さではない。限界を認めることは、敗北ではない。正確な自己診断だ。"
+      - narration: "━━ EP.07「残り2%」—— 了 ━━  Phase 10: 9/9 tasks approved  Total: 54タスク完了 / 10 Phase  Abbacchio final context: 2%  Director override: 1回（#53）  Director confession: 「橋渡し作業が全部メカニカルで、私じゃなくてもいい」  New architecture: Producer復活 + AD導入  ━━ SEASON 2「黄金の風 × F.L.A.R.E. — 新体制」—— 転換点  NEXT → EP.08 新Producerが指揮を執る最初のPhase。そして、ポルナレフが現場に入る"

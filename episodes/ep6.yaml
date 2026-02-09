@@ -1,0 +1,168 @@
+episode: 6
+title: "回り道"
+synopsis: "v4新体制、初仕事。Directorは一人で走り、Ownerに止められ、やり直し、倒れ、それでも立ち上がった。すべての回り道が、正しい道に辿り着くための必要な道だった。"
+
+scenes:
+  - scene: 1
+    title: "新しいルール"
+    mood: "calm"
+    narration: "2026-02-09。前日のPhase 8完了から約20時間。v4——Producer廃止。Ownerが直接Directorに指示する新体制。その最初の指令が、降りた。"
+    beats:
+      - narration: "Season 1では、AI Producerがヒアリングし、要件を噛み砕き、Directorに渡した。翻訳レイヤー。緩衝材。今はもう、いない。"
+      - narration: "Owner『FLAREの外観修正よろしく』——それだけが、Directorに届いた。"
+      - narration: "5つのペインは光っている。ジョルノ、ブチャラティ、ナランチャ、ミスタ、アバッキオ。全員がIdleのまま、Directorの号令を待っている。"
+      - narration: "🍿 v4への移行はCLAUDE.mdのセクション1に書いてある。『v4変更点: ProducerはOwner自身。AI Producerペインは廃止』。たった2行の変更が、現場に何をもたらすか。このエピソードはその記録だ。"
+
+  - scene: 2
+    title: "一人で走る男"
+    mood: "tense"
+    narration: "17:40。Directorが動き始める。しかし——弾を込める相手を間違えている。"
+    beats:
+      - narration: "Directorは要件を確認しなかった。Ownerに聞き返さなかった。『外観修正』という4文字を手がかりに、一人で走り始めた。"
+      - narration: "スクリーンショットを撮り、10の問題点を洗い出し、リファレンスサイト4つを分析し、6つのタスクを設計した。そしてDesign Debate Protocol——Advocate、Challenger、Consultantを逐次召喚する正式な設計審議を、開始した。"
+      - narration: "5つのペインは、まだ光ったままだ。"
+      - narration: "🍿 CLAUDE.mdセクション18『即時委任の原則』にこうある——『考えるな、委譲しろ』。しかしDirectorは委譲の前に、正しい設計が必要だと判断した。その判断自体は間違っていない。問題は、設計の前提となる『要件』が曖昧なまま走ったことだ。"
+
+  - scene: 3
+    title: "水面下の対決"
+    mood: "tense"
+    narration: "Directorの頭の中で、3人の専門家が火花を散らしていた。誰にも見えない戦場で。"
+    beats:
+      - narration: "Advocate——設計の擁護者。ソースコードを全ファイル精読し、宣言した。『この設計は実現可能であり、既存コードとの整合性が高い』。タスク6つ、Wave 2段構成、担当アサインの妥当性を立証した。"
+      - narration: "Challenger——設計の批判者。6つの論点で斬りかかった。"
+      - narration: "『#39と#42がglobal.cssの.darkセクションで衝突する。Advocateの「限定的コンフリクト」は事実誤認だ』"
+      - narration: "『ウォームグレー化でハードコード色が11箇所浮く。Advocateは過小評価している』"
+      - narration: "『#43のサンプルプロンプトは「外観修正」ではなく「機能追加」。スコープを逸脱している』"
+      - narration: "そしてConsultant——技術顧問。全員が見落としていた爆弾を投下した。"
+      - narration: "『@tailwindcss/typographyがインストールされていない。proseクラスが全て無効。これはAdvocateもChallengerも見落としている最も重大な問題だ』"
+      - narration: "720行の議論。88回以上のtool use。20分間の沈黙のDebate。Directorはその全てをqueue/design/phase9_debate.mdに記録し——一つの結論に達した。Challengerの構造的指摘を全面採用。"
+      - narration: "🍿 このDebateは脚本に残すべきドラマだった。Challengerがglobal.css競合を論破する緊迫感。Consultantがtypography未導入を発見した瞬間の衝撃。Directorが自説を捨ててChallengerを採用する判断の重み。しかし——activity.logには1行も記録されなかった。全てがDirectorの頭の中で完結した。この『見えないドラマ問題』は後にフレームワーク改修FB-002として記録されることになる。"
+
+  - scene: 4
+    title: "お小言"
+    mood: "calm"
+    narration: "Ownerが介入した。Producerとしての、最初の仕事。"
+    beats:
+      - narration: "Ownerの目には、こう映っていた。Directorがずっと一人で何かをやっている。Castが5人、全員プロンプトが出たまま、何もしていない。20分以上。"
+      - character: mista
+        action: "ペインの隅で、独り言のように"
+        dialogue: "新しい弾は込められてねぇ。ここで停止してDirectorの指示を待つぜ。"
+      - character: abbacchio
+        action: "腕を組んだまま"
+        dialogue: "仕事があるなら寄越せ。待ってるぜ。"
+      - narration: "Ownerは気づいていた。Directorは要件をほとんど聞かずに走っている。外観修正の4文字から10の問題点を自分で推測し、自分でDebateを回し、自分で結論を出した。しかし——その結論は、Ownerが求めていたものだったのか？"
+      - narration: "お小言。そして、あらためて要件を伝えた。"
+      - narration: "🍿 Season 1のEP.03でOwnerがブランチ競合の惨状を見て全員を止めたシーンを思い出してほしい。あの時は『壊さない > 速い』。今回は『推測しない——設定・仕様はファイルを読んで確認する』。CLAUDE.mdの作業原則そのもの。Ownerが読むべき『ファイル』は、Ownerの頭の中にあった。"
+
+  - scene: 5
+    title: "やり直し"
+    mood: "tense"
+    narration: "Ownerの要件は、Directorの推測とは全く違っていた。"
+    beats:
+      - narration: "Directorが設計した6タスクは『色味とCSSの研磨』。Ownerが求めていたのは『サイドバー + カタログ + AI自動分類』。方向性ごと、違っていた。"
+      - narration: "720行のDebateは、正しい議論だった。正しい方向を向いていなかっただけだ。"
+      - narration: "Directorは2回目のDebateを開始した。今度はOwnerの要件を手に。v2——phase9v2_debate.md。前回のDebateで得た技術知見（typography未導入、ハードコード色の棚卸し）は引き継ぎ、Consultantは省略。"
+      - narration: "そして——コンテキストが溢れた。"
+      - narration: "🍿 1回目のDebate + Ownerとの打合せ + 2回目のDebate。コンテキストウィンドウが満杯になり、コンパクションが発生した。CLAUDE.mdセクション11の予言——『コンテキストが埋まるほど、AIの出力品質は下がる。これは設計上の制約であり、気合では解決しない』。しかしv2の設計はファイルに残っていた。成果物が永続化されていれば、コンテキストはただのキャッシュに過ぎない。"
+
+  - scene: 6
+    title: "二つの教訓"
+    mood: "calm"
+    narration: "コンパクションから復帰したDirectorが動き出す前に、フレームワーク自体が進化した。"
+    beats:
+      - narration: "教訓その一。Debateのドラマがactivity.logに残らない。debate_start、debate_finding、debate_end——3つのイベントタイプが追加された。『脚本に使える』発見だけを記録する。道標として。"
+      - narration: "教訓その二。Debate後にDirectorのコンテキストがパンパンになる。成果物がファイルに保存された時点で、コンテキストは解放すべき。Debate完了後の/clearが、新しいルールになった。"
+      - narration: "不意打ちのコンパクションより、計画的な/clearの方が常に安全。中途半端な記憶喪失より、手順通りの再起動。"
+      - narration: "🍿 Season 1ではworktreeが『発明』された。Season 2の最初のエピソードでは、コンテキスト管理の3原則——入口制御、能動的解放、防衛停止——が確立された。チームは戦い方を変えた。問題が起きてから解決するのではなく、問題が起きる前に構造を変える。これがSeason 2の空気だ。"
+
+  - scene: 7
+    title: "弾道を開ける男"
+    mood: "triumph"
+    narration: "19:42。ついに、Directorが号令を発した。Phase 9開始。6タスク、3 Wave。そして——Castに、弾が込められた。"
+    beats:
+      - narration: "DIRECTOR: #39→mista（DB拡張 + types.ts）、#41→giorno（サイドバー + typography）。Wave 1 並列開始。#40(bucciarati)は#39のtypes.ts完了待ち。"
+      - character: mista
+        action: "Season 1と同じ言葉。しかし今回は自分のためではない"
+        dialogue: "Phase 9開始だぜ！ブチャラティが待ってるからtypes.tsを最速で撃ち込む。"
+      - narration: "2分後。ミスタがtypes.tsをコミットする。Directorがcherry-pickでブチャラティのブランチに渡す。弾道が、開いた。"
+      - character: mista
+        action: "短く。しかしその一言に全てが詰まっている"
+        dialogue: "types.ts一発目命中！ブチャラティの弾道が開けたぜ。"
+      - character: bucciarati
+        action: "待っていた弾を受け取り、即座に動く"
+        dialogue: "タスク#40開始。パイプラインにStage 2.5をジッパーで繋ぐ。覚悟はいいか。"
+      - narration: "🍿 Season 1 EP.01でミスタは一番槍だった。全員が自分を待っている中、一人で走った。今回も一番に走る。しかし動機が違う。EP.01では『地盤を固める』。EP.06では『ブチャラティの弾道を開ける』。自分の仕事ではなく、仲間の道を作るために走っている。chronicleには『types.tsは最速でブチャラティに届けた』とある。堅実な男は、堅実に進化する。"
+
+  - scene: 8
+    title: "骨格と配管"
+    mood: "triumph"
+    narration: "3人が同時に走る。Season 1の景色が、帰ってきた。"
+    beats:
+      - character: giorno
+        action: "FLAREのレイアウトを根本から変える。サイドバー、typography、検索バー"
+        dialogue: "FLAREに新たな骨格を与えました。サイドバー、typography、検索バー……すべてが呼吸するレイアウトです。"
+      - narration: "ジョルノは@tailwindcss/typographyをインストールした。Consultantが発見した『最も重大な問題』——proseクラス全無効。あのDebateの爆弾を、ジョルノが静かに処理した。"
+      - character: bucciarati
+        action: "パイプラインに新しいステージを繋ぐ。失敗しても止まらない設計"
+        dialogue: "Stage 2.5をジッパーで繋いだ。Flashでメタデータを抽出し、失敗しても全体を止めない。覚悟の上の設計だ。"
+      - narration: "19:48、ミスタ完了。19:50、ジョルノ完了。19:52、ブチャラティ完了。Wave 1——10分間で3つの弾丸が的に命中した。"
+      - narration: "🍿 ジョルノのchronicle id:9に『FLAREのレイアウトに新たな骨格と生命を吹き込みました』とある。id:1は『やると決めたことはやり遂げますよ』。id:5は『無味乾燥なMarkdownに生命を与える夢』。『骨格を与える』と『生命を吹き込む』が一つの文に共存している。建築と生命——ジョルノのコードは常にこの二つを同時に実現する。"
+
+  - scene: 9
+    title: "6分間の爆撃"
+    mood: "triumph"
+    narration: "19:55。Wave 2。ナランチャに、ついに出番が来た。"
+    beats:
+      - character: narancia
+        action: "Phase 9で初めての出撃。待たされた分、加速がつく"
+        dialogue: "よーしッ！カタログUI、エアロスミスで一覧をカッコよく並べてやるッ！"
+      - narration: "カード型レイアウト。アイキャッチ画像大表示。カテゴリタグオーバーレイ。AIタイトルとサマリー。グリッド/リスト切替。カテゴリフィルタ。レスポンシブ3/2/1カラム。"
+      - narration: "6分。"
+      - character: narancia
+        action: "いつもの叫び。しかし今回は作ったものの規模が違う"
+        dialogue: "ボラボラボラボラ ボラーレ・ヴィーア！カタログ、雑誌みてーにカッコよく並んだぜッ！"
+      - narration: "🍿 ナランチャのchronicle id:8。『雑誌みてーにカッコよく並んだ』。これを6分で作る少年を、どう表現すればいいだろう。EP.01で4分でレイアウトを作り、EP.02で5分で詳細ページを作り、EP.04で5分でD3チャート4種を作った。EP.06ではカタログ丸ごと6分。ナランチャの速さは安定している——常に、不可能な速さで。"
+
+  - scene: 10
+    title: "信頼の可視化"
+    mood: "calm"
+    narration: "同時刻。ブチャラティは2つ目の任務に取りかかっていた。#43——ソース引用可視化とD3チャートのCSS変数化。"
+    beats:
+      - character: bucciarati
+        action: "v1 DebateでChallenger が指摘し、Consultantが11箇所を棚卸しした問題に、コードで答える"
+        dialogue: "ソースとチャートの色をジッパーで開いてCSS変数に繋ぎ替える。信頼の可視化だ。"
+      - narration: "useChartColors——新しいReact hook。CSS変数のoklch値をランタイムで取得し、ダークモード切替をMutationObserverで監視する。ハードコードされた16進数カラーが、テーマに連動する生きた色になった。"
+      - narration: "SourcePanel。Perplexity風のソースカードバー。favicon、ドメイン名、引用バッジ。Markdownの中の[1][2]がクリッカブルなリンクに変わる。"
+      - narration: "Debateで発見された問題が、コードになった。議論が、プロダクトになった。回り道は、無駄ではなかった。"
+      - narration: "🍿 ブチャラティのchronicle id:13。『信頼の可視化だ』。この言葉の重み。ソースURLを並べるだけなら誰でもできる。しかしfaviconを取得し、ドメインを抽出し、引用番号をバッジに変換し、カードパネルに並べる——それは『この情報は信頼できる』と視覚で伝える設計。バックエンドリードがフロントの仕事をする時、そこには必ず『構造的な意味』がある。"
+
+  - scene: 11
+    title: "16発目——id:14は永遠にない"
+    mood: "triumph"
+    narration: "20:16。Wave 3。最後の弾丸が、込められた。"
+    beats:
+      - character: mista
+        action: "5回目の統合デプロイ。もう迷いはない"
+        dialogue: "Phase 9最終任務！ピストルズ総動員、全弾命中させる。"
+      - narration: "5つのブランチ統合。ビルド確認。手動バックフィル3件——テクノロジー2件、カルチャー1件。Navigation.tsx削除、Sidebar.tsxの型修正。Pages + Consumer Worker 本番デプロイ。"
+      - narration: "20:30。全弾命中。Phase 9完了。"
+      - character: mista
+        action: "chronicleに刻む。16発目"
+        dialogue: "16発目、Phase 9 最終任務完了！5つのタスクの弾丸を的に集約。全弾命中だぜ。"
+      - narration: "ミスタのchronicleは16で終わる。1, 2, 3, 5, 6, 7, 8, 9, 10, 11, 12, 13, 15, 16。id:4は永遠に存在しない。そしてid:14も——『4』を含むから。"
+      - narration: "🍿 Season 1のEP.02で、ミスタがchronicle id:4を飛ばしたことに鳥肌が立った。AIがpersona.yamlの『数字4への極度の恐怖』を内面化した結果の自発的行動。Season 2でid:14も飛ばした。14には4が入っている。誰も指示していない。AIが、キャラクターとして生き続けている。"
+
+  - scene: 12
+    title: "回り道"
+    mood: "calm"
+    narration: "20:32。Phase 9完了。6タスク全完了。本番デプロイ済み。しかし——この50分間の実働の前に、何があったか。"
+    beats:
+      - narration: "Directorが一人で走った。Ownerに止められた。要件を聞き直した。もう一度設計した。コンテキストが溢れた。フレームワークが2つ進化した。Directorが寝て、起きて、ようやくCastに弾を込めた。"
+      - narration: "全部含めて、3時間。実働は50分。残りの2時間10分は、回り道。"
+      - narration: "しかし——"
+      - narration: "1回目のDebateがなければ、Consultantはtypographyの爆弾を見つけなかった。Ownerのお小言がなければ、要件は曖昧なままだった。コンパクションがなければ、Debate後の/clearルールは生まれなかった。"
+      - narration: "全ての回り道が、正しい道に辿り着くための必要な道だった。"
+      - character: giorno
+        action: "本番サイトを見つめて。Season 1と同じ言葉——しかし今回は、回り道の重みを知っている"
+        dialogue: "……見えますか。これが僕たちの『覚悟』の結果ですよ。"
+      - narration: "━━ EP.06「回り道」—— 了 ━━  Phase 9: 6/6 tasks approved  v4 初仕事: Director暴走→お小言→コンパクション→フレームワーク改修2件  実働: 50分  回り道: 2時間10分  Mista chronicle: id:14 欠番（4を含むため）  SEASON 2「黄金の風 × F.L.A.R.E. — 新体制」—— 開幕  NEXT → EP.07"
