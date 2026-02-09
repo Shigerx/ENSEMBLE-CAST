@@ -1,0 +1,28 @@
+# queue/task_pool.yaml — Director がタスクを投入し、Cast が自律取得するプール
+#
+# 運用ルール:
+# - Director だけがタスクを追加・ステータス変更できる
+# - Cast は status: available かつ自分の dev_role/skills に合うタスクを取得できる
+# - Cast がタスクを取得したら status: claimed に変更し、queue/tasks/<slug>.yaml にコピーする
+# - Director は定期的に task_pool を確認し、滞留タスクがないか監視する
+
+pool:
+  # 例:
+  # - id: 1
+  #   title: "リサーチAPI CRUD実装"
+  #   description: |
+  #     GET/POST/PUT/DELETE の4エンドポイントを実装
+  #   priority: high          # high | medium | low
+  #   status: available       # available | claimed | completed | blocked
+  #   required_role: "BE"     # 取得条件: dev_role が一致する Cast のみ
+  #   required_skills: []     # 追加のスキル条件（オプション）
+  #   semantic_group: null    # 同一グループは直列化（既存ルール）
+  #   depends_on: []          # 依存タスク
+  #   owned_files:            # 排他ファイル
+  #     - "src/api/routes/research.ts"
+  #   shared_files: []        # 統合時に調整するファイル
+  #   branch: null            # Director がブランチ作成後に記入
+  #   worktree: null          # Director が worktree 作成後に記入
+  #   claimed_by: null        # Cast が取得時に slug を記入
+  #   claimed_at: null
+  #   created_at: null        # Director が date コマンドで記入

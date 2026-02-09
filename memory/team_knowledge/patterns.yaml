@@ -1,0 +1,16 @@
+# Team Knowledge: Patterns — うまくいったパターン
+# Phase 蒸留で自動追記される。手動追記も可
+
+patterns:
+  # 例:
+  # - id: P-001
+  #   phase: 1
+  #   project: "flare"
+  #   title: "Hono + D1 の CRUD パターン"
+  #   description: |
+  #     Hono の app.route() でプレフィックス管理し、
+  #     D1 binding "DB" で直接クエリする方式が安定した。
+  #   context: "Cloudflare Workers 環境"
+  #   benefit: "型安全 + エッジ実行 + ゼロコールドスタート"
+  #   source: "bucciarati/chronicle.yaml"
+  #   added_at: "2026-02-10"

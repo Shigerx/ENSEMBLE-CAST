@@ -33,7 +33,8 @@ queue/file_registry.yaml
 # --- コンテキスト・メモリ ---
 context/*.md
 !context/template.md
-memory/
+memory/*
+!memory/team_knowledge/
 
 # --- 契約・デイリー（実データ） ---
 contracts/*.yaml

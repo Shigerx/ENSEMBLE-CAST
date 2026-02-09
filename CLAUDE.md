@@ -242,6 +242,9 @@ Claude Codeは「待機」できない。プロンプトが出た = スクリプ
 | queue/reports/<reviewer-slug>_report.yaml | Director | Reviewer のみ |
 | queue/pending_tasks.yaml | Director | Director のみ |
 | queue/file_registry.yaml | Director | Director のみ |
+| queue/task_pool.yaml | 全員 | Director（タスク投入・ステータス管理）、Cast（claimed 時の更新のみ） |
+| memory/team_knowledge/*.yaml | 全員 | **Director のみ**（蒸留時。Task tool 経由も含む） |
+| memory/team_knowledge/README.md | 全員 | **Director のみ** |
 | queue/framework_feedback.yaml | 全員 | **Director のみ**（Cast レポートから集約） |
 | queue/design/*.md | Director + 議論参加者 | Director（作成）、Advocate/Challenger/Consultant（セクション追記） |
 | queue/design/*.yaml | 全員 | Director のみ |
@@ -324,6 +327,10 @@ v3ではプロジェクトを複数のユニット（班）に分割する。
 ```
 
 競合リスクがある場合は status: blocked にして Director に報告する。
+
+**例外（追記のみ or 限定的更新が許可されるファイル）:**
+- `logs/activity.log` — 追記のみ（append-only）。複数 Cast が同時追記可。構造化データではないため破損リスク低
+- `queue/task_pool.yaml` — Cast は `status: claimed` + `claimed_by` + `claimed_at` の更新のみ許可。同一タスクを複数 Cast が同時に claimed するレース条件は Director が調停（先に claimed した方が有効。後から書いた方は Director が差し戻し）
 
 ### v2: Git ブランチ分離による根本解決
 
@@ -408,7 +415,7 @@ Claude Codeのコンテキストがコンパクションされた場合:
    - Line Producer: `config/units.yaml` + `contracts/` + `dailies/` + `dashboard.md`
 
 6. **現在のタスクを確認**:
-   - Cast: `queue/tasks/<slug>.yaml`
+   - Cast: `queue/tasks/<slug>.yaml` + `queue/task_pool.yaml`（セルフサーブ方式の場合）
    - Red Team: タスクキューなし。起床時に全ブランチ巡回 + レポート確認
    - Director: `queue/producer_to_director.yaml`（v2）/ `queue/lp_to_units/<unit>.yaml`（v3）
    - Line Producer: `queue/producer_to_lp.yaml` + `queue/inter_unit/`
@@ -484,13 +491,14 @@ date "+%Y-%m-%dT%H:%M:%S"
 
 ---
 
-## 16. 3層コンテキスト管理
+## 16. 4層コンテキスト管理（v4 P6 で3層→4層に拡張）
 
-効率的な知識共有のため、3層構造のコンテキストを採用:
+効率的な知識共有のため、4層構造のコンテキストを採用:
 
 | レイヤー | 場所 | 用途 | 更新者 |
 |---------|------|------|--------|
 | グローバル | `memory/global_context.md` | システム全体の設定・Ownerの好み | Producer |
+| チーム | `memory/team_knowledge/` | Phase蒸留されたチーム知見・教訓 | Director（v4 P6 追加） |
 | プロジェクト | `context/{project}.md` | プロジェクト固有の知見・状態 | Director / Cast |
 | 個人 | `cast/members/<slug>/chronicle.yaml` | キャスト個人の行動履歴 | 各Cast |
 
@@ -713,3 +721,84 @@ messages:
 - 200文字を超えるメッセージ
 - 3往復目の続行（escalated にせずに会話を続けること）
 - discussion を使わず send-keys だけで会話すること（記録が残らない）
+
+---
+
+## 24. セルフサーブタスク管理（v4 P5 追加）
+
+Director がタスクプール（`queue/task_pool.yaml`）にタスクを投入し、Cast が自律的に取得する方式。
+Director の伝言ゲームボトルネックを解消する。
+
+### タスクプールの仕組み
+
+```
+Director: タスク設計 → task_pool.yaml にタスク投入
+  ↓
+Cast: 起床時に task_pool.yaml を確認
+  → status: available かつ自分に合うタスクを発見
+  → status: claimed に変更 + claimed_by に自分の slug を記入
+  → queue/tasks/<slug>.yaml にタスク詳細をコピーして作業開始
+  ↓
+Director: task_pool.yaml を監視。滞留タスクがあれば Cast に直接割り当て
+```
+
+### ルール
+
+1. **タスク投入は Director のみ** — Cast はタスクを追加・変更しない（claimed 更新のみ許可）
+2. **取得条件の確認** — Cast は `required_role` が自分の `dev_role` に合致するタスクのみ取得可能
+3. **早い者勝ち** — 複数 Cast が同じタスクを狙った場合、先に claimed にした方が取得（レース条件はファイル競合で検知。Director が調停）
+4. **取得したらすぐ作業開始** — claimed のまま放置しない
+5. **Director は監視者** — タスクが滞留していないか定期確認。24時間以上 available のタスクは Cast に直接割り当て
+
+### ファイル所有権（正典: セクション7）
+
+| ファイル | 読み | 書き |
+|---------|------|------|
+| queue/task_pool.yaml | 全員 | Director（タスク投入・ステータス管理）、Cast（claimed 時の更新のみ） |
+
+### 従来方式との共存
+
+- セルフサーブ（task_pool.yaml）と従来方式（queue/tasks/<slug>.yaml への直接配布）は**共存可能**
+- Director が Cast のスキルや状況を見て、直接配布する方が効率的な場合は従来方式を使ってよい
+- 初期タスク配布時はプール方式でも直接配布でも可
+
+---
+
+## 25. Team Memory（v4 P6 追加）
+
+Phase 完了時にチームの知見を蒸留し、`memory/team_knowledge/` に蓄積する仕組み。
+次回以降の Cast がプロジェクト開始時に参照し、過去の教訓を活用する。
+
+### ディレクトリ構造
+
+```
+memory/team_knowledge/
+  patterns.yaml        # うまくいったパターン
+  anti_patterns.yaml   # 失敗パターン
+  decisions.yaml       # 技術判断の記録
+  retrospective.yaml   # Phase 振り返り
+```
+
+### 蒸留タイミング
+
+- **Phase 完了時**: Director が `scripts/distill-phase.sh <Phase番号>` を実行
+- **手動追記**: Director が重要な知見を即座に記録する場合
+
+### 蒸留手順
+
+1. `scripts/snapshot-phase.sh` でスナップショット保存（先に実行必須）
+2. `scripts/distill-phase.sh` で蒸留ソース一覧を取得
+3. Task tool（Haiku モデル推奨）で知見を抽出し、各ファイルに追記
+
+### ファイル所有権（正典: セクション7）
+
+| ファイル | 読み | 書き |
+|---------|------|------|
+| memory/team_knowledge/*.yaml | 全員 | Director のみ（蒸留時。Task tool 経由も含む） |
+| memory/team_knowledge/README.md | 全員 | Director のみ |
+
+### Cast の読み込みタイミング
+
+- 起動時のコンテキスト読み込みで参照（cast_template.md のステップ7.5。存在する場合のみ）
+- patterns.yaml と anti_patterns.yaml を優先的に参照
+- コンパクション復帰時は省略可（chronicle.yaml の handoff を優先）

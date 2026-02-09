@@ -1,0 +1,16 @@
+# Team Knowledge: Anti-Patterns — 失敗パターン
+# Phase 蒸留で自動追記される
+
+anti_patterns:
+  # 例:
+  # - id: AP-001
+  #   phase: 1
+  #   project: "flare"
+  #   title: "共有ディレクトリでの git checkout 競合"
+  #   description: |
+  #     複数 Cast が同じディレクトリで git checkout すると
+  #     ファイルが混入する。worktree 必須。
+  #   impact: "タスク成果物の汚染、手戻り"
+  #   prevention: "git worktree で Cast ごとに独立ディレクトリを割り当て"
+  #   source: "director/checkpoint"
+  #   added_at: "2026-02-10"

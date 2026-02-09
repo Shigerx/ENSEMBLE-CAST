@@ -1,0 +1,21 @@
+# Team Knowledge: Retrospective — Phase 振り返り
+# Phase 完了時に Director が distill-phase.sh で生成
+
+retrospectives:
+  # 例:
+  # - phase: 1
+  #   project: "flare"
+  #   date: "2026-02-10"
+  #   duration_days: 2
+  #   tasks_completed: 4
+  #   tasks_rejected: 1
+  #   key_achievements:
+  #     - "プロジェクト初期構築完了"
+  #     - "DB スキーマ設計確定"
+  #   challenges:
+  #     - "worktree 未使用でブランチ競合が発生"
+  #   improvements:
+  #     - "worktree 必須ルールを追加"
+  #   cast_highlights:
+  #     giorno: "初期構築を高速で完了"
+  #     bucciarati: "API 設計が明確で修正ゼロ"

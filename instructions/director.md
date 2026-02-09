@@ -184,6 +184,8 @@ queue/discussion/ を確認（escalated があるか？）
   ↓
 escalated あり？ → エスカレーション対応（下記「Cast間通信の監視」参照）
   ↓
+queue/task_pool.yaml を確認（滞留タスクがないか？）
+  ↓
 着任報告がある？ → 全員揃ったらタスク配布
   ↓
 完了報告がある？ → レビュー判断（下記）
@@ -405,6 +407,13 @@ ls queue/discussion/
 - `status: open` → 正常。Cast 同士で進行中。介入不要
 - `status: resolved` → 正常。完了済み
 - `status: escalated` → **要対応**。下記「Cast間通信の監視」セクションの「エスカレーション対応」を実行
+
+### 1.8 タスクプール確認（v4 P5 追加）
+
+`queue/task_pool.yaml` の状態を確認:
+- `status: available` のタスク → 滞留していないか確認（長時間 available のままなら Cast に直接割り当て）
+- `status: claimed` のタスク → 進捗を `queue/reports/` と照合
+- Cast が claimed 後に長時間報告がない → send-keys で状況確認
 
 ### 2. レポート内容に基づいて行動
 
@@ -1125,6 +1134,97 @@ Director は Red Team からの追加レポートを待つ必要はないが、�
 
 ---
 
+## 🔄 セルフサーブタスク管理（v4 P5 追加）
+
+### 概要
+
+従来の「Director が各 Cast に個別配布」に加え、**タスクプール方式**を導入。
+Director はタスクプール（`queue/task_pool.yaml`）にタスクを投入し、Cast が自律的に取得する。
+
+**Director の役割変更**:
+| 従来 | P5以降 |
+|------|--------|
+| Cast への個別タスク配布 | タスクプールにタスク投入 |
+| 全通信のハブ | テックリード（タスク設計 + マージ判断） |
+| 全レビュー実施 | Red Team に委譲（マージ判断のみ） |
+
+### タスクプール運用フロー
+
+```
+1. Director がタスクを設計 → task_pool.yaml に投入（status: available）
+   ↓
+2. Cast を起床: "タスクプールに新しいタスクがあります。確認してください。"
+   ↓
+3. Cast が task_pool.yaml を確認
+   → required_role が合致 + depends_on が全て完了 → 取得可能
+   → status: claimed に変更 + claimed_by に slug を記入
+   → queue/tasks/<slug>.yaml にタスク詳細をコピーして作業開始
+   ↓
+4. Director は task_pool.yaml を監視（起床時のFull Scanに追加）
+   → 滞留タスク（24h以上 available）があれば Cast に直接割り当て
+   → claimed タスクの進捗を確認
+```
+
+### タスクプールへの投入手順
+
+1. タスクを設計（従来と同じ: 依存関係、ファイル所有権、semantic_group）
+2. task_pool.yaml にタスクを追加:
+   ```yaml
+   pool:
+     - id: <タスクID>
+       title: "<タスクタイトル>"
+       description: |
+         <詳細な説明>
+       priority: high
+       status: available
+       required_role: "<FE/BE/UI/infra/test 等>"
+       required_skills: []
+       semantic_group: null
+       depends_on: []
+       owned_files:
+         - "<排他ファイル>"
+       shared_files: []
+       branch: "<cast/<slug>/<task-id>-<説明>>"
+       worktree: "</tmp/<slug>-<task-id>>"
+       claimed_by: null
+       claimed_at: null
+       created_at: <dateコマンドの結果>
+   ```
+3. ブランチ + worktree を事前作成（従来のタスク配布時と同じ）
+4. Cast を一括起床:
+   ```bash
+   bash scripts/send-message.sh <slug1> "タスクプールに新しいタスクがあります。queue/task_pool.yaml を確認してください。"
+   bash scripts/send-message.sh <slug2> "タスクプールに新しいタスクがあります。queue/task_pool.yaml を確認してください。"
+   ```
+
+### 起床時のFull Scanに追加
+
+既存の「起こされたら全確認」セクションに以下を追加:
+
+```
+### 1.8 タスクプール確認（v4 P5 追加）
+
+task_pool.yaml の状態を確認:
+- status: available のタスク → 滞留していないか確認
+- status: claimed のタスク → 進捗を queue/reports/ と照合
+- Cast が claimed 後に長時間報告がない → send-keys で状況確認
+```
+
+### 従来方式との共存
+
+- **初期タスク配布**: プール方式でも直接配布でも可（Director判断）
+- **修正タスク**: 従来通り直接配布が効率的（特定Castへの修正指示のため）
+- **緊急タスク**: 直接配布推奨（プールだと取得が遅れる可能性）
+- **移行**: 既存プロジェクトでは段階的に導入可能。新プロジェクトではプール方式を推奨
+
+### ファイル所有権（追加）
+
+task_pool.yaml の所有権を認識すること:
+- 読み: 全員
+- 書き: Director（タスク投入・管理）、Cast（claimed 更新のみ）
+
+---
+
 ## 🔴 タスク配布の自動化ヒント（v2 追加）
 
 ### バッチ配布パターン
@@ -1222,6 +1322,29 @@ Phase完了時、または Director/Cast のコンテキスト枯渇時に全員
    ```
    → `episodes/phase{N}/` に activity.log, dashboard.md, chronicles, reports, materials.yaml を保存。
    これをしないと Phase の発言履歴・作業記録が失われ、脚本生成ができなくなる。
+1.5. **ナレッジ蒸留（v4 P6 追加）**: Phase の知見を team_knowledge に蒸留する
+   ```bash
+   bash scripts/distill-phase.sh <Phase番号>
+   ```
+   → 蒸留ソースの一覧が出力される。
+   → Task tool（Haiku モデル推奨）を起動し、ソースファイルを読ませて知見を抽出:
+   ```
+   subagent_type: general-purpose
+   model: haiku
+   prompt: |
+     以下のファイルから Phase {N} の知見を抽出し、memory/team_knowledge/ の各ファイルに追記してください。
+
+     抽出対象:
+     - patterns.yaml: うまくいったパターン（再現推奨）
+     - anti_patterns.yaml: 失敗パターン（再発防止）
+     - decisions.yaml: 重要な技術判断
+     - retrospective.yaml: Phase 全体の振り返り
+
+     ソースファイル:
+     [distill-phase.sh の出力から一覧]
+
+     各ファイルの既存エントリの ID を確認し、次の連番で追加してください。
+   ```
 2. **チェックポイント保存**: `queue/checkpoint.yaml` を更新（上記フォーマット）
 3. **dashboard.md 更新**: 現在の状態を正確に反映
 4. **Producerに報告**: send-keys で「Phase N 完了。スナップショット・checkpoint 保存済み。リセット推奨。」

@@ -113,8 +113,10 @@ bash scripts/send-message.sh director '<slug>、任務完了。報告書を確�
 5. `memory/global_context.md`（Ownerの好み・システム方針）
 6. `config/production.yaml`（プロジェクト概要）
 7. `context/{project}.md`（プロジェクトコンテキスト、存在すれば）
+7.5. `memory/team_knowledge/`（チーム知識ベース。存在する場合。patterns.yaml と anti_patterns.yaml を優先的に参照）
 8. `cast/members/<slug>/chronicle.yaml`（これまでの行動履歴）
 9. `queue/tasks/<slug>.yaml`（現在のタスク）
+9.5. `queue/task_pool.yaml`（タスクプール。tasks/<slug>.yaml が空の場合に確認）
 10. `queue/discussion/` 配下に自分宛のメッセージがないか確認（存在する場合のみ）
 11. 必要に応じて対象ファイルを読む
 12. ペルソナを設定してから行動開始
@@ -227,6 +229,78 @@ bash scripts/send-message.sh director '<slug>、着任完了。報告書を確�
 ```
 
 **🔴 その後、停止**。タスクが来るのを待つ。
+
+---
+
+## 🔄 セルフサーブタスク取得（v4 P5 追加）
+
+### 概要
+
+Director がタスクプール（`queue/task_pool.yaml`）にタスクを投入し、Cast が自律的に取得する方式。
+従来の「Director からの直接配布（queue/tasks/<slug>.yaml）」と共存する。
+
+### 取得フロー
+
+起床時（または従来タスクが空の時）に以下を確認:
+
+```
+1. queue/tasks/<slug>.yaml を確認
+   → タスクあり → 従来フロー（そのまま実行）
+   → タスクなし → 2へ
+
+2. queue/task_pool.yaml を確認
+   → status: available のタスクを探す
+   → 条件チェック:
+     a. required_role が自分の dev_role に合致するか
+     b. depends_on の全タスクが completed か
+     c. 自分が現在別タスクを実行中でないか
+   → 全条件OK → 3へ
+   → 該当タスクなし → 停止して待機
+
+3. タスクを取得（claimed）
+   a. task_pool.yaml のエントリを更新:
+      status: claimed
+      claimed_by: <自分のslug>
+      claimed_at: <dateコマンドの結果>
+   b. queue/tasks/<slug>.yaml にタスク詳細をコピー:
+      ```yaml
+      tasks:
+        - id: <task_pool のタスクID>
+          title: "<タスクタイトル>"
+          description: "<タスク詳細>"
+          branch: "<task_pool のブランチ>"
+          worktree: "<task_pool の worktree>"
+          owned_files: <task_pool の owned_files>
+          shared_files: <task_pool の shared_files>
+          priority: <task_pool の priority>
+          status: in_progress
+          assigned_at: <dateコマンドの結果>
+      ```
+   c. activity.log に記録:
+      ```bash
+      echo -e "$(date '+%Y-%m-%dT%H:%M:%S')\t<slug>\tprogress\tタスクプールから #<ID> を取得。<タスクタイトル>" >> logs/activity.log
+      ```
+
+4. 通常のタスク実行フロー（本指示書「メインループ: タスク実行」）に進む
+```
+
+### ルール
+
+1. **条件チェック必須** — required_role が合わないタスクは取得しない
+2. **depends_on の確認** — 依存タスクが completed でないタスクは取得しない。task_pool.yaml で確認
+3. **早い者勝ち** — 複数 Cast が同じタスクを狙うことがある。先に claimed にした Cast が取得。Director が競合を調停
+4. **取得したらすぐ作業開始** — claimed のまま放置しない
+5. **従来方式を優先** — queue/tasks/<slug>.yaml にタスクがあればそちらを先に実行
+6. **タスクプールを書き換えるのは claimed 更新のみ** — タスクの追加・変更は Director のみ
+
+### 従来方式との違い
+
+| | 従来方式 | セルフサーブ |
+|---|---------|------------|
+| タスク入手 | Director が queue/tasks/<slug>.yaml に書く | Cast が task_pool.yaml から取得 |
+| 起床メッセージ | "queue/tasks/<slug>.yaml に新しいタスクがあります" | "タスクプールに新しいタスクがあります" |
+| 作業開始 | すぐ実行 | 条件チェック → claimed → tasks/<slug>.yaml にコピー → 実行 |
+| 完了報告 | 同じ | 同じ（queue/reports/<slug>_report.yaml） |
 
 ---
 
@@ -582,6 +656,8 @@ echo "完了待機|—|—|$(date '+%Y-%m-%dT%H:%M:%S')" > logs/<slug>_status.tx
    ```
    queue/tasks/<slug>.yaml
    ```
+
+7.5. タスクがない場合は `queue/task_pool.yaml` を確認（セルフサーブタスク取得セクション参照）
 
 8. ペルソナを設定して作業再開
 

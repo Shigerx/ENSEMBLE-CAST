@@ -1,0 +1,16 @@
+# Team Knowledge: Decisions — 重要な技術判断
+# Design Debate の _final.yaml や Director の判断を記録
+
+decisions:
+  # 例:
+  # - id: D-001
+  #   phase: 1
+  #   project: "flare"
+  #   title: "フロントエンド: Astro + Tailwind 採用"
+  #   rationale: "Cloudflare Pages 完結の要件に最も合致"
+  #   alternatives_considered:
+  #     - "Next.js: Vercel 依存が懸念"
+  #     - "SvelteKit: エコシステムが小さい"
+  #   decided_by: "Design Debate Phase 1"
+  #   source: "queue/design/phase1_final.yaml"
+  #   added_at: "2026-02-10"
