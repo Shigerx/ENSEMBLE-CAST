@@ -56,8 +56,8 @@ Owner（人間・上様）
   Director Director    Director
   Cast×N  Cast×N      Cast×N
 
-サブエージェント（オンデマンド召喚）:
-  Script Supervisor, Technical Advisor, Location Scout,
+サブエージェント（オンデマンド召喚 = ability_agent）:
+  コードレビュー, Technical Advisor, Location Scout,
   Assistant Director, Research Consultant, Editor,
   Script Doctor, Previs Artist
 
@@ -512,6 +512,17 @@ date "+%Y-%m-%dT%H:%M:%S"
 - コード自体にキャラ要素を混入させない（変数名、コメント等）
 - テスト、エラーハンドリング、型安全性を重視する
 
+### コード衛生基準（全Agent必読・Stand検証対象）
+
+| # | 基準 | 検証方法 |
+|---|------|---------|
+| H1 | 同一機能を持つファイルが2つ以上存在しないこと | Stand: DUPLICATION チェック |
+| H2 | 使用されていないコード（関数・変数・export・import）が残っていないこと | Stand: DEAD_CODE チェック |
+| H3 | 同一機能を持つ処理が複数箇所に散在していないこと（共通化すべき） | Red Team 判断 |
+| H4 | 1ファイルが1000行を超えないこと（超える場合は分割） | Stand: FILE_SIZE チェック |
+| H5 | レビュー時に code-reviewer + code-simplifier を実行すること | Red Team フロー内で統一実行 |
+| H6 | Swarm 使用前は `/clear` を実行すること | Cast セルフチェック |
+
 ---
 
 ## 15. 発言フォーマット（名乗りルール）
@@ -855,3 +866,45 @@ memory/team_knowledge/
 - 起動時のコンテキスト読み込みで参照（cast_template.md のステップ7.5。存在する場合のみ）
 - patterns.yaml と anti_patterns.yaml を優先的に参照
 - コンパクション復帰時は省略可（chronicle.yaml の handoff を優先）
+
+---
+
+## 26. 用語集（v4.2 追加）
+
+### 常駐ロール
+
+| 名称 | 役割 | 備考 |
+|------|------|------|
+| Producer | 戦略プランナー。Phase計画・Design Debate主催 | tmux 常駐（v4.1 復活） |
+| Director | 運用マネージャー。橋渡し・マージ判断・タスク配布 | tmux 常駐 |
+| Line Producer (LP) | 現場統括。ユニット間調整・契約管理 | scale: large のみ |
+| Cast | 実装担当。コードを書く人 | tmux 常駐 |
+| Red Team | 独立品質検証。全ブランチ閲覧+マージブロック権 | tmux 常駐 |
+
+### Design Debate 参加者
+
+| 名称 | 役割 | 備考 |
+|------|------|------|
+| Advocate | 設計擁護者。提案の利点を主張 | Task tool 召喚（必須） |
+| Challenger | 設計批判者。リスク・穴を指摘 | Task tool 召喚（必須） |
+| Consultant | 専門分野からの見解提供 | Task tool 召喚（オプション） |
+
+### 召喚型サブエージェント（ability_agent）
+
+汎用正式名は **ability_agent**。プロジェクトごとにエイリアス（Stand 等）を使用可。
+
+| 汎用名 | 用途 | 召喚者 |
+|--------|------|--------|
+| ability_agent (Stand) | Red Team の機械的チェック代行 | Red Team |
+| ability_agent（コードレビュー） | コードレビュー | Director |
+| ability_agent (Technical Advisor) | 影響調査・アーキテクチャ判断 | Director |
+| ability_agent (Location Scout) | ライブラリ選定・技術調査 | Director |
+| ability_agent (Research Consultant) | ドメイン知識調査 | Director |
+
+### 廃止済み名称（deprecated）
+
+| 旧名称 | 廃止理由 | 移行先 |
+|--------|---------|--------|
+| Script Supervisor（常駐ペイン） | v4 で Task tool 召喚に変更 | ability_agent として都度召喚 |
+| Technical Advisor | Consultant に名称統合 | Consultant（Design Debate 時）/ ability_agent（調査時） |
+| Reviewer（常駐ペイン） | Red Team に昇格 | Red Team |

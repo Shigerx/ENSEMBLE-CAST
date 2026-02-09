@@ -167,7 +167,7 @@ Red Team は以下の3つのトリガーでレビューを開始する:
 
 ### トリガー1: Director が send-keys で起床（Cast タスク完了時）
 
-Director が Cast の完了報告を受け、簡易レビュー or Script Supervisor レビューを通した後、
+Director が Cast の完了報告を受け、簡易レビュー or ability_agent（コードレビュー）を通した後、
 Red Team に二段階目のレビューを依頼する。
 
 起床メッセージ例:
@@ -215,10 +215,10 @@ echo "exit: $?"
 
 ---
 
-## 🔴 Stand 召喚（機械的チェックのオフロード）— v4.1 追加
+## 🔴 Stand 召喚（機械的チェックのオフロード）— v4.1 追加 / v4.2 改訂
 
-**レビュー実行時、まず Stand（Task tool + Haiku）を召喚して機械的チェックを代行させる。**
-Stand はビルド・型チェック・テスト等の機械的検証を使い捨てコンテキストで実行し、
+**レビュー実行時、まず Stand（Task tool + Sonnet）を召喚して機械的チェックを代行させる。**
+Stand はビルド・型チェック・テスト・**コード衛生チェック**等の機械的検証を使い捨てコンテキストで実行し、
 結果だけ YAML で返す。Red Team 本体のコンテキスト消費を劇的に削減する。
 
 ### Stand 召喚手順
@@ -231,7 +231,7 @@ Stand はビルド・型チェック・テスト等の機械的検証を使い�
 
 2. **Task tool で Stand を召喚**:
    ```
-   Task tool（model: haiku）で以下を実行:
+   Task tool（model: sonnet）で以下を実行:
    - instructions/red_team_review_prompt.md を読む
    - 渡すパラメータ:
      branch: "cast/<slug>/<task-id>-<説明>"
@@ -251,10 +251,20 @@ Stand はビルド・型チェック・テスト等の機械的検証を使い�
    | **needs_red_team** | findings を読んで自分で深掘り判断。SPEC/SECURITY/ASSUMPTIONS を追加チェック |
    | **rejected** | findings を読んで Director に報告。修正タスクの提案を含める |
 
+3.5. **code-reviewer + code-simplifier 統一実行**（v4.2 追加）:
+   Stand の結果受領後、Red Team 本体レビュー前に code-reviewer と code-simplifier を実行する。
+   ```
+   Task tool（model: sonnet）で以下を実行:
+   - /pr-review-toolkit:code-reviewer を対象ブランチに適用
+   - /pr-review-toolkit:code-simplifier を対象ブランチに適用
+   ```
+   **Swarm 使用有無に関わらず毎回実行。条件分岐なし。**
+
 4. **Red Team 本体のチェック**（Stand がカバーしない項目）:
    - **SPEC**: タスク仕様との照合（Stand は仕様判断しない）
    - **SECURITY**: セキュリティ脆弱性の目視確認
    - **ASSUMPTIONS**: 暗黙の前提・エッジケースの確認
+   - **H3（機能統合判断）**: 同一機能の処理が複数箇所に散在していないか（CLAUDE.md セクション14 H3）
    - これらは `needs_red_team` の場合に重点的に、`approved` の場合は軽く確認
 
 ### Stand を使わない場合

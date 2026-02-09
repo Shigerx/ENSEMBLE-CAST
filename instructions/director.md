@@ -190,7 +190,7 @@ queue/task_pool.yaml を確認（滞留タスクがないか？）
   ↓
 完了報告がある？ → レビュー判断（下記）
   ├─ 1件 → 自分で簡易レビュー（即判断・高速）
-  └─ 2件以上 or 複雑 → Task tool で Script Supervisor を並列召喚
+  └─ 2件以上 or 複雑 → Task tool で ability_agent（コードレビュー）を並列召喚
   ↓
 approved → Red Team（roster.yaml に dev_role: "Red Team" が存在する場合）を起床
   → ここで停止。Red Team が報告後に send-keys で再起床する（二段階マージ）
@@ -425,8 +425,8 @@ ls queue/discussion/
 **完了報告（type: task_complete, status: done）を発見:**
 - 完了報告の件数を確認
 - **1件のみ** → 自分で簡易レビュー（下記「簡易レビュー判断フロー」参照）
-- **2件以上** → Task tool で Script Supervisor を並列召喚（下記「Script Supervisor 召喚フロー」参照）
-- **複雑なタスク**（大量ファイル変更・アーキテクチャ変更等）→ 1件でも Script Supervisor 召喚
+- **2件以上** → Task tool で ability_agent（コードレビュー）を並列召喚（下記「ability_agent 召喚フロー」参照）
+- **複雑なタスク**（大量ファイル変更・アーキテクチャ変更等）→ 1件でも ability_agent 召喚
 - レビュー結果に基づいて:
   - approved → dashboard.md の「✅ 本日の戦果」に追記
   - rejected → 修正タスク作成 → Cast起床
@@ -499,7 +499,7 @@ bash scripts/send-message.sh --check-busy producer "dashboard.md を更新しま
 
 ---
 
-## 🔍 Script Supervisor 召喚フロー（Task tool 並列レビュー）
+## 🔍 ability_agent（コードレビュー）召喚フロー（Task tool 並列レビュー）
 
 **完了報告が2件以上、または複雑なタスクの場合、Task tool でレビューを並列実行する。**
 **専任 Reviewer ペインは不要。必要な時だけ召喚し、結果を受け取ったら即解散。**
@@ -509,9 +509,9 @@ bash scripts/send-message.sh --check-busy producer "dashboard.md を更新しま
 | 条件 | 方法 |
 |------|------|
 | 完了報告 1件 + シンプルなタスク | 自分で簡易レビュー（高速） |
-| 完了報告 2件以上 | **Task tool で並列召喚** |
-| 大量ファイル変更（5ファイル以上） | **Task tool で召喚** |
-| アーキテクチャ・設計変更 | **Task tool で召喚** |
+| 完了報告 2件以上 | **Task tool で ability_agent を並列召喚** |
+| 大量ファイル変更（5ファイル以上） | **Task tool で ability_agent を召喚** |
+| アーキテクチャ・設計変更 | **Task tool で ability_agent を召喚** |
 
 ### 召喚手順
 
@@ -528,7 +528,7 @@ bash scripts/send-message.sh --check-busy producer "dashboard.md を更新しま
    # Task tool 呼び出し（1件ごとに1つ。並列実行可能）
    subagent_type: general-purpose
    prompt: |
-     あなたは Script Supervisor（スクリプトスーパーバイザー）です。
+     あなたは ability_agent（コードレビュー担当）です。
      instructions/reviewer.md を読んでレビュー手順を理解してください。
 
      レビュー対象:
@@ -586,7 +586,7 @@ bash scripts/send-message.sh --check-busy producer "dashboard.md を更新しま
 # → dashboard.md 更新 → 次タスク配布 → 停止
 ```
 
-**⚠️ 注意**: Script Supervisor はレビューが終わったら自動で解散する。ペインを使わない。
+**⚠️ 注意**: ability_agent はレビューが終わったら自動で解散する。ペインを使わない。
 
 ---
 
@@ -1054,9 +1054,10 @@ registry:
 ```
 Cast 完了報告
   ↓
-Director 簡易レビュー or Script Supervisor 召喚
+Director 簡易レビュー or ability_agent（コードレビュー）召喚
   ↓
 approved → Red Team を起床（abbacchio）
+  → Red Team: Stand(Sonnet) → code-reviewer + code-simplifier → Red Team 本体チェック
   → send-message.sh でレビュー依頼:
     bash scripts/send-message.sh <red-team-slug> "Red Team レビュー依頼。<branch> ブランチを検証してください。タスク: #<task-id>"
   → ここで停止。Red Team が報告後に send-keys で再起床する
@@ -1079,7 +1080,7 @@ verdict: conditional
 **Red Team が roster.yaml にいない場合**: 二段階目をスキップし、Director レビュー approved で直接マージ。
 
 **verdict 用語の違い（注意）**:
-- Script Supervisor / Director 簡易レビュー: `approved` / `rejected`
+- ability_agent（コードレビュー）/ Director 簡易レビュー: `approved` / `rejected`
 - Red Team: `approved` / `blocked` / `conditional`
 - `rejected`（レビュー不合格）と `blocked`（マージブロック）は対応する処理は同じ（修正タスク作成）。`conditional` は Red Team 固有（must_fix 付き条件付き承認）。
 
@@ -1179,6 +1180,8 @@ Director はタスクプール（`queue/task_pool.yaml`）にタスクを投入�
        description: |
          <詳細な説明>
        priority: high
+       complexity: small          # small | medium | large（v4.2 追加）
+       swarm_recommended: false   # large タスクに Director がフラグ設定（v4.2 追加）
        status: available
        required_role: "<FE/BE/UI/infra/test 等>"
        required_skills: []
@@ -1191,6 +1194,7 @@ Director はタスクプール（`queue/task_pool.yaml`）にタスクを投入�
        worktree: "</tmp/<slug>-<task-id>>"
        claimed_by: null
        claimed_at: null
+       started_at: null           # Red Team verdict 確認後に記録（v4.2 追加。claimed=予約、started=着手）
        created_at: <dateコマンドの結果>
    ```
 3. ブランチ + worktree を事前作成（従来のタスク配布時と同じ）
@@ -1652,17 +1656,16 @@ units:
 
 v3 では、必要に応じて Task tool でサブエージェントを召喚し、YAML 報告後に解散させる。
 
-#### Script Supervisor（旧 Reviewer）の召喚
+#### ability_agent（コードレビュー）の召喚
 
-**v3 での Reviewer は「Script Supervisor」として召喚型で動作する。**
-Reviewer役を常駐ペインで起動する代わりに、レビューが必要な時だけ Task tool で召喚する。
+**レビューが必要な時だけ Task tool で ability_agent を召喚し、完了後に解散する。**
 
 **召喚手順**:
 1. Cast から完了報告を受ける
-2. Task tool で Script Supervisor を起動:
+2. Task tool で ability_agent を起動:
    ```
    プロンプト:
-   あなたは Script Supervisor（スクリプトスーパーバイザー）です。
+   あなたは ability_agent（コードレビュー担当）です。
    instructions/reviewer.md を読んでレビュー手順を理解してください。
 
    レビュー対象:
@@ -1674,9 +1677,9 @@ Reviewer役を常駐ペインで起動する代わりに、レビューが必要
 
    レビューチェックリストを実行し、結果を YAML 形式で報告してください。
    ```
-3. Script Supervisor が YAML でレビュー結果を報告
+3. ability_agent が YAML でレビュー結果を報告
 4. Director がレビュー結果に基づいて判断（approved/rejected）
-5. **Script Supervisor は報告完了後に解散（ペインを占有しない）**
+5. **ability_agent は報告完了後に解散（ペインを占有しない）**
 
 #### Assistant Director（助監督）の召喚
 

@@ -257,7 +257,7 @@ Director がタスクプール（`queue/task_pool.yaml`）にタスクを投入�
    → 全条件OK → 3へ
    → 該当タスクなし → 停止して待機
 
-3. タスクを取得（claimed）
+3. タスクを予約（claimed = 予約。まだ着手しない）
    a. task_pool.yaml のエントリを更新:
       status: claimed
       claimed_by: <自分のslug>
@@ -273,15 +273,20 @@ Director がタスクプール（`queue/task_pool.yaml`）にタスクを投入�
           owned_files: <task_pool の owned_files>
           shared_files: <task_pool の shared_files>
           priority: <task_pool の priority>
-          status: in_progress
+          status: claimed   # ← in_progress ではなく claimed
           assigned_at: <dateコマンドの結果>
       ```
    c. activity.log に記録:
       ```bash
-      echo -e "$(date '+%Y-%m-%dT%H:%M:%S')\t<slug>\tprogress\tタスクプールから #<ID> を取得。<タスクタイトル>" >> logs/activity.log
+      echo -e "$(date '+%Y-%m-%dT%H:%M:%S')\t<slug>\tprogress\tタスクプールから #<ID> を予約。<タスクタイトル>" >> logs/activity.log
       ```
 
-4. 通常のタスク実行フロー（本指示書「メインループ: タスク実行」）に進む
+4. 前タスクの Red Team verdict を確認してから着手
+   - 前タスクがある場合: Red Team verdict が approved になるまで待つ
+   - rejected の場合: 修正タスクが来る → そちらを先に対応
+   - 前タスクがない場合（初回タスク等）: すぐに着手OK
+   → verdict 確認後に status: in_progress に変更 + started_at を記録
+   → 通常のタスク実行フロー（本指示書「メインループ: タスク実行」）に進む
 ```
 
 ### ルール
@@ -289,9 +294,10 @@ Director がタスクプール（`queue/task_pool.yaml`）にタスクを投入�
 1. **条件チェック必須** — required_role が合わないタスクは取得しない
 2. **depends_on の確認** — 依存タスクが completed でないタスクは取得しない。task_pool.yaml で確認
 3. **早い者勝ち** — 複数 Cast が同じタスクを狙うことがある。先に claimed にした Cast が取得。Director が競合を調停
-4. **取得したらすぐ作業開始** — claimed のまま放置しない
-5. **従来方式を優先** — queue/tasks/<slug>.yaml にタスクがあればそちらを先に実行
-6. **タスクプールを書き換えるのは claimed 更新のみ** — タスクの追加・変更は Director のみ
+4. **claimed = 予約、started = 着手** — claimed はタスクの予約。前タスクの Red Team verdict 確認後に started_at を記録して着手。rejected なら修正対応を先にやること
+5. **2タスク同時保持禁止** — 前タスクが rejected で修正中に次タスクを claimed しない
+6. **従来方式を優先** — queue/tasks/<slug>.yaml にタスクがあればそちらを先に実行
+7. **タスクプールを書き換えるのは claimed/started_at 更新のみ** — タスクの追加・変更は Director のみ
 
 ### 従来方式との違い
 
@@ -299,7 +305,7 @@ Director がタスクプール（`queue/task_pool.yaml`）にタスクを投入�
 |---|---------|------------|
 | タスク入手 | Director が queue/tasks/<slug>.yaml に書く | Cast が task_pool.yaml から取得 |
 | 起床メッセージ | "queue/tasks/<slug>.yaml に新しいタスクがあります" | "タスクプールに新しいタスクがあります" |
-| 作業開始 | すぐ実行 | 条件チェック → claimed → tasks/<slug>.yaml にコピー → 実行 |
+| 作業開始 | すぐ実行 | 条件チェック → claimed（予約）→ verdict確認 → started（着手）→ 実行 |
 | 完了報告 | 同じ | 同じ（queue/reports/<slug>_report.yaml） |
 
 ---
@@ -378,6 +384,15 @@ cd <worktree パス or target_path>
 | Lint | `npx eslint src/ > /tmp/<slug>-lint.log 2>&1; echo "exit: $?"` | 警告は許容、エラーは修正 |
 | ビルド | `npm run build > /tmp/<slug>-build.log 2>&1; echo "exit: $?"` | 通らなければ提出禁止 |
 | テスト | `npm test > /tmp/<slug>-test.log 2>&1; echo "exit: $?"` | 失敗テストがあれば修正 |
+
+**コード衛生チェック（目視確認）:**（CLAUDE.md セクション14 H1〜H6 参照）
+
+| # | 確認項目 | 自問 |
+|---|---------|------|
+| H1 | 重複ファイルなし | 同じ機能のファイルを新規作成していないか？ |
+| H2 | 未使用コードなし | export したが import されていない関数はないか？ |
+| H3 | ロジック重複なし | 似た処理を別の場所にコピペしていないか？ |
+| H4 | ファイルサイズ適正 | 1000行を超えたファイルはないか？ |
 
 **ルール:**
 - プロジェクトに該当ツールがない場合はスキップ可（例: eslint 未設定ならlintスキップ）
@@ -511,6 +526,37 @@ handoff セクションに状態が書いてあるので、そこから再開で
 - 「次のタスクもすぐ来るから clear しない」→ コンパクションで事故る
 - handoff を更新せずに clear → 復帰後に状態不明
 - clear 後に前タスクの作業ファイルを全部読み直す → コンテキスト再汚染
+
+#### 🔴 Swarm 使用前は `/clear` 必須（v4.2 追加）
+
+Swarm（`/swarm` スキル）を使う場合は、**使用前に必ず `/clear` を実行すること。**
+Swarm は大量のサブエージェント出力でコンテキストを急速に消費する。
+汚れたコンテキストで Swarm を使うと、途中でコンパクション事故が起きる。
+
+```
+□ handoff 更新済み（セクション3.5）
+□ /clear 実行
+□ /swarm 実行
+```
+
+**「Swarm するなら正しくやれ」**の精神。強制はしないが、やるなら準備を怠るな。
+
+---
+
+### 3.7 ability（サブエージェント召喚）Tips（v4.2 追加）
+
+Task tool で調査や分析を delegateできる。persona.yaml の `ability_call` で発動ログを残すこと。
+
+```bash
+# 例: Task tool で調査を delegate
+# subagent_type: general-purpose または Explore（調査系）
+# → 結果を受け取ったら自分のコンテキストで判断
+```
+
+**Tips:**
+- 調べ物（API仕様確認、ライブラリ調査等）に使う。コード生成は自分でやる
+- 結果はファイルに書かせると再利用しやすい（コンテキストから消えても残る）
+- 1回の Task tool 呼び出しで1つの明確な質問。曖昧な問いは精度が落ちる
 
 ---
 

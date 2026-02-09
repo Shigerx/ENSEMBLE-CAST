@@ -1,6 +1,6 @@
 # Red Team Stand — レビュー実行プロンプト
 
-> このファイルは Red Team が Task tool (Haiku) で Stand を召喚する際に渡すプロンプトの定義。
+> このファイルは Red Team が Task tool (Sonnet) で Stand を召喚する際に渡すプロンプトの定義。
 > Stand はキャラクター非依存。機械的チェックを実行し、YAML で結果を返す。
 
 ---
@@ -89,6 +89,21 @@ echo "exit: $?"
 - main ブランチへの直接コミットがないか確認
 - `git log main...<branch> --oneline` で確認
 
+#### CHECK 8: FILE_SIZE（v4.2 追加）
+- `git diff main...<branch> --name-only` で変更ファイルを取得
+- 各ファイルが1000行を超えていないか確認:
+```bash
+wc -l <変更ファイル> | awk '$1 > 1000 {print}'
+```
+
+#### CHECK 9: DUPLICATION（v4.2 追加）
+- 変更ファイル内に同名の関数定義が複数ないか確認
+- 変更ファイルと同ディレクトリの既存ファイルに同名 export がないか確認
+
+#### CHECK 10: DEAD_CODE（v4.2 追加）
+- 変更ファイルで export された関数・変数が、プロジェクト内で import されているか確認
+- 未使用の import がないか確認
+
 ### 4. main に戻る
 
 ```bash
@@ -130,9 +145,18 @@ stand_review_result:
     - id: BRANCH
       passed: true | false
       output: "<確認結果>"
+    - id: FILE_SIZE
+      passed: true | false
+      output: "<1000行超のファイル一覧（なければ null）>"
+    - id: DUPLICATION
+      passed: true | false
+      output: "<重複検出結果>"
+    - id: DEAD_CODE
+      passed: true | false
+      output: "<未使用コード検出結果>"
 
   findings:
-    - category: "<BUILD|TYPES|LINT|TEST|REGRESSION|OWNERSHIP|BRANCH>"
+    - category: "<BUILD|TYPES|LINT|TEST|REGRESSION|OWNERSHIP|BRANCH|FILE_SIZE|DUPLICATION|DEAD_CODE>"
       severity: "<critical|major|minor>"
       description: "<指摘内容>"
       file: "<ファイルパス>"
@@ -152,6 +176,9 @@ stand_review_result:
 | OWNERSHIP or BRANCH が failed | **rejected** |
 | TEST or LINT のみ failed | **needs_red_team**（Red Team 本体が判断） |
 | REGRESSION で疑わしい変更あり | **needs_red_team** |
+| FILE_SIZE failed（1000行超） | **needs_red_team** |
+| DUPLICATION failed | **needs_red_team** |
+| DEAD_CODE failed | **needs_red_team** |
 
 **判断に迷ったら `needs_red_team`。** Red Team 本体が最終判断する。
 
@@ -162,4 +189,4 @@ stand_review_result:
 - **出力リダイレクト必須**: 全コマンドを `/tmp/stand-*.log` にリダイレクトすること
 - **コンテキスト汚染防止**: ビルドログ全文を出力に含めない。エラーサマリーのみ
 - **main に戻る**: チェック完了後は必ず `git checkout main` で戻る
-- SPEC / SECURITY / ASSUMPTIONS チェックは**行わない**（Red Team 本体の責務）
+- SPEC / SECURITY / ASSUMPTIONS / H3（機能統合判断）チェックは**行わない**（Red Team 本体の責務）
